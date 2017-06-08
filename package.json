@@ -1,0 +1,39 @@
+{
+  "name": "noise-asmjs",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "react": "^15.5.4",
+    "react-dom": "^15.5.4",
+    "semantic-ui-react": "^0.68.5"
+  },
+  "devDependencies": {
+    "react-scripts": "1.0.7"
+  },
+  "description": "Web application providing interactive demonstrations of the `noise-rs` library allowing users to select and configure their noise functions and view them dynamically in a canvas",
+  "keywords": [
+    "noise",
+    "perlin",
+    "noise",
+    "fbm",
+    "noise-rs",
+    "asm.js",
+    "rust"
+  ],
+  "author": "Casey Primozic <me@ameo.link>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ameobea/noise-asmjs/issues"
+  },
+  "homepage": "https://github.com/ameobea/noise-asmjs#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ameobea/noise-asmjs.git"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}
