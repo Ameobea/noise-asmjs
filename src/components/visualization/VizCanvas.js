@@ -3,7 +3,7 @@
 import React from 'react';
 
 const VizCanvas = ({size}) => (
-  <center style={{padding: 20, width: '100%'}}>
+  <center>
     <canvas width={size} height={size} style={{backgroundColor: '#000'}} />
   </center>
 );

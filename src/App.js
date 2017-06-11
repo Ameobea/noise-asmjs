@@ -28,7 +28,7 @@ const handleSizeChange = actionDispatcher => {
 };
 
 const App = ({settingsVisible, toggleSettings, setMaxStageSize}) => (
-  <div style={{width: '100%', height: '100%', overflow: 'hidden'}} ref={handleSizeChange(setMaxStageSize)} >
+  <div style={{width: '100%', height: '100%'}} ref={handleSizeChange(setMaxStageSize)} >
     <ReactResizeDetector handleWidth handleHeight onResize={setMaxStageSize} />
 
     {/* HEADER */}
@@ -36,7 +36,7 @@ const App = ({settingsVisible, toggleSettings, setMaxStageSize}) => (
       <VizHeader />
     </div>
 
-    <Grid>
+    <Grid relaxed>
       <Row>
         <Column computer={10} mobile={16}>
           {/* MAIN VISUALIZATION CONTENT */}
