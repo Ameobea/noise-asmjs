@@ -1,11 +1,10 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Button, Container, Grid, Menu, Segment, Sidebar } from 'semantic-ui-react';
+import { Grid } from 'semantic-ui-react';
 import ReactResizeDetector from 'react-resize-detector';
 
 import { toggleSettings } from './actions/settings';
 import { setMaxStageSize } from './actions/stage';
-import { SHOWN } from './reducers/settings';
 
 import VizHeader from './components/VizHeader';
 import Visualization from './components/visualization';
@@ -24,9 +23,9 @@ const measureElementSizeChange = element => ({
 const handleSizeChange = actionDispatcher => {
   return element => {
     const {height, width} = measureElementSizeChange(element);
-    actionDispatcher(height, width)
+    actionDispatcher(height, width);
   };
-}
+};
 
 const App = ({settingsVisible, toggleSettings, setMaxStageSize}) => (
   <div style={{width: '100%', height: '100%', overflow: 'hidden'}} ref={handleSizeChange(setMaxStageSize)} >

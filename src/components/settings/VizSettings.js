@@ -2,18 +2,12 @@
 
 import React from 'react';
 import { reduxForm, Field } from 'redux-form';
-import { Dropdown, Grid, Header, Form, Input } from 'semantic-ui-react';
-// import '../semantic/dist/semantic.min.css';
+import { Dropdown, Grid, Header, Input } from 'semantic-ui-react';
 import _ from 'lodash';
 
 import noiseGenerators from '../../data/noiseGenerators';
 
 const { Column, Row } = Grid;
-
-const log = (...args) => {
-  console.log(...args);
-  return args[args.length - 1];
-}
 
 const noiseGeneratorOptions = _.map(noiseGenerators, ({key, name, content}) => {
   return {
@@ -33,36 +27,32 @@ const SemanticReduxFormField = (props) => {
   return <As value={input.value} onChange={handleChange} onFocus={_.noop} {...componentProps} />;
 };
 
-const NoiseGeneratorDropdown = () => {
-  const options = noiseGenerators.map(gen => {
-    return {...gen, value: gen.key};
-  });
+const SemanticField = ({name, as=Input, componentProps={}}) => (
+  <Field name={name} component={SemanticReduxFormField} as={as} componentProps={componentProps} />
+);
 
-  return (
-    <Field
-      name='noiseFunction'
-      component={SemanticReduxFormField}
-      as={Dropdown}
-      componentProps={{
-        fluid: true,
-        selection: true,
-        options: noiseGeneratorOptions
-      }}
-    />
-  );
-};
+const NoiseGeneratorDropdown = () => (
+  <SemanticField
+    name='noiseFunction'
+    as={Dropdown}
+    componentProps={{
+      fluid: true,
+      selection: true,
+      options: noiseGeneratorOptions
+    }}
+  />
+);
 
 const CanvasSize = () => (
-  <Field
+  <SemanticField
     name='canvasSize'
-    component={SemanticReduxFormField}
-    as={Input}
     componentProps={{
       label: {
         basic: true,
         content: 'px'
       },
       labelPosition: 'right',
+      size: 'mini'
     }}
   />
 );
@@ -81,6 +71,14 @@ const VizSettings = () => (
             <CanvasSize />
           </Column>
         </Row>
+        <Row>
+          <Column width={8}>
+            <SemanticField name='zoom' />
+          </Column>
+          <Column width={8}>
+            <SemanticField name='speed' />
+          </Column>
+        </Row>
       </Grid>
     </form>
   </div>
@@ -91,8 +89,10 @@ export default reduxForm({
   initialValues: {
     noiseFunction: noiseGenerators[0].key,
     canvasSize: 700,
-    onChange: (values, dispatch, props) => {
-      console.log('dispatch', dispatch); // TODO
-    }
-  }
+    zoom: 0.0132312,
+    speed: 0.00758,
+  },
+  onChange: (values, dispatch, props) => {
+    console.log('dispatch', dispatch); // TODO
+  },
 })(VizSettings);
