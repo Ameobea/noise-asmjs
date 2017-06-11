@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { reduxForm, Field } from 'redux-form';
-import { Dropdown, Grid, Header, Input } from 'semantic-ui-react';
+import { Dropdown, Grid, Icon, Header, Input, Popup } from 'semantic-ui-react';
 import _ from 'lodash';
 
 import noiseGenerators from '../../data/noiseGenerators';
@@ -27,12 +27,29 @@ const SemanticReduxFormField = (props) => {
   return <As value={input.value} onChange={handleChange} onFocus={_.noop} {...componentProps} />;
 };
 
-const SemanticField = ({name, as=Input, componentProps={}}) => (
-  <Field name={name} component={SemanticReduxFormField} as={as} componentProps={componentProps} />
-);
+const SemanticField = ({name, as=Input, componentProps={}, label='', helpContent}) => {
+  const icon = helpContent ? (
+    <Popup trigger={<Icon name='question circle' circular fitted size='normal' style={{marginBottom: -10, marginTop: -10}} />} content={helpContent} />
+  ) : <span />;
+
+  const labelContent = (
+    <p style={{fontWeight: 'bold', marginBottom: 6}}>
+      {icon}
+      {label}
+    </p>
+  );
+
+  return (
+    <div>
+      {labelContent}
+      <Field name={name} component={SemanticReduxFormField} as={as} componentProps={componentProps} />
+    </div>
+  );
+};
 
 const NoiseGeneratorDropdown = () => (
   <SemanticField
+    label='Noise Function'
     name='noiseFunction'
     as={Dropdown}
     componentProps={{
@@ -45,6 +62,7 @@ const NoiseGeneratorDropdown = () => (
 
 const CanvasSize = () => (
   <SemanticField
+    label='Canvas Size'
     name='canvasSize'
     componentProps={{
       label: {
@@ -52,7 +70,7 @@ const CanvasSize = () => (
         content: 'px'
       },
       labelPosition: 'right',
-      size: 'mini'
+      fluid: true
     }}
   />
 );
@@ -67,16 +85,24 @@ const VizSettings = () => (
           </Column>
         </Row>
         <Row>
-          <Column width={4}>
+          <Column width={8}>
             <CanvasSize />
           </Column>
         </Row>
         <Row>
           <Column width={8}>
-            <SemanticField name='zoom' />
+            <SemanticField label='Zoom Level' name='zoom' componentProps={{fluid: true}} />
           </Column>
           <Column width={8}>
-            <SemanticField name='speed' />
+            <SemanticField label='Speed Level' name='speed' componentProps={{fluid: true}} />
+          </Column>
+        </Row>
+        <Row>
+          <Column width={8}>
+            <SemanticField label='seed' name='Noise Generator Seed' componentProps={{flud: true}} helpContent='SEED DATA' />
+          </Column>
+          <Column width={8}>
+            <SemanticField label='frequency' name='Frequency' componentProps={{flud: true}} />
           </Column>
         </Row>
       </Grid>

@@ -12,7 +12,7 @@ const Vizualization = ({form, stageSize}) => {
 
     return (
       <div style={{marginBottom: 20}}>
-        <VizCanvas size={_.min([vizSettings.canvasSize, stageSize]) - 50} />
+        <VizCanvas size={_.min([vizSettings.canvasSize, stageSize])} />
       </div>
     );
   } else {

@@ -4,7 +4,7 @@ export const SET_MAX_STAGE_SIZE = 'SET_STAGE_SIZE';
 
 export const maxSizeReducer = (state=0, action) => {
   if(action.type === SET_MAX_STAGE_SIZE) {
-    return action.size;
+    return action.size - 120;
   }
 
   return state;
