@@ -1,0 +1,15 @@
+[package]
+authors = ["Casey Primozic <me@ameo.link>"]
+name = "noise"
+version = "0.1.0"
+
+[dependencies]
+lazy_static = "0.2.8"
+palette = "0.2"
+
+[dependencies.minutiae]
+path = "../../minutiae/minutiae"
+
+[dependencies.noise]
+path = "../../noise-rs"
+version = "0.4.1"

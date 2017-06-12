@@ -2,10 +2,12 @@
 
 import React from 'react';
 import { reduxForm, Field } from 'redux-form';
-import { Dropdown, Grid, Icon, Header, Input, Popup } from 'semantic-ui-react';
+import { Button, Dropdown, Grid, Icon, Header, Input, Popup } from 'semantic-ui-react';
 import _ from 'lodash';
 
+import { store } from '../../';
 import noiseGenerators from '../../data/noiseGenerators';
+import { init, setConfig, SETTING_TYPES } from '../../interop';
 
 const { Column, Row } = Grid;
 
@@ -179,23 +181,55 @@ const VizSettings = () => (
         </Row>
       </Grid>
     </form>
+
+    <center>
+      <Button onClick={init}>Initialize Noise Engine</Button>
+    </center>
   </div>
 );
 
+var lastValues = {
+  noiseFunction: noiseGenerators[0].key,
+  canvasSize: 700,
+  zoom: 0.0132312,
+  speed: 0.00758,
+  seed: '75iTgPGxbUvkZRAfnUQyp',
+  octaves: 6,
+  frequency: '1.0',
+  lacunarity: '2.0',
+  persistence: '0.5',
+};
+
+// used to map the input names to `SETTING_TYPES` used in the interop
+const nameMap = {
+  noiseFunction: SETTING_TYPES['GENERATOR_TYPE'],
+  canvasSize: SETTING_TYPES['CANVAS_SIZE'],
+  zoom: SETTING_TYPES['ZOOM'],
+  speed: SETTING_TYPES['SPEED'],
+  seed: SETTING_TYPES['SEED'],
+  octaves: SETTING_TYPES['OCTAVES'],
+  frequency: SETTING_TYPES['FREQUENCY'],
+  lacunarity: SETTING_TYPES['LACUARITY'],
+  persistence: SETTING_TYPES['PERSISTENCE'],
+};
+
 export default reduxForm({
   form: 'vizSettings',
-  initialValues: {
-    noiseFunction: noiseGenerators[0].key,
-    canvasSize: 700,
-    zoom: 0.0132312,
-    speed: 0.00758,
-    seed: '75iTgPGxbUvkZRAfnUQyp',
-    octaves: 6,
-    frequency: '1.0',
-    lacunarity: '2.0',
-    persistence: '0.5',
-  },
+  initialValues: _.cloneDeep(lastValues),
   onChange: (values, dispatch, props) => {
-    console.log('dispatch', dispatch); // TODO
+    // Find the keys of all settings that have changed
+    // (Stolen from https://stackoverflow.com/a/31686152/3833068)
+    const diffKeys = _.reduce(
+      values,(result, value, key) => {
+      return _.isEqual(value, lastValues[key]) ? result : result.concat(key);
+    }, []);
+    lastValues = values;
+
+    // map them to `SETTING_TYPES` from the interop and call the configuration callback with the noise engine's pointer
+    const enginePointer = store.getState().enginePointer.pointer;
+    _.each(diffKeys, key => {
+      console.log('Setting config values: ', nameMap[key], values[key], enginePointer)
+      setConfig(nameMap[key], values[key], enginePointer);
+    });
   },
 })(VizSettings);

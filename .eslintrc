@@ -42,6 +42,7 @@
   "plugins": ["react"],
   "globals": {
     "require": true,
-    "module": true
+    "module": true,
+    "Module": true
   }
 }
