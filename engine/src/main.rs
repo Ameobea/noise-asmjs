@@ -8,11 +8,6 @@
 
 #![allow(unused_variables, dead_code)]
 
-#![feature(alloc)]
-
-extern crate alloc;
-#[macro_use]
-extern crate lazy_static;
 extern crate minutiae;
 extern crate noise;
 extern crate palette;
@@ -22,7 +17,10 @@ use std::os::raw::{c_char, c_void};
 
 use minutiae::prelude::*;
 use minutiae::emscripten::{EmscriptenDriver, CanvasRenderer};
-use noise::{Billow, NoiseModule, OpenSimplex,Fbm, HybridMulti, Point3, RidgedMulti, SuperSimplex, Value, Worley};
+use noise::{
+    BasicMulti, Billow, NoiseModule, OpenSimplex,Fbm, HybridMulti, MultiFractal,
+    Point3, RidgedMulti, Seedable, SuperSimplex, Value, Worley
+};
 use palette::{FromColor, Hsv, Rgb};
 
 extern {
@@ -51,20 +49,16 @@ pub fn error(msg: &str) {
 pub mod interop;
 use interop::*;
 
-const UNIVERSE_SIZE: usize = 575;
-const ZOOM: f32 = 0.0132312;
-const TIME_SCALE: f32 = 0.00758;
-
-lazy_static!{
-    static ref NOISE_1: Fbm<f32> = Fbm::new();
-    static ref NOISE_2: Worley<f32> = Worley::new();
-    static ref NOISE_3: OpenSimplex = OpenSimplex::new();
-    static ref NOISE_4: Billow<f32> = Billow::new();
-    static ref NOISE_5: HybridMulti<f32> = HybridMulti::new();
-    static ref NOISE_6: SuperSimplex = SuperSimplex::new();
-    static ref NOISE_7: Value = Value::new();
-    static ref NOISE_8: RidgedMulti<f32> = RidgedMulti::new();
-}
+// lazy_static!{
+//     static ref NOISE_1: Mutex<Fbm<f32>> = Mutex::new(Fbm::new());
+//     static ref NOISE_2: Mutex<Worley<f32>> = Mutex::new(Worley::new());
+//     static ref NOISE_3: Mutex<OpenSimplex> = Mutex::new(OpenSimplex::new());
+//     static ref NOISE_4: Mutex<Billow<f32>> = Mutex::new(Billow::new());
+//     static ref NOISE_5: Mutex<HybridMulti<f32>> = Mutex::new(HybridMulti::new());
+//     static ref NOISE_6: Mutex<SuperSimplex> = Mutex::new(SuperSimplex::new());
+//     static ref NOISE_7: Mutex<Value> = Mutex::new(Value::new());
+//     static ref NOISE_8: Mutex<RidgedMulti<f32>> = Mutex::new(RidgedMulti::new());
+// }
 
 struct NoiseUpdater;
 
@@ -110,7 +104,11 @@ pub struct NoiseEngine {
     frequency: f32,
     lacunarity: f32,
     persistence: f32,
+    zoom: f32,
+    speed: f32,
     needs_update: bool, // flag indicating whether or not there are new stettings that need to be applied
+    needs_resize: bool, // flag indicating if the universe itself needs to be resized or not
+    needs_new_noise_gen: bool, // the type of noise generator itself needs to be changed
 }
 
 impl Default for NoiseEngine {
@@ -123,46 +121,174 @@ impl Default for NoiseEngine {
             frequency: 1.0,
             lacunarity: 2.0,
             persistence: 0.5,
+            speed: 0.00758,
+            zoom: 0.0132312,
             needs_update: false,
+            needs_resize: false,
+            needs_new_noise_gen: false,
         }
     }
 }
 
 /// given a buffer containing all of the cells in the universe, calculates values for each of them using
 /// perlin noise and sets their states according to the result.
-fn drive_noise(cells_buf: &mut [Cell<CS>], seq: usize, noise: &NoiseModule<Point3<f32>, f32>) {
+fn drive_noise(cells_buf: &mut [Cell<CS>], seq: usize, noise: &NoiseModule<Point3<f32>, f32>, universe_size: usize, zoom: f32, speed: f32) {
     let fseq = seq as f32;
-    for y in 0..UNIVERSE_SIZE {
-        for x in 0..UNIVERSE_SIZE {
+    for y in 0..universe_size {
+        for x in 0..universe_size {
             // calculate noise value for current coordinate and sequence number
-            let val = noise.get([x as f32 * ZOOM, y as f32 * ZOOM, fseq * TIME_SCALE]);
+            let val = noise.get([x as f32 * zoom, y as f32 * zoom, fseq * speed]);
 
             // set the cell's state equal to that value
-            let index = get_index(x, y, UNIVERSE_SIZE);
+            let index = get_index(x, y, universe_size);
             cells_buf[index].state = CS(val);
         }
     }
 }
 
+/// Very custom function for changing the size of the universe by either removing elements from it or expanding
+/// it with elements to match the new length.  Totally ignores all entity-related stuff for now and will almost
+/// certainly break if entities are utilized in any way.
+fn resize_universe(universe: &mut Universe<CS, ES, MES, CA, EA>, new_size: usize) {
+    if new_size == 0 {
+        return error("Requested change of universe size to 0!");
+    }
+
+    universe.cells.resize(new_size, Cell {state: CS(0.0)});
+}
+
+// trait SeedableMultifractalNoiseModule:
+
+
+
+/// Given the ID of a noise engine, allocates an instance of it on the heap and returns a void reference to it.
+/// Since `MultiFractal` can't be made into a trait object, this is the best optionsdfsfsdfsdfs
+fn create_noise_engine(id: GenType) -> *mut c_void {
+    match id {
+        GenType::Fbm => Box::into_raw(Box::new(Fbm::new() as Fbm<f32>)) as *mut c_void,
+        GenType::Worley => Box::into_raw(Box::new(Worley::new() as Worley<f32>)) as *mut c_void,
+        GenType::OpenSimplex => Box::into_raw(Box::new(OpenSimplex::new())) as *mut c_void,
+        GenType::Billow => Box::into_raw(Box::new(Billow::new() as Billow<f32>)) as *mut c_void,
+        GenType::HybridMulti => Box::into_raw(Box::new(HybridMulti::new() as HybridMulti<f32>)) as *mut c_void,
+        GenType::SuperSimplex => Box::into_raw(Box::new(SuperSimplex::new())) as *mut c_void,
+        GenType::Value => Box::into_raw(Box::new(Value::new())) as *mut c_void,
+        GenType::RidgedMulti => Box::into_raw(Box::new(RidgedMulti::new() as RidgedMulti<f32>)) as *mut c_void,
+        GenType::BasicMulti => Box::into_raw(Box::new(BasicMulti::new() as BasicMulti<f32>)) as *mut c_void,
+    }
+}
+
+/// Given a pointer to a noise engine of variable type and a settings struct, applies those settings based
+/// on the capabilities of that noise modules.  For example, if the noise module doesn't implement `Seedable`,
+/// the `seed` setting is ignored.
+unsafe fn apply_settings(engine_conf: &NoiseEngine, engine: *mut c_void) -> *mut c_void {
+    match engine_conf.generator_type {
+        GenType::Fbm => {
+            let gen = Box::from_raw(engine as *mut Fbm<f32>);
+            let gen = gen.set_seed(engine_conf.seed as u32);
+            let gen = gen.set_octaves(engine_conf.octaves as usize);
+            let gen = gen.set_frequency(engine_conf.frequency);
+            let gen = gen.set_lacunarity(engine_conf.lacunarity);
+            let gen = gen.set_persistence(engine_conf.persistence);
+            Box::into_raw(Box::new(gen)) as *mut c_void
+        },
+        GenType::Worley => {
+            let gen = Box::from_raw(engine as *mut Worley<f32>);
+            let gen = gen.set_seed(engine_conf.seed as u32);
+            let gen = gen.set_frequency(engine_conf.frequency);
+            Box::into_raw(Box::new(gen)) as *mut c_void
+        },
+        GenType::OpenSimplex => {
+            let gen = Box::from_raw(engine as *mut OpenSimplex);
+            let gen = gen.set_seed(engine_conf.seed as u32);
+            Box::into_raw(Box::new(gen)) as *mut c_void
+        },
+        GenType::Billow => {
+            let gen = Box::from_raw(engine as *mut Billow<f32>);
+            let gen = gen.set_seed(engine_conf.seed as u32);
+            let gen = gen.set_octaves(engine_conf.octaves as usize);
+            let gen = gen.set_frequency(engine_conf.frequency);
+            let gen = gen.set_lacunarity(engine_conf.lacunarity);
+            let gen = gen.set_persistence(engine_conf.persistence);
+            Box::into_raw(Box::new(gen)) as *mut c_void
+        },
+        GenType::HybridMulti => {
+            let gen = Box::from_raw(engine as *mut HybridMulti<f32>);
+            let gen = gen.set_seed(engine_conf.seed as u32);
+            let gen = gen.set_octaves(engine_conf.octaves as usize);
+            let gen = gen.set_frequency(engine_conf.frequency);
+            let gen = gen.set_lacunarity(engine_conf.lacunarity);
+            let gen = gen.set_persistence(engine_conf.persistence);
+            Box::into_raw(Box::new(gen)) as *mut c_void
+        },
+        GenType::SuperSimplex => {
+            let gen = Box::from_raw(engine as *mut SuperSimplex);
+            let gen = gen.set_seed(engine_conf.seed as u32);
+            Box::into_raw(Box::new(gen)) as *mut c_void
+        },
+        GenType::Value => {
+            let gen = Box::from_raw(engine as *mut Value);
+            let gen = gen.set_seed(engine_conf.seed as u32);
+            Box::into_raw(Box::new(gen)) as *mut c_void
+        },
+        GenType::RidgedMulti => {
+            let gen = Box::from_raw(engine as *mut RidgedMulti<f32>);
+            let gen = gen.set_seed(engine_conf.seed as u32);
+            let gen = gen.set_octaves(engine_conf.octaves as usize);
+            let gen = gen.set_frequency(engine_conf.frequency);
+            let gen = gen.set_lacunarity(engine_conf.lacunarity);
+            let gen = gen.set_persistence(engine_conf.persistence);
+            Box::into_raw(Box::new(gen)) as *mut c_void
+        },
+        GenType::BasicMulti => {
+            let gen = Box::from_raw(engine as *mut BasicMulti<f32>);
+            let gen = gen.set_seed(engine_conf.seed as u32);
+            let gen = gen.set_octaves(engine_conf.octaves as usize);
+            let gen = gen.set_frequency(engine_conf.frequency);
+            let gen = gen.set_lacunarity(engine_conf.lacunarity);
+            let gen = gen.set_persistence(engine_conf.persistence);
+            Box::into_raw(Box::new(gen)) as *mut c_void
+        },
+    }
+}
+
 /// Defines a middleware that sets the cell state of
-struct NoiseStepper(Box<NoiseEngine>);
+struct NoiseStepper{
+    conf: Box<NoiseEngine>,
+    noise_engine: *mut c_void,
+}
 
 impl Middleware<CS, ES, MES, CA, EA, OurEngine> for NoiseStepper {
     fn after_render(&mut self, universe: &mut OurUniverse) {
-        let module = match self.0.generator_type {
-            GenType::Fbm => drive_noise(&mut universe.cells, universe.seq, &*NOISE_1),
-            GenType::Worley => drive_noise(&mut universe.cells, universe.seq, &*NOISE_2),
-            GenType::OpenSimplex => drive_noise(&mut universe.cells, universe.seq, &*NOISE_3),
-            GenType::Billow => drive_noise(&mut universe.cells, universe.seq, &*NOISE_4),
-            GenType::HybridMulti => drive_noise(&mut universe.cells, universe.seq, &*NOISE_5),
-            GenType::SuperSimplex => drive_noise(&mut universe.cells, universe.seq, &*NOISE_6),
-            GenType::Value => drive_noise(&mut universe.cells, universe.seq, &*NOISE_7),
-            GenType::RidgedMulti => drive_noise(&mut universe.cells, universe.seq, &*NOISE_8),
-        };
+        // handle any new setting changes before rendering
+        if self.conf.needs_update {
+            if self.conf.needs_resize {
+                // resize the universe if the canvas size changed, matching that size.
+                resize_universe(universe, self.conf.canvas_size);
+                self.conf.needs_resize = false;
+            } else {
+                if self.conf.needs_new_noise_gen {
+                    self.noise_engine = create_noise_engine(self.conf.generator_type);
+                    self.conf.needs_new_noise_gen = false;
+                }
 
-        if self.0.needs_update {
-            unimplemented!(); // TODO
+                // re-apply all settings to the noise module
+                self.noise_engine = unsafe { apply_settings(&*self.conf, self.noise_engine) };
+            }
+
+            self.conf.needs_update = false;
         }
+
+        let module = match self.conf.generator_type {
+            GenType::Fbm => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut Fbm<f32>) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
+            GenType::Worley => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut Worley<f32>) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
+            GenType::OpenSimplex => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut OpenSimplex) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
+            GenType::Billow => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut Billow<f32>) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
+            GenType::HybridMulti => drive_noise(&mut universe.cells, universe.seq, &unsafe { &*(self.noise_engine as *mut HybridMulti<f32>) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
+            GenType::SuperSimplex => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut SuperSimplex) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
+            GenType::Value => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut Value) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
+            GenType::RidgedMulti => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut RidgedMulti<f32>) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
+            GenType::BasicMulti => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut BasicMulti<f32>) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
+        };
     }
 }
 
@@ -179,7 +305,7 @@ struct WorldGenerator;
 impl Generator<CS, ES, MES, CA, EA> for WorldGenerator {
     fn gen(&mut self, conf: &UniverseConf) -> (Vec<Cell<CS>>, Vec<Vec<Entity<CS, ES, MES>>>) {
         // initialize blank universe
-        (vec![Cell{state: CS(0.0)}; UNIVERSE_SIZE * UNIVERSE_SIZE], Vec::new())
+        (vec![Cell{state: CS(0.0)}; conf.size * conf.size], Vec::new())
     }
 }
 

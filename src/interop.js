@@ -30,7 +30,7 @@ export const GENERATOR_TYPES = {
   SUPER_SIMPLEX: 5,
   VALUE: 6,
   RIDGED_MULTI: 7,
-};2
+};
 
 /**
  * Wrapper around the native configuration function.

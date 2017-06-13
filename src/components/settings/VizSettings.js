@@ -189,28 +189,41 @@ const VizSettings = () => (
 );
 
 var lastValues = {
-  noiseFunction: noiseGenerators[0].key,
+  noiseFunction: noiseGenerators[7].key,
   canvasSize: 700,
-  zoom: 0.0132312,
-  speed: 0.00758,
+  zoom: 200,
+  speed: 60,
   seed: '75iTgPGxbUvkZRAfnUQyp',
-  octaves: 6,
-  frequency: '1.0',
-  lacunarity: '2.0',
-  persistence: '0.5',
+  octaves: 2,
+  frequency: 1,
+  lacunarity: 1345340,
+  persistence: 11000,
+};
+
+// stolen from https://stackoverflow.com/a/7616484/3833068
+// which stole it from http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
+const hashCode = input => {
+  var hash = 0, i, chr;
+  if (input.length === 0) return hash;
+  for (i = 0; i < input.length; i++) {
+    chr   = input.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
 };
 
 // used to map the input names to `SETTING_TYPES` used in the interop
 const nameMap = {
-  noiseFunction: SETTING_TYPES['GENERATOR_TYPE'],
-  canvasSize: SETTING_TYPES['CANVAS_SIZE'],
-  zoom: SETTING_TYPES['ZOOM'],
-  speed: SETTING_TYPES['SPEED'],
-  seed: SETTING_TYPES['SEED'],
-  octaves: SETTING_TYPES['OCTAVES'],
-  frequency: SETTING_TYPES['FREQUENCY'],
-  lacunarity: SETTING_TYPES['LACUARITY'],
-  persistence: SETTING_TYPES['PERSISTENCE'],
+  noiseFunction: {id: SETTING_TYPES['GENERATOR_TYPE'], parser: id => _.findIndex(noiseGenerators, {key: id})},
+  canvasSize: {id: SETTING_TYPES['CANVAS_SIZE'], parser: parseInt},
+  zoom: {id: SETTING_TYPES['ZOOM'], parser: parseInt},
+  speed: {id: SETTING_TYPES['SPEED'], parser: parseInt},
+  seed: {id: SETTING_TYPES['SEED'], parser: hashCode},
+  octaves: {id: SETTING_TYPES['OCTAVES'], parser: parseInt},
+  frequency: {id: SETTING_TYPES['FREQUENCY'], parser: parseInt},
+  lacunarity: {id: SETTING_TYPES['LACUNARITY'], parser: parseInt},
+  persistence: {id: SETTING_TYPES['PERSISTENCE'], parser: parseInt},
 };
 
 export default reduxForm({
@@ -221,15 +234,16 @@ export default reduxForm({
     // (Stolen from https://stackoverflow.com/a/31686152/3833068)
     const diffKeys = _.reduce(
       values,(result, value, key) => {
-      return _.isEqual(value, lastValues[key]) ? result : result.concat(key);
-    }, []);
+        return _.isEqual(value, lastValues[key]) ? result : result.concat(key);
+      }, []);
     lastValues = values;
 
     // map them to `SETTING_TYPES` from the interop and call the configuration callback with the noise engine's pointer
     const enginePointer = store.getState().enginePointer.pointer;
     _.each(diffKeys, key => {
-      console.log('Setting config values: ', nameMap[key], values[key], enginePointer)
-      setConfig(nameMap[key], values[key], enginePointer);
+      const {id, parser} = nameMap[key];
+      console.log('Setting config values: ', parser(values[key]), enginePointer);
+      setConfig(id, parser(values[key]), enginePointer);
     });
   },
 })(VizSettings);

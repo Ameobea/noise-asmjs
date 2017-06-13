@@ -5,7 +5,7 @@ use std::mem::transmute;
 use super::*;
 
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum SettingType {
     GeneratorType,
     Seed,
@@ -14,10 +14,12 @@ pub enum SettingType {
     Frequency,
     Lacunarity,
     Persistence,
+    Zoom,
+    Speed,
 }
 
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum GenType {
     Fbm,
     Worley,
@@ -27,6 +29,7 @@ pub enum GenType {
     SuperSimplex,
     Value,
     RidgedMulti,
+    BasicMulti,
 }
 
 /// Initializes the minutiae engine and the internal noise generator engine, returning a pointer to the noise generator engine that
@@ -54,9 +57,12 @@ pub unsafe extern "C" fn init(canvas_size: usize) {
     // Initialize the simulation, registering with the emscripten Browser event loop
     EmscriptenDriver.init(universe, OurEngine, &mut [
         // middleware that calculates noise values for each of the universe's cells using the current sequence number
-        Box::new(NoiseStepper(boxed_noise_engine)),
+        Box::new(NoiseStepper{
+            conf: boxed_noise_engine,
+            noise_engine: Box::into_raw(Box::new(Fbm::new() as Fbm<f32>)) as *mut c_void}
+        ),
         // middleware that renders the current universe to the canvas each tick using the supplied color calculator function
-        Box::new(CanvasRenderer::new(UNIVERSE_SIZE, calc_color, canvas_render))
+        Box::new(CanvasRenderer::new(canvas_size, calc_color, canvas_render))
     ]);
 }
 
@@ -66,18 +72,31 @@ pub unsafe extern "C" fn init(canvas_size: usize) {
 pub unsafe extern "C" fn set_config(setting_type: SettingType, val: u32, engine_ptr: *mut NoiseEngine) {
     debug(&format!("Setting config values: setting_type: {:?}, value: {}, engine_pointer: {:?}", setting_type, val, engine_ptr));
     let engine = &mut *engine_ptr;
+    engine.needs_update = true;
 
     match setting_type {
-        SettingType::GeneratorType => engine.generator_type = transmute(val),
+        SettingType::GeneratorType => {
+            engine.generator_type = transmute(val);
+            engine.needs_new_noise_gen = true;
+        },
         SettingType::Seed => engine.seed = val as usize,
-        SettingType::CanvasSize => /*engine.canvas_size = val as usize*/(), // TODO
+        SettingType::CanvasSize => {
+            engine.canvas_size = val as usize;
+            engine.needs_resize = true;
+        },
         SettingType::Octaves => engine.octaves = val as usize,
-        SettingType::Frequency => engine.frequency = transmute(val),
-        SettingType::Lacunarity => engine.lacunarity = transmute(val),
-        SettingType::Persistence => engine.persistence = transmute(val),
+        SettingType::Frequency => engine.frequency = val as f32 * 0.00001,
+        SettingType::Lacunarity => engine.lacunarity = val as f32 * 0.00001,
+        SettingType::Persistence => engine.persistence = val as f32 * 0.00001,
+        SettingType::Zoom => {
+            engine.zoom = val as f32 * 0.00001;
+            engine.needs_update = false;
+        },
+        SettingType::Speed => {
+            engine.speed = val as f32 * 0.0001;
+            engine.needs_update = false;
+        },
     };
-
-    engine.needs_update = true;
 }
 
 /// Pauses the simulation by halting the Emscripten browser event loop.
