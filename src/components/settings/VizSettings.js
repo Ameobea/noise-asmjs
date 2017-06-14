@@ -3,6 +3,7 @@
 import React from 'react';
 import { reduxForm, Field } from 'redux-form';
 import { Button, Dropdown, Grid, Icon, Header, Input, Popup } from 'semantic-ui-react';
+import Slider from 'material-ui/Slider';
 import _ from 'lodash';
 
 import { store } from '../../';
@@ -103,6 +104,14 @@ const VizSettings = () => (
           <Column style={columnStyle} width={8}>
             <CanvasSize />
           </Column>
+          <Column style={columnStyle} width={8}>
+            <SemanticField
+              label='Frequency'
+              name='frequency'
+              componentProps={{fluid: true, size: 'mini'}}
+              helpContent='The number of cycles per unit length that the noise function outputs.'
+            />
+          </Column>
         </Row>
         <Row>
           <Column style={columnStyle} width={8}>
@@ -127,7 +136,7 @@ const VizSettings = () => (
               label='Seed'
               name='seed'
               componentProps={{fluid: true, size: 'mini'}}
-              helpContent="The value entered here is hashed and used to seed the noise module."
+              helpContent='The value entered here is hashed and used to seed the noise module.'
             />
           </Column>
           <Column style={columnStyle} width={8}>
@@ -191,13 +200,13 @@ const VizSettings = () => (
 var lastValues = {
   noiseFunction: noiseGenerators[7].key,
   canvasSize: 700,
-  zoom: 200,
-  speed: 60,
+  zoom: 20000,
+  speed: 6000,
   seed: '75iTgPGxbUvkZRAfnUQyp',
-  octaves: 2,
-  frequency: 1,
-  lacunarity: 1345340,
-  persistence: 11000,
+  octaves: 8,
+  frequency: 10000000,
+  lacunarity: 20000000,
+  persistence: 15000000,
 };
 
 // stolen from https://stackoverflow.com/a/7616484/3833068

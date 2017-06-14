@@ -85,15 +85,15 @@ pub unsafe extern "C" fn set_config(setting_type: SettingType, val: u32, engine_
             engine.needs_resize = true;
         },
         SettingType::Octaves => engine.octaves = val as usize,
-        SettingType::Frequency => engine.frequency = val as f32 * 0.00001,
-        SettingType::Lacunarity => engine.lacunarity = val as f32 * 0.00001,
-        SettingType::Persistence => engine.persistence = val as f32 * 0.00001,
+        SettingType::Frequency => engine.frequency = val as f32 * 0.0000001,
+        SettingType::Lacunarity => engine.lacunarity = val as f32 * 0.0000001,
+        SettingType::Persistence => engine.persistence = val as f32 * 0.0000001,
         SettingType::Zoom => {
-            engine.zoom = val as f32 * 0.00001;
+            engine.zoom = val as f32 * 0.0000001;
             engine.needs_update = false;
         },
         SettingType::Speed => {
-            engine.speed = val as f32 * 0.0001;
+            engine.speed = val as f32 * 0.000001;
             engine.needs_update = false;
         },
     };
