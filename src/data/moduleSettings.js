@@ -2,12 +2,12 @@
 
 import React from 'react';
 import _ from 'lodash';
-import { Field } from 'redux';
+import { Field } from 'redux-form';
 import { Checkbox, Dropdown, Header, Icon, Input, Popup } from 'semantic-ui-react';
 import { Slider } from 'material-ui/Slider';
 
-import { store } from '../';
-import noiseGenerators from './noiseGenerators';
+import store from '../reducers';
+import noiseModules from './noiseModules';
 
 const maxStageSize = store.getState().maxStageSize;
 
@@ -52,7 +52,7 @@ const settingDefinitions = {
     trueMin: 0.0,
     max: 20.0,
     trueMax: 500.0,
-    scale: 1e8,
+    scale: 10e8,
     hint: 'The number of cycles per unit length that the noise function outputs.',
   },
   lacunarity: {
@@ -61,7 +61,7 @@ const settingDefinitions = {
     trueMin: 0.0,
     max: 4.0,
     trueMax: 50.0,
-    scale: 1e8,
+    scale: 10e8,
     hint: (
       <span>
         {'A multiplier that determines how quickly the frequency increases for each successive octave in the noise function.'}
@@ -78,7 +78,7 @@ const settingDefinitions = {
     trueMin: 0.0,
     max: 4.0,
     trueMax: 50.0,
-    scale: 1e8,
+    scale: 10e8,
     hint: (
       <span>
         {'A multiplier that determines how quickly the amplitudes diminish for each successive octave in the noise function.'}
@@ -132,13 +132,22 @@ const settingDefinitions = {
     bool: true, // indicates that this value is a boolean and should be represented by a checkbox
     hint: 'Determines if the distance from the nearest seed point is applied to the output value.',
   },
+  attenuation: {
+    title: 'Attenuation',
+    min: 0.0,
+    trueMin: 0.0,
+    max: 5.0,
+    trueMax: 5.0,
+    scale: 10e8,
+    hint: 'The attenuation to apply to the weight on each octave. This reduces the strength of each successive octave, making their respective ridges smaller. The default attenuation is 2.0, making each octave half the height of the previous.',
+  },
   displacement: {
     title: 'Displacement',
     min: 0.0,
     trueMin: 0.0,
     max: 5.0,
     trueMax: 100.0,
-    scale: 1e8,
+    scale: 10e8,
     hint: (
       <span>
         {'Scale of the random displacement to apply to each cell.'}
@@ -151,24 +160,25 @@ const settingDefinitions = {
     title: 'Zoom',
     min: 0.0,
     trueMin: 0.0,
-    max: 1e6,
-    trueMax: 1e6,
-    scale: 1e10,
+    max: 10e6,
+    trueMax: 10e6,
+    scale: 10e10,
     hint: 'How magnified the image in the canvas is displayed.  A value of 1 corresponds to a distance of 1 unit per pixel.',
   },
   speed: {
     title: 'Speed',
     min: 0.00000001,
     trueMin: 0.0,
-    max: 1e4,
-    trueMax: 1e10,
-    scale: 1e8,
+    max: 10e4,
+    trueMax: 10e10,
+    scale: 10e8,
     hint: 'How fast the Z axis is traversed.  A value of 2.0 means that 2 units are traversed per tick of the visualization.',
   },
-  noiseModules: {
+  noiseModule: {
     title: 'Noise Modules',
     enum: true,
-    enumValues: noiseGenerators.map(({key, name, content}) => ({key, title: name, description: content})),
+    enumValues: noiseModules.map(({key, name, content}) => ({key, title: name, description: content})),
+    hint: 'The noise module is the function that produces noise values.  For each pixel of the canvas, the X and Y coordinate is passed into this function along with the current sequence number which returns a value to color that pixel.',
   },
 };
 
@@ -217,11 +227,11 @@ const buildEnumField = (name, {title, hint, enumValues}) => (
     componentProps={{
       fluid: true,
       selection: true,
-      options: _.map(enumValues, ({key, name, description}) => ({
+      options: _.map(enumValues, ({key, title, description}) => ({
         key,
-        text: name,
+        text: title,
         value: key,
-        content: <Header content={name} subheader={description} />
+        content: <Header content={title} subheader={description} />
       })),
       size: 'mini',
     }}
@@ -263,6 +273,10 @@ const buildNumericField = (name, {title, hint}) => (
  */
 export default (name) => {
   const def = settingDefinitions[name];
+  if(!def) {
+    console.error(`Attempted to create field for component with name ${name}, but no definition exists!`);
+    return <div>ERROR</div>;
+  }
 
   if(def.enum) {
     return buildEnumField(name, def);

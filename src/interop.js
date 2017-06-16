@@ -4,13 +4,11 @@
 
 /* global Module */
 
-import { dispatch } from 'redux';
-
-import { store } from './';
+import store from './reducers';
 import { setEnginePointer } from './reducers/enginePointerReducer';
 
 export const SETTING_TYPES = {
-  GENERATOR_TYPE: 0,
+  NOISE_MODULE: 0,
   SEED: 1,
   CANVAS_SIZE: 2,
   OCTAVES: 3,
@@ -19,9 +17,10 @@ export const SETTING_TYPES = {
   PERSISTENCE: 6,
   ZOOM: 7,
   SPEED: 8,
+  ATTENUATION: 9,
 };
 
-export const GENERATOR_TYPES = {
+export const MODULE_TYPES = {
   FBM: 0,
   WORLEY: 1,
   OPEN_SIMPLEX: 2,
