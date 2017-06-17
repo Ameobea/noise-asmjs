@@ -2,6 +2,8 @@
 
 use std::mem::transmute;
 
+use noise::RangeFunction as NativeRangeFunction;
+
 use super::*;
 
 #[repr(u32)]
@@ -16,6 +18,10 @@ pub enum SettingType {
     Persistence,
     Zoom,
     Speed,
+    Attenuation,
+    RangeFunction,
+    EnableRange,
+    Displacement,
 }
 
 #[repr(u32)]
@@ -30,6 +36,28 @@ pub enum GenType {
     Value,
     RidgedMulti,
     BasicMulti,
+}
+
+#[repr(u32)]
+#[derive(Clone, Copy, Debug)]
+pub enum RangeFunction {
+    Euclidean,
+    EuclideanSquared,
+    Manhattan,
+    Chebyshev,
+    Quadratic,
+}
+
+impl Into<NativeRangeFunction> for RangeFunction {
+    fn into(self) -> NativeRangeFunction {
+        match self {
+            RangeFunction::Euclidean => NativeRangeFunction::Euclidean,
+            RangeFunction::EuclideanSquared => NativeRangeFunction::EuclideanSquared,
+            RangeFunction::Manhattan => NativeRangeFunction::Manhattan,
+            RangeFunction::Chebyshev => NativeRangeFunction::Chebyshev,
+            RangeFunction::Quadratic => NativeRangeFunction::Quadratic,
+        }
+    }
 }
 
 /// Initializes the minutiae engine and the internal noise generator engine, returning a pointer to the noise generator engine that
@@ -85,17 +113,21 @@ pub unsafe extern "C" fn set_config(setting_type: SettingType, val: u32, engine_
             engine.needs_resize = true;
         },
         SettingType::Octaves => engine.octaves = val as usize,
-        SettingType::Frequency => engine.frequency = val as f32 * 0.0000001,
-        SettingType::Lacunarity => engine.lacunarity = val as f32 * 0.0000001,
-        SettingType::Persistence => engine.persistence = val as f32 * 0.0000001,
+        SettingType::Frequency => engine.frequency = val as f32 * 10e-8,
+        SettingType::Lacunarity => engine.lacunarity = val as f32 * 10e-8,
+        SettingType::Persistence => engine.persistence = val as f32 * 10e-8,
         SettingType::Zoom => {
-            engine.zoom = val as f32 * 0.0000001;
+            engine.zoom = val as f32 * 10e-8;
             engine.needs_update = false;
         },
         SettingType::Speed => {
-            engine.speed = val as f32 * 0.000001;
+            engine.speed = val as f32 * 10e-8;
             engine.needs_update = false;
         },
+        SettingType::Attenuation => engine.attenuation = val as f32 * 10e-8,
+        SettingType::RangeFunction => engine.range_function = transmute(val),
+        SettingType::EnableRange => engine.enable_range = val,
+        SettingType::Displacement => engine.displacement = val as f32 * 10e-8,
     };
 }
 

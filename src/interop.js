@@ -4,8 +4,8 @@
 
 /* global Module */
 
-import store from './reducers';
-import { setEnginePointer } from './reducers/enginePointerReducer';
+import store from 'src/reducers';
+import { setEnginePointer } from 'src/reducers/enginePointerReducer';
 
 export const SETTING_TYPES = {
   NOISE_MODULE: 0,
@@ -18,6 +18,9 @@ export const SETTING_TYPES = {
   ZOOM: 7,
   SPEED: 8,
   ATTENUATION: 9,
+  RANGE_FUNCTION: 10,
+  ENABLE_RANGE: 11,
+  DISPLACEMENT: 12,
 };
 
 export const MODULE_TYPES = {
@@ -31,6 +34,14 @@ export const MODULE_TYPES = {
   RIDGED_MULTI: 7,
 };
 
+export const RANGE_FUNCTIONS = {
+  euclidean: 0,
+  euclideanSquared: 1,
+  manhattan: 2,
+  chebyshev: 3,
+  quadratic: 4,
+};
+
 /**
  * Wrapper around the native configuration function.
  * Arg 1 is the setting type
@@ -40,13 +51,10 @@ export const MODULE_TYPES = {
 export const setConfig = Module.cwrap('set_config', null, ['number', 'number', 'number']);
 
 // add a hook into the `Module` that can be called from the Rust side to register the noise engine's pointer
-Module = {
-  ...Module,
-  registerEnginePointer: pointer => {
-    const action = setEnginePointer(pointer);
-    console.log('action', action);
-    store.dispatch(action);
-  },
+Module.registerEnginePointer = pointer => {
+  const action = setEnginePointer(pointer);
+  console.log('action', action);
+  store.dispatch(action);
 };
 
 /**

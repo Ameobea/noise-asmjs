@@ -49,17 +49,6 @@ pub fn error(msg: &str) {
 pub mod interop;
 use interop::*;
 
-// lazy_static!{
-//     static ref NOISE_1: Mutex<Fbm<f32>> = Mutex::new(Fbm::new());
-//     static ref NOISE_2: Mutex<Worley<f32>> = Mutex::new(Worley::new());
-//     static ref NOISE_3: Mutex<OpenSimplex> = Mutex::new(OpenSimplex::new());
-//     static ref NOISE_4: Mutex<Billow<f32>> = Mutex::new(Billow::new());
-//     static ref NOISE_5: Mutex<HybridMulti<f32>> = Mutex::new(HybridMulti::new());
-//     static ref NOISE_6: Mutex<SuperSimplex> = Mutex::new(SuperSimplex::new());
-//     static ref NOISE_7: Mutex<Value> = Mutex::new(Value::new());
-//     static ref NOISE_8: Mutex<RidgedMulti<f32>> = Mutex::new(RidgedMulti::new());
-// }
-
 struct NoiseUpdater;
 
 // Minutiae custom type declarations.
@@ -106,6 +95,10 @@ pub struct NoiseEngine {
     persistence: f32,
     zoom: f32,
     speed: f32,
+    attenuation: f32,
+    range_function: RangeFunction,
+    enable_range: u32,
+    displacement: f32,
     needs_update: bool, // flag indicating whether or not there are new stettings that need to be applied
     needs_resize: bool, // flag indicating if the universe itself needs to be resized or not
     needs_new_noise_gen: bool, // the type of noise generator itself needs to be changed
@@ -123,6 +116,10 @@ impl Default for NoiseEngine {
             persistence: 0.5,
             speed: 0.00758,
             zoom: 0.0132312,
+            attenuation: 2.0,
+            enable_range: 0,
+            displacement: 1.0,
+            range_function: RangeFunction::Euclidean,
             needs_update: false,
             needs_resize: false,
             needs_new_noise_gen: false,
@@ -156,10 +153,6 @@ fn resize_universe(universe: &mut Universe<CS, ES, MES, CA, EA>, new_size: usize
 
     universe.cells.resize(new_size, Cell {state: CS(0.0)});
 }
-
-// trait SeedableMultifractalNoiseModule:
-
-
 
 /// Given the ID of a noise engine, allocates an instance of it on the heap and returns a void reference to it.
 /// Since `MultiFractal` can't be made into a trait object, this is the best optionsdfsfsdfsdfs
@@ -195,6 +188,9 @@ unsafe fn apply_settings(engine_conf: &NoiseEngine, engine: *mut c_void) -> *mut
             let gen = Box::from_raw(engine as *mut Worley<f32>);
             let gen = gen.set_seed(engine_conf.seed as u32);
             let gen = gen.set_frequency(engine_conf.frequency);
+            let gen = gen.set_range_function(engine_conf.range_function.into());
+            let gen = gen.enable_range(engine_conf.enable_range != 0);
+            let gen = gen.set_displacement(engine_conf.displacement);
             Box::into_raw(Box::new(gen)) as *mut c_void
         },
         GenType::OpenSimplex => {
@@ -237,6 +233,7 @@ unsafe fn apply_settings(engine_conf: &NoiseEngine, engine: *mut c_void) -> *mut
             let gen = gen.set_frequency(engine_conf.frequency);
             let gen = gen.set_lacunarity(engine_conf.lacunarity);
             let gen = gen.set_persistence(engine_conf.persistence);
+            let gen = gen.set_attenuation(engine_conf.attenuation);
             Box::into_raw(Box::new(gen)) as *mut c_void
         },
         GenType::BasicMulti => {
@@ -314,8 +311,6 @@ fn main() {
     assert_eq!(std::mem::size_of::<usize>(), 4);
     assert_eq!(std::mem::size_of::<SettingType>(), 4);
     assert_eq!(std::mem::size_of::<GenType>(), 4);
-
-    // let noise6: Blend<Point3<f32>, f32> = Blend::new(&*NOISE_1, &*NOISE_4, &*NOISE_5);
 
     // Intentionally left blank; the engine itself is initialized by the JavaScript asynchronously.
 }

@@ -4,7 +4,7 @@ import React from 'react';
 import _ from 'lodash';
 import { Field } from 'redux-form';
 import { Checkbox, Dropdown, Header, Icon, Input, Popup } from 'semantic-ui-react';
-import { Slider } from 'material-ui/Slider';
+// import { Slider } from 'material-ui/Slider';
 
 import store from '../reducers';
 import noiseModules from './noiseModules';
@@ -186,7 +186,9 @@ const settingDefinitions = {
 const SemanticReduxFormField = (props) => {
   const { input, as: As = Input, componentProps } = props;
 
-  const handleChange =  (e, { value }) => input.onChange(value);
+  const handleChange = (e, { value, checked }) => {
+    input.onChange(value || checked);
+  };
 
   return <As value={input.value} onChange={handleChange} onFocus={_.noop} {...componentProps} />;
 };
@@ -240,10 +242,21 @@ const buildEnumField = (name, {title, hint, enumValues}) => (
   />
 );
 
+// wrapper around `<Checkbox>` that shifts the `value` prop to `checked`.
+const CheckboxWrapper = props => {
+  const mappedProps = {
+    ...props,
+    checked: props.value,
+    value: undefined,
+  };
+
+  return <Checkbox {...mappedProps} />;
+};
+
 const buildBoolField = (name, {title, hint}) => (
   <SemanticField
     name={name}
-    as={Checkbox}
+    as={CheckboxWrapper}
     label={title}
     helpContent={hint}
   />
@@ -262,7 +275,6 @@ const buildNumericField = (name, {title, hint}) => (
   // TODO: Proper validation, scaling, etc.
   <SemanticField
     name={name}
-    as={Slider}
     label={title}
     helpContent={hint}
   />

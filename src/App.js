@@ -3,13 +3,11 @@ import { connect } from 'react-redux';
 import { Grid } from 'semantic-ui-react';
 import ReactResizeDetector from 'react-resize-detector';
 
-import { toggleSettings } from './actions/settings';
-import { setMaxStageSize } from './actions/stage';
-
-import VizHeader from './components/VizHeader';
-import Visualization from './components/visualization';
-import VizSettings from './components/settings/VizSettings';
-import './index.css';
+import { setMaxStageSize } from 'src/actions/stage';
+import VizHeader from 'src/components/VizHeader';
+import Visualization from 'src/components/visualization';
+import VizSettings from 'src/components/VizSettings';
+import 'src/index.css';
 
 const { Column, Row } = Grid;
 
@@ -27,7 +25,7 @@ const handleSizeChange = actionDispatcher => {
   };
 };
 
-const App = ({settingsVisible, toggleSettings, setMaxStageSize}) => (
+const App = ({settingsVisible, setMaxStageSize}) => (
   <div style={{width: '100%', height: '100%'}} ref={handleSizeChange(setMaxStageSize)} >
     <ReactResizeDetector handleWidth handleHeight onResize={setMaxStageSize} />
 
@@ -56,4 +54,4 @@ const mapState = state => ({
   settingsVisible: state.settingsVisible,
 });
 
-export default connect(mapState, {toggleSettings, setMaxStageSize})(App);
+export default connect(mapState, {setMaxStageSize})(App);
