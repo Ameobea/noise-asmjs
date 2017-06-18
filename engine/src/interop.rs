@@ -97,37 +97,40 @@ pub unsafe extern "C" fn init(canvas_size: usize) {
 /// This function receives a configuraiton type as well as a value from the JavaScript side and mutates the noise engine's state
 /// to apply it.  The actual type of the value passed to this function varies, but it is always guarenteed to be 32 bits in size.
 #[no_mangle]
-pub unsafe extern "C" fn set_config(setting_type: SettingType, val: u32, engine_ptr: *mut NoiseEngine) {
+pub unsafe extern "C" fn set_config(setting_type: SettingType, val: f64, engine_ptr: *mut NoiseEngine) {
     debug(&format!("Setting config values: setting_type: {:?}, value: {}, engine_pointer: {:?}", setting_type, val, engine_ptr));
     let engine = &mut *engine_ptr;
     engine.needs_update = true;
 
     match setting_type {
         SettingType::GeneratorType => {
-            engine.generator_type = transmute(val);
+            engine.generator_type = transmute(val as u32);
             engine.needs_new_noise_gen = true;
         },
         SettingType::Seed => engine.seed = val as usize,
         SettingType::CanvasSize => {
-            engine.canvas_size = val as usize;
-            engine.needs_resize = true;
+            let new_size = val as usize;
+            if new_size != 0 {
+                engine.canvas_size = new_size;
+                engine.needs_resize = true;
+            }
         },
         SettingType::Octaves => engine.octaves = val as usize,
-        SettingType::Frequency => engine.frequency = val as f32 * 10e-8,
-        SettingType::Lacunarity => engine.lacunarity = val as f32 * 10e-8,
-        SettingType::Persistence => engine.persistence = val as f32 * 10e-8,
+        SettingType::Frequency => engine.frequency = val as f32,
+        SettingType::Lacunarity => engine.lacunarity = val as f32,
+        SettingType::Persistence => engine.persistence = val as f32,
         SettingType::Zoom => {
-            engine.zoom = val as f32 * 10e-8;
+            engine.zoom = val as f32;
             engine.needs_update = false;
         },
         SettingType::Speed => {
-            engine.speed = val as f32 * 10e-8;
+            engine.speed = val as f32;
             engine.needs_update = false;
         },
-        SettingType::Attenuation => engine.attenuation = val as f32 * 10e-8,
-        SettingType::RangeFunction => engine.range_function = transmute(val),
-        SettingType::EnableRange => engine.enable_range = val,
-        SettingType::Displacement => engine.displacement = val as f32 * 10e-8,
+        SettingType::Attenuation => engine.attenuation = val as f32,
+        SettingType::RangeFunction => engine.range_function = transmute(val as u32),
+        SettingType::EnableRange => engine.enable_range = val as u32,
+        SettingType::Displacement => engine.displacement = val as f32,
     };
 }
 

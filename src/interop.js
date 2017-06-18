@@ -5,6 +5,7 @@
 /* global Module */
 
 import store from 'src/reducers';
+import { getEnginePointer } from 'src/selectors/enginePointer';
 import { setEnginePointer } from 'src/reducers/enginePointerReducer';
 
 export const SETTING_TYPES = {
@@ -61,14 +62,13 @@ Module.registerEnginePointer = pointer => {
  * Initializes the noise engine backend, returning a pointer to the noise engine configuration object passed along with
  * configuration
  */
-export const init = () => {
-  const state = store.getState();
+export const init = canvasSize => {
   // make sure we've not already set an engine pointer
-  if(state.enginePointer.pointer !== 0) {
+  if(getEnginePointer() !== 0) {
     return console.error('There\'s already a set engine pointer; can\'t initialize a new engine!');
   }
 
   // Call the internal engine code, initializing the engine and returning a pointer to its settings.
-  console.log('Calling the noise engine initialization function...');
-  Module.ccall('init', null, ['number'], [state.maxStageSize]);
+  console.log(`Calling the noise engine initialization function with canvas size of ${canvasSize}...`);
+  Module.ccall('init', null, ['number'], [canvasSize]);
 };

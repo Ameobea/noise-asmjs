@@ -151,7 +151,8 @@ fn resize_universe(universe: &mut Universe<CS, ES, MES, CA, EA>, new_size: usize
         return error("Requested change of universe size to 0!");
     }
 
-    universe.cells.resize(new_size, Cell {state: CS(0.0)});
+    universe.cells.resize(new_size * new_size, Cell {state: CS(0.0)});
+    universe.conf.size = new_size;
 }
 
 /// Given the ID of a noise engine, allocates an instance of it on the heap and returns a void reference to it.
@@ -262,15 +263,15 @@ impl Middleware<CS, ES, MES, CA, EA, OurEngine> for NoiseStepper {
                 // resize the universe if the canvas size changed, matching that size.
                 resize_universe(universe, self.conf.canvas_size);
                 self.conf.needs_resize = false;
-            } else {
-                if self.conf.needs_new_noise_gen {
-                    self.noise_engine = create_noise_engine(self.conf.generator_type);
-                    self.conf.needs_new_noise_gen = false;
-                }
-
-                // re-apply all settings to the noise module
-                self.noise_engine = unsafe { apply_settings(&*self.conf, self.noise_engine) };
             }
+
+            if self.conf.needs_new_noise_gen {
+                self.noise_engine = create_noise_engine(self.conf.generator_type);
+                self.conf.needs_new_noise_gen = false;
+            }
+
+            // re-apply all settings to the noise module
+            self.noise_engine = unsafe { apply_settings(&*self.conf, self.noise_engine) };
 
             self.conf.needs_update = false;
         }

@@ -35,7 +35,6 @@ const settingDefinitions = {
     trueMin: 0.0,
     max: 80.0, // the limit that the user is capped at for sliders
     trueMax: 350.0, // the limit that the user is capped at when the slider is unlocked
-    scale: 1.0, // number that the input value is multiplied by before passing into the backend
     hint: (
       <span>
         {'Total number of frequency octaves to generate the noise with.  '}
@@ -52,7 +51,6 @@ const settingDefinitions = {
     trueMin: 0.0,
     max: 20.0,
     trueMax: 500.0,
-    scale: 10e8,
     hint: 'The number of cycles per unit length that the noise function outputs.',
   },
   lacunarity: {
@@ -61,7 +59,6 @@ const settingDefinitions = {
     trueMin: 0.0,
     max: 4.0,
     trueMax: 50.0,
-    scale: 10e8,
     hint: (
       <span>
         {'A multiplier that determines how quickly the frequency increases for each successive octave in the noise function.'}
@@ -78,7 +75,6 @@ const settingDefinitions = {
     trueMin: 0.0,
     max: 4.0,
     trueMax: 50.0,
-    scale: 10e8,
     hint: (
       <span>
         {'A multiplier that determines how quickly the amplitudes diminish for each successive octave in the noise function.'}
@@ -99,7 +95,6 @@ const settingDefinitions = {
     trueMin: 1,
     max: maxStageSize,
     trueMax: maxStageSize,
-    scale: 1,
   },
   rangeFunction: {
     title: 'Range Function',
@@ -138,7 +133,6 @@ const settingDefinitions = {
     trueMin: 0.0,
     max: 5.0,
     trueMax: 5.0,
-    scale: 10e8,
     hint: 'The attenuation to apply to the weight on each octave. This reduces the strength of each successive octave, making their respective ridges smaller. The default attenuation is 2.0, making each octave half the height of the previous.',
   },
   displacement: {
@@ -147,7 +141,6 @@ const settingDefinitions = {
     trueMin: 0.0,
     max: 5.0,
     trueMax: 100.0,
-    scale: 10e8,
     hint: (
       <span>
         {'Scale of the random displacement to apply to each cell.'}
@@ -162,7 +155,6 @@ const settingDefinitions = {
     trueMin: 0.0,
     max: 10e6,
     trueMax: 10e6,
-    scale: 10e10,
     hint: 'How magnified the image in the canvas is displayed.  A value of 1 corresponds to a distance of 1 unit per pixel.',
   },
   speed: {
@@ -171,7 +163,6 @@ const settingDefinitions = {
     trueMin: 0.0,
     max: 10e4,
     trueMax: 10e10,
-    scale: 10e8,
     hint: 'How fast the Z axis is traversed.  A value of 2.0 means that 2 units are traversed per tick of the visualization.',
   },
   noiseModule: {
@@ -187,7 +178,7 @@ const SemanticReduxFormField = (props) => {
   const { input, as: As = Input, componentProps } = props;
 
   const handleChange = (e, { value, checked }) => {
-    input.onChange(value || checked);
+    input.onChange(value || checked || '');
   };
 
   return <As value={input.value} onChange={handleChange} onFocus={_.noop} {...componentProps} />;

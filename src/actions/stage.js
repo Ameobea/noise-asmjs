@@ -1,10 +1,3 @@
-//! Actions for dealing with the stage area surrounding the main visualization canvas
+import Simr from 'simr';
 
-import _ from 'lodash';
-
-import { SET_MAX_STAGE_SIZE } from '../reducers/maxSizeReducer';
-
-export const setMaxStageSize = (height, width) => ({
-  type: SET_MAX_STAGE_SIZE,
-  size: _.min([height, width]),
-});
+export const setStageContainerSize = (width, height) => Simr.actions.setOn('stageSize', 'containerSize', {height, width});
