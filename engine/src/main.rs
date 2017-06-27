@@ -295,7 +295,7 @@ fn calc_color(cell: &Cell<CS>, _: &[usize], _: &EntityContainer<CS, ES, MES>) ->
     let hue = (cell.state.0 * 360.0) + 180.0;
     let hsv_color = Hsv::new(hue.into(), 1.0, 1.0);
     let rgb_color = Rgb::from_hsv(hsv_color);
-    [(rgb_color.red * 255.0) as u8, (rgb_color.green * 255.0) as u8, (rgb_color.blue * 255.0) as u8, 255]
+    [(cell.state.0 * 255.0) as u8, (cell.state.0 * 255.0) as u8, (cell.state.0 * 255.0) as u8, 255]
 }
 
 struct WorldGenerator;
