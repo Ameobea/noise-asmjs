@@ -1,8 +1,8 @@
-//! Defines functions that are exported to the JavaScript frontend, allowing access to the engine during runtime.
+//! Defines functions that are exported to the JavaScript frontend, allowing access to the engine during runtime from the JS side.
 
-use std::mem::transmute;
+use std::mem::{self, transmute};
 
-use noise::RangeFunction as NativeRangeFunction;
+use noise::RangeFunction;
 
 use super::*;
 
@@ -36,11 +36,13 @@ pub enum GenType {
     Value,
     RidgedMulti,
     BasicMulti,
+    Composed, // Custom noise function representing a `ComposedNoiseModule`.
 }
+
 
 #[repr(u32)]
 #[derive(Clone, Copy, Debug)]
-pub enum RangeFunction {
+pub enum InteropRangeFunction {
     Euclidean,
     EuclideanSquared,
     Manhattan,
@@ -48,14 +50,14 @@ pub enum RangeFunction {
     Quadratic,
 }
 
-impl Into<NativeRangeFunction> for RangeFunction {
-    fn into(self) -> NativeRangeFunction {
+impl Into<RangeFunction> for InteropRangeFunction {
+    fn into(self) -> RangeFunction {
         match self {
-            RangeFunction::Euclidean => NativeRangeFunction::Euclidean,
-            RangeFunction::EuclideanSquared => NativeRangeFunction::EuclideanSquared,
-            RangeFunction::Manhattan => NativeRangeFunction::Manhattan,
-            RangeFunction::Chebyshev => NativeRangeFunction::Chebyshev,
-            RangeFunction::Quadratic => NativeRangeFunction::Quadratic,
+            InteropRangeFunction::Euclidean => RangeFunction::Euclidean,
+            InteropRangeFunction::EuclideanSquared => RangeFunction::EuclideanSquared,
+            InteropRangeFunction::Manhattan => RangeFunction::Manhattan,
+            InteropRangeFunction::Chebyshev => RangeFunction::Chebyshev,
+            InteropRangeFunction::Quadratic => RangeFunction::Quadratic,
         }
     }
 }
@@ -65,9 +67,7 @@ impl Into<NativeRangeFunction> for RangeFunction {
 #[no_mangle]
 pub unsafe extern "C" fn init(canvas_size: usize) {
     // initialize the noise engine and put it in a box so I feel more confident that it never moves
-    let mut noise_engine = NoiseEngine::default();
-    noise_engine.canvas_size = canvas_size;
-    let boxed_noise_engine = Box::new(noise_engine);
+    let boxed_noise_engine = Box::new(ComposedNoiseModule::new());
 
     // initialize emscripten universe and start the minutiae simulation
     let mut conf = UniverseConf::default();
@@ -85,53 +85,79 @@ pub unsafe extern "C" fn init(canvas_size: usize) {
     // Initialize the simulation, registering with the emscripten Browser event loop
     EmscriptenDriver.init(universe, OurEngine, &mut [
         // middleware that calculates noise values for each of the universe's cells using the current sequence number
-        Box::new(NoiseStepper{
-            conf: boxed_noise_engine,
-            noise_engine: Box::into_raw(Box::new(Fbm::new() as Fbm<f32>)) as *mut c_void}
-        ),
+        Box::new(NoiseStepper {
+            conf: MasterConf::default(),
+            root_module: boxed_noise_engine,
+        }),
         // middleware that renders the current universe to the canvas each tick using the supplied color calculator function
         Box::new(CanvasRenderer::new(canvas_size, calc_color, canvas_render))
     ]);
 }
 
 /// This function receives a configuraiton type as well as a value from the JavaScript side and mutates the noise engine's state
-/// to apply it.  The actual type of the value passed to this function varies, but it is always guarenteed to be 32 bits in size.
+/// to apply it.  The actual type of the value passed to this function varies, but it is always guarenteed to be 64 bits in size.
+///
+/// Settings are applied to the noise module referred to by the `conf_depth` and `conf_coords`.  These values are used to index
+/// the module composition tree and access the appropriate inner module.  A `conf_depth` of -1 means that the supplied setting
+/// refers to the `MasterConf` of the root module.
 #[no_mangle]
-pub unsafe extern "C" fn set_config(setting_type: SettingType, val: f64, engine_ptr: *mut NoiseEngine) {
+pub unsafe extern "C" fn set_config(
+    setting_type: SettingType, val: f64, engine_ptr: *mut NoiseStepper, conf_depth: f64, conf_coords: *const f32
+) {
     debug(&format!("Setting config values: setting_type: {:?}, value: {}, engine_pointer: {:?}", setting_type, val, engine_ptr));
-    let engine = &mut *engine_ptr;
-    engine.needs_update = true;
+    let stepper = &mut *engine_ptr;
+
+    // a conf_depth of -1 refers to the master configuration
+    if (conf_depth as i32) < 0 {
+        match setting_type {
+            SettingType::Zoom => stepper.conf.zoom = val as f32,
+            SettingType::Speed => stepper.conf.speed = val as f32,
+            SettingType::CanvasSize => {
+                stepper.conf.canvas_size = val as usize;
+                stepper.conf.needs_resize = true;
+            },
+            _ => { return error(&format!("Attempted to set config of type {:?} on root module!", setting_type)); },
+        };
+    }
+
+    let mut target_module: RawNoiseModule = match stepper.root_module.find_child(conf_depth as i32, conf_coords) {
+        Ok(raw_mod) => raw_mod,
+        Err(err) => { return error(&err); },
+    };
+    let mut conf = &mut target_module.conf;
+    conf.needs_update = true;
 
     match setting_type {
         SettingType::GeneratorType => {
-            engine.generator_type = transmute(val as u32);
-            engine.needs_new_noise_gen = true;
+            conf.generator_type = transmute(val as u32);
+            conf.needs_new_noise_gen = true;
         },
-        SettingType::Seed => engine.seed = val as usize,
-        SettingType::CanvasSize => {
-            let new_size = val as usize;
-            if new_size != 0 {
-                engine.canvas_size = new_size;
-                engine.needs_resize = true;
-            }
-        },
-        SettingType::Octaves => engine.octaves = val as usize,
-        SettingType::Frequency => engine.frequency = val as f32,
-        SettingType::Lacunarity => engine.lacunarity = val as f32,
-        SettingType::Persistence => engine.persistence = val as f32,
-        SettingType::Zoom => {
-            engine.zoom = val as f32;
-            engine.needs_update = false;
-        },
-        SettingType::Speed => {
-            engine.speed = val as f32;
-            engine.needs_update = false;
-        },
-        SettingType::Attenuation => engine.attenuation = val as f32,
-        SettingType::RangeFunction => engine.range_function = transmute(val as u32),
-        SettingType::EnableRange => engine.enable_range = val as u32,
-        SettingType::Displacement => engine.displacement = val as f32,
+        SettingType::Seed => conf.seed = val as usize,
+        SettingType::Octaves => conf.octaves = val as usize,
+        SettingType::Frequency => conf.frequency = val as f32,
+        SettingType::Lacunarity => conf.lacunarity = val as f32,
+        SettingType::Persistence => conf.persistence = val as f32,
+        SettingType::Zoom => conf.zoom = val as f32,
+        SettingType::Speed => conf.speed = val as f32,
+        SettingType::Attenuation => conf.attenuation = val as f32,
+        SettingType::RangeFunction => conf.range_function = transmute(val as u32),
+        SettingType::EnableRange => conf.enable_range = val as u32,
+        SettingType::Displacement => conf.displacement = val as f32,
+        SettingType::CanvasSize => { return error("Attempted to set canvas size on non-master module config!"); },
     };
+
+    // create new noise engine of a different type if that needs to happen
+    let noise_engine = if conf.needs_new_noise_gen {
+        create_noise_engine(conf.generator_type)
+    } else {
+        target_module.engine_pointer
+    };
+
+    // apply all settings, returning a new noise module pointer.  Internally, the module is mutated so no memory is leaked.
+    let new_noise_engine_pointer = apply_settings(conf, noise_engine);
+    // Convert the old module pointer back into a box so it can be dropped
+    let old_module_pointer = mem::replace(&mut target_module.engine_pointer, new_noise_engine_pointer);
+    let _ = Box::from_raw(old_module_pointer);
 }
 
 /// Pauses the simulation by halting the Emscripten browser event loop.

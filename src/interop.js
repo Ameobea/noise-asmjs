@@ -33,6 +33,7 @@ export const MODULE_TYPES = {
   SUPER_SIMPLEX: 5,
   VALUE: 6,
   RIDGED_MULTI: 7,
+  COMPOSED: 8,
 };
 
 export const RANGE_FUNCTIONS = {

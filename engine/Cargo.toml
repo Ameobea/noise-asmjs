@@ -8,8 +8,8 @@ lazy_static = "0.2.8"
 palette = "0.2"
 
 [dependencies.minutiae]
-# path = "../../minutiae/minutiae"
-version = "0.4.2"
+path = "../../minutiae/minutiae"
+# version = "0.4.2"
 
 [dependencies.noise]
 path = "../../noise-rs"

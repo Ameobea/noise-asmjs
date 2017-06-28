@@ -6,7 +6,7 @@
 //       implementing CA/EA for `()`
 // TODO: Deprecate the entire cell mutator functionality in favor of entirely middleware-driven approaches
 
-#![allow(unused_variables, dead_code)]
+// #![allow(unused_variables, dead_code)]
 
 extern crate minutiae;
 extern crate noise;
@@ -17,11 +17,8 @@ use std::os::raw::{c_char, c_void};
 
 use minutiae::prelude::*;
 use minutiae::emscripten::{EmscriptenDriver, CanvasRenderer};
-use noise::{
-    BasicMulti, Billow, NoiseModule, OpenSimplex,Fbm, HybridMulti, MultiFractal,
-    Point3, RidgedMulti, Seedable, SuperSimplex, Value, Worley
-};
-use palette::{FromColor, Hsv, Rgb};
+use noise::*;
+// use palette::{FromColor, Hsv, Rgb};
 
 extern {
     /// Given a pointer to our pixel data buffer, draws its contents to the canvas.
@@ -48,8 +45,8 @@ pub fn error(msg: &str) {
 
 pub mod interop;
 use interop::*;
-
-struct NoiseUpdater;
+pub mod composed_module;
+use composed_module::{ComposedNoiseModule, RawNoiseModule};
 
 // Minutiae custom type declarations.
 // Since we're only using a very small subset of Minutiae's capabilities, these are mostly unused.
@@ -77,7 +74,6 @@ type OurUniverse = Universe<CS, ES, MES, CA, EA>;
 struct OurEngine;
 
 impl Engine<CS, ES, MES, CA, EA> for OurEngine {
-    #[allow(unused_variables)]
     fn step(&mut self, universe: &mut OurUniverse) {
         // no-op; all logic is handled by the middleware
         universe.seq += 1;
@@ -85,7 +81,8 @@ impl Engine<CS, ES, MES, CA, EA> for OurEngine {
 }
 
 /// Holds the noise generator's state.  A pointer to this is passed along with all configuraiton functions.
-pub struct NoiseEngine {
+#[derive(Clone)]
+pub struct NoiseModuleConf {
     generator_type: GenType,
     canvas_size: usize,
     seed: usize,
@@ -96,7 +93,7 @@ pub struct NoiseEngine {
     zoom: f32,
     speed: f32,
     attenuation: f32,
-    range_function: RangeFunction,
+    range_function: InteropRangeFunction,
     enable_range: u32,
     displacement: f32,
     needs_update: bool, // flag indicating whether or not there are new stettings that need to be applied
@@ -104,9 +101,9 @@ pub struct NoiseEngine {
     needs_new_noise_gen: bool, // the type of noise generator itself needs to be changed
 }
 
-impl Default for NoiseEngine {
+impl Default for NoiseModuleConf {
     fn default() -> Self {
-        NoiseEngine {
+        NoiseModuleConf {
             generator_type: GenType::Fbm,
             canvas_size: 0,
             seed: 101269420,
@@ -119,7 +116,7 @@ impl Default for NoiseEngine {
             attenuation: 2.0,
             enable_range: 0,
             displacement: 1.0,
-            range_function: RangeFunction::Euclidean,
+            range_function: InteropRangeFunction::Euclidean,
             needs_update: false,
             needs_resize: false,
             needs_new_noise_gen: false,
@@ -168,13 +165,14 @@ fn create_noise_engine(id: GenType) -> *mut c_void {
         GenType::Value => Box::into_raw(Box::new(Value::new())) as *mut c_void,
         GenType::RidgedMulti => Box::into_raw(Box::new(RidgedMulti::new() as RidgedMulti<f32>)) as *mut c_void,
         GenType::BasicMulti => Box::into_raw(Box::new(BasicMulti::new() as BasicMulti<f32>)) as *mut c_void,
+        GenType::Composed => Box::into_raw(Box::new(ComposedNoiseModule::new())) as *mut c_void,
     }
 }
 
 /// Given a pointer to a noise engine of variable type and a settings struct, applies those settings based
 /// on the capabilities of that noise modules.  For example, if the noise module doesn't implement `Seedable`,
 /// the `seed` setting is ignored.
-unsafe fn apply_settings(engine_conf: &NoiseEngine, engine: *mut c_void) -> *mut c_void {
+unsafe fn apply_settings(engine_conf: &NoiseModuleConf, engine: *mut c_void) -> *mut c_void {
     match engine_conf.generator_type {
         GenType::Fbm => {
             let gen = Box::from_raw(engine as *mut Fbm<f32>);
@@ -246,55 +244,56 @@ unsafe fn apply_settings(engine_conf: &NoiseEngine, engine: *mut c_void) -> *mut
             let gen = gen.set_persistence(engine_conf.persistence);
             Box::into_raw(Box::new(gen)) as *mut c_void
         },
+        GenType::Composed => {
+            unimplemented!();
+        }
+    }
+}
+
+/// Configuration status and state for the entire backend.
+pub struct MasterConf {
+    needs_resize: bool,
+    canvas_size: usize,
+    zoom: f32,
+    speed: f32,
+}
+
+impl Default for MasterConf {
+    fn default() -> Self {
+            MasterConf {
+            needs_resize: false,
+            canvas_size: 0,
+            speed: 0.00758,
+            zoom: 0.0132312,
+        }
     }
 }
 
 /// Defines a middleware that sets the cell state of
-struct NoiseStepper{
-    conf: Box<NoiseEngine>,
-    noise_engine: *mut c_void,
+pub struct NoiseStepper {
+    root_module: Box<ComposedNoiseModule>, // The root node of the module composition tree
+    conf: MasterConf,
 }
 
 impl Middleware<CS, ES, MES, CA, EA, OurEngine> for NoiseStepper {
     fn after_render(&mut self, universe: &mut OurUniverse) {
         // handle any new setting changes before rendering
-        if self.conf.needs_update {
-            if self.conf.needs_resize {
-                // resize the universe if the canvas size changed, matching that size.
-                resize_universe(universe, self.conf.canvas_size);
-                self.conf.needs_resize = false;
-            }
 
-            if self.conf.needs_new_noise_gen {
-                self.noise_engine = create_noise_engine(self.conf.generator_type);
-                self.conf.needs_new_noise_gen = false;
-            }
-
-            // re-apply all settings to the noise module
-            self.noise_engine = unsafe { apply_settings(&*self.conf, self.noise_engine) };
-
-            self.conf.needs_update = false;
+       if self.conf.needs_resize {
+            // resize the universe if the canvas size changed, matching that size.
+            resize_universe(universe, self.conf.canvas_size);
+            self.conf.needs_resize = false;
         }
 
-        let module = match self.conf.generator_type {
-            GenType::Fbm => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut Fbm<f32>) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
-            GenType::Worley => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut Worley<f32>) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
-            GenType::OpenSimplex => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut OpenSimplex) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
-            GenType::Billow => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut Billow<f32>) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
-            GenType::HybridMulti => drive_noise(&mut universe.cells, universe.seq, &unsafe { &*(self.noise_engine as *mut HybridMulti<f32>) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
-            GenType::SuperSimplex => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut SuperSimplex) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
-            GenType::Value => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut Value) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
-            GenType::RidgedMulti => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut RidgedMulti<f32>) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
-            GenType::BasicMulti => drive_noise(&mut universe.cells, universe.seq, unsafe { &*(self.noise_engine as *mut BasicMulti<f32>) }, self.conf.canvas_size, self.conf.zoom, self.conf.speed),
-        };
+        drive_noise(&mut universe.cells, universe.seq, &*self.root_module, self.conf.canvas_size, self.conf.zoom, self.conf.speed);
     }
 }
 
 fn calc_color(cell: &Cell<CS>, _: &[usize], _: &EntityContainer<CS, ES, MES>) -> [u8; 4] {
     // normalize into range from -180 to 180
-    let hue = (cell.state.0 * 360.0) + 180.0;
-    let hsv_color = Hsv::new(hue.into(), 1.0, 1.0);
-    let rgb_color = Rgb::from_hsv(hsv_color);
+    // let hue = (cell.state.0 * 360.0) + 180.0;
+    // let hsv_color = Hsv::new(hue.into(), 1.0, 1.0);
+    // let rgb_color = Rgb::from_hsv(hsv_color);
     [(cell.state.0 * 255.0) as u8, (cell.state.0 * 255.0) as u8, (cell.state.0 * 255.0) as u8, 255]
 }
 
