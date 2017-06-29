@@ -2,11 +2,13 @@
 //! buildable and configurable from the application.
 
 use std::os::raw::c_void;
+use std::ptr;
 use std::slice;
 
 use noise::*;
 
-use interop::GenType;
+use composition_meta::*;
+use interop::{CompositionScheme, GenType};
 use super::NoiseModuleConf;
 
 /// Represents a generic noise module, stored as a pointer and a type.
@@ -34,19 +36,38 @@ impl NoiseModule<Point3<f32>, f32> for RawNoiseModule {
 }
 
 /// Defines a method for composing multiple noise functions.
-pub enum NoiseModuleComposer {
-    Average, // Simpily averages the values from all contained noise modules
+pub struct NoiseModuleComposer {
+    scheme: CompositionScheme,
+    meta: *const c_void,
 }
 
 impl Default for NoiseModuleComposer {
-    fn default() -> Self { NoiseModuleComposer::Average }
+    fn default() -> Self {
+        NoiseModuleComposer {
+            scheme: CompositionScheme::Average,
+            meta: ptr::null(),
+        }
+    }
 }
 
 impl NoiseModuleComposer {
     /// The core logic of the composition scheme happens here.  Given the composition scheme itself, an array of noise functions,
     /// and a point, calculates a final output value of the composed module.
     pub fn compose(&self, modules: &[RawNoiseModule], coord: Point3<f32>) -> f32 {
-        unimplemented!(); // TODO
+        match self.scheme {
+            CompositionScheme::Average => {
+                modules.iter().fold(0.0, |acc, noise_module| { acc + noise_module.get(coord) }) / modules.len() as f32
+            },
+            CompositionScheme::WeightedAverage => {
+                let weight_meta: &WeightedAverageMeta = unsafe { &*(self.meta as *const WeightedAverageMeta) };
+                // assume that the weights are correctly set up and that they all add up to 1.0
+                modules.iter().enumerate().fold(0.0, |acc, (i, noise_module)| {
+                    let weight = weight_meta.weights.get(i)
+                        .expect(&format!("`WeightedAverageMeta` doesn't include index {} but we have {} child modules!", i, modules.len()));
+                    acc + (noise_module.get(coord) * weight)
+                })
+            }
+        }
     }
 }
 
@@ -72,17 +93,19 @@ impl ComposedNoiseModule {
     }
 
     /// Given a setting to apply and a coordinate within the configuration tree (represented by a depth and set of indexes on each
-    /// level of the tree), applies the configuration setting to the module.
-    pub fn find_child(&mut self, depth: i32, coords: *const f32) -> Result<RawNoiseModule, String> {
-        let coords_slice: &[f32] = unsafe { slice::from_raw_parts(coords, depth as usize) };
+    /// level of the tree), applies the configuration setting to the module.  `depth` is 1-indexed and should also represent
+    /// the length of the coords array.
+    pub fn find_child(&mut self, depth: i32, coords: *const i32) -> Result<RawNoiseModule, String> {
+        let coords_slice: &[i32] = unsafe { slice::from_raw_parts(coords, depth as usize) };
 
+        #[inline(never)]
         fn index_err(depth: usize, coord: usize) -> String {
             format!("Attempted to index composition tree at depth {}, coord {} which doesn't exist!", depth, coord)
         }
 
         // traverse the tree, bailing out in the case of an error.
         let mut cur_modules = &mut self.modules;
-        for (depth, coord) in coords_slice.iter().take(depth as usize - 1).enumerate() {
+        for (depth, coord) in coords_slice.iter().take((depth - 1) as usize).enumerate() {
             let next_modules = match cur_modules.get(depth) {
                 Some(module) => {
                     match module.conf.generator_type {

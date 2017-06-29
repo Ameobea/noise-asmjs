@@ -36,7 +36,7 @@ pub enum GenType {
     Value,
     RidgedMulti,
     BasicMulti,
-    Composed, // Custom noise function representing a `ComposedNoiseModule`.
+    Composed, // Custom noise module representing a `ComposedNoiseModule`.
 }
 
 
@@ -48,6 +48,13 @@ pub enum InteropRangeFunction {
     Manhattan,
     Chebyshev,
     Quadratic,
+}
+
+#[repr(u32)]
+#[derive(Clone, Copy, Debug)]
+pub enum CompositionScheme {
+    Average,
+    WeightedAverage,
 }
 
 impl Into<RangeFunction> for InteropRangeFunction {
@@ -102,7 +109,7 @@ pub unsafe extern "C" fn init(canvas_size: usize) {
 /// refers to the `MasterConf` of the root module.
 #[no_mangle]
 pub unsafe extern "C" fn set_config(
-    setting_type: SettingType, val: f64, engine_ptr: *mut NoiseStepper, conf_depth: f64, conf_coords: *const f32
+    setting_type: SettingType, val: f64, engine_ptr: *mut NoiseStepper, conf_depth: i32, conf_coords: *const i32
 ) {
     debug(&format!("Setting config values: setting_type: {:?}, value: {}, engine_pointer: {:?}", setting_type, val, engine_ptr));
     let stepper = &mut *engine_ptr;

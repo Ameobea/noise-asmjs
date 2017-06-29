@@ -47,6 +47,7 @@ pub mod interop;
 use interop::*;
 pub mod composed_module;
 use composed_module::{ComposedNoiseModule, RawNoiseModule};
+pub mod composition_meta;
 
 // Minutiae custom type declarations.
 // Since we're only using a very small subset of Minutiae's capabilities, these are mostly unused.
