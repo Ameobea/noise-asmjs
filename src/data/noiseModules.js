@@ -36,4 +36,8 @@ export default [{
   key: 'BasicMulti',
   name: 'Basic Multifractal Noise',
   content: 'Outputs heterogenous Multifractal noise.  In areas near zero, higher frequencies will be heavily damped, resulting in the terrain remaining smooth. As the value moves further away from zero, higher frequencies will not be as damped and thus will grow more jagged as iteration progresses.',
+}, {
+  key: 'Constant',
+  name: 'Constant Value',
+  content: 'Noise module that returns a constant value for every input coordinate.  Not useful on its own, but can be helpful in composing more complicated noise modules.',
 }];

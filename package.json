@@ -35,6 +35,7 @@
   "bugs": {
     "url": "https://github.com/ameobea/noise-asmjs/issues"
   },
+  "homepage": "localhost:5000/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ameobea/noise-asmjs.git"

@@ -5,11 +5,12 @@ use std::os::raw::c_void;
 use std::ptr;
 use std::slice;
 
+use noise;
 use noise::*;
 
 use composition_meta::*;
 use interop::{CompositionScheme, GenType};
-use super::NoiseModuleConf;
+use super::{error, NoiseModuleConf};
 
 /// Represents a generic noise module, stored as a pointer and a type.
 #[derive(Clone)]
@@ -21,24 +22,25 @@ pub struct RawNoiseModule {
 impl NoiseModule<Point3<f32>, f32> for RawNoiseModule {
     fn get(&self, coord: Point3<f32>) -> f32 {
         match self.conf.generator_type {
-            GenType::Fbm => unsafe { &*(self.engine_pointer as *mut Fbm<f32>) }.get(coord),
-            GenType::Worley => unsafe { &*(self.engine_pointer as *mut Worley<f32>) }.get(coord),
-            GenType::OpenSimplex => unsafe { &*(self.engine_pointer as *mut OpenSimplex) }.get(coord),
-            GenType::Billow => unsafe { &*(self.engine_pointer as *mut Billow<f32>) }.get(coord),
-            GenType::HybridMulti => unsafe { &*(self.engine_pointer as *mut HybridMulti<f32>) }.get(coord),
-            GenType::SuperSimplex => unsafe { &*(self.engine_pointer as *mut SuperSimplex) }.get(coord),
-            GenType::Value => unsafe { &*(self.engine_pointer as *mut Value) }.get(coord),
-            GenType::RidgedMulti => unsafe { &*(self.engine_pointer as *mut RidgedMulti<f32>) }.get(coord),
-            GenType::BasicMulti => unsafe { &*(self.engine_pointer as *mut BasicMulti<f32>) }.get(coord),
-            GenType::Composed => unsafe { &*(self.engine_pointer as *mut ComposedNoiseModule ) }.get(coord),
+            GenType::Fbm => unsafe { &*(self.engine_pointer as *const Fbm<f32>) }.get(coord),
+            GenType::Worley => unsafe { &*(self.engine_pointer as *const Worley<f32>) }.get(coord),
+            GenType::OpenSimplex => unsafe { &*(self.engine_pointer as *const OpenSimplex) }.get(coord),
+            GenType::Billow => unsafe { &*(self.engine_pointer as *const Billow<f32>) }.get(coord),
+            GenType::HybridMulti => unsafe { &*(self.engine_pointer as *const HybridMulti<f32>) }.get(coord),
+            GenType::SuperSimplex => unsafe { &*(self.engine_pointer as *const SuperSimplex) }.get(coord),
+            GenType::Value => unsafe { &*(self.engine_pointer as *const Value) }.get(coord),
+            GenType::RidgedMulti => unsafe { &*(self.engine_pointer as *const RidgedMulti<f32>) }.get(coord),
+            GenType::BasicMulti => unsafe { &*(self.engine_pointer as *const BasicMulti<f32>) }.get(coord),
+            GenType::Constant => unsafe { &*(self.engine_pointer as *const noise::Constant<f32>) }.get(coord),
+            GenType::Composed => unsafe { &*(self.engine_pointer as *const ComposedNoiseModule ) }.get(coord),
         }
     }
 }
 
 /// Defines a method for composing multiple noise functions.
 pub struct NoiseModuleComposer {
-    scheme: CompositionScheme,
-    meta: *const c_void,
+    pub scheme: CompositionScheme,
+    pub meta: *const c_void,
 }
 
 impl Default for NoiseModuleComposer {
@@ -48,6 +50,16 @@ impl Default for NoiseModuleComposer {
             meta: ptr::null(),
         }
     }
+}
+
+pub fn weighted_average(modules: &[RawNoiseModule], weights: &[f32], coord: Point3<f32>) -> f32 {
+    println!("Modules: {}, Weights: {:?}", modules.len(), weights);
+    modules.iter().enumerate().fold(0.0, |acc, (i, noise_module)| {
+        let weight = weights.get(i)
+            .expect(&format!("`WeightedAverageMeta` doesn't include index {} but we have {} child modules!", i, modules.len()));
+        println!("Module type: {:?}", noise_module.conf.generator_type);
+        acc + (noise_module.get(coord) * weight)
+    })
 }
 
 impl NoiseModuleComposer {
@@ -60,12 +72,9 @@ impl NoiseModuleComposer {
             },
             CompositionScheme::WeightedAverage => {
                 let weight_meta: &WeightedAverageMeta = unsafe { &*(self.meta as *const WeightedAverageMeta) };
+                debug_assert_eq!(modules.len(), weight_meta.weights.len());
                 // assume that the weights are correctly set up and that they all add up to 1.0
-                modules.iter().enumerate().fold(0.0, |acc, (i, noise_module)| {
-                    let weight = weight_meta.weights.get(i)
-                        .expect(&format!("`WeightedAverageMeta` doesn't include index {} but we have {} child modules!", i, modules.len()));
-                    acc + (noise_module.get(coord) * weight)
-                })
+                weighted_average(modules, &weight_meta.weights, coord)
             }
         }
     }
@@ -136,4 +145,71 @@ impl ComposedNoiseModule {
             None => { return Err(index_err(depth as usize, final_coord)); }
         }
     }
+
+    /// Adds a child module to the end of the modules list.  The metadata will have to be adjusted manually if it needs to be changed.
+    pub fn add_child(&mut self, child_module: RawNoiseModule) {
+        self.modules.push(child_module)
+    }
+
+    /// Removes a child module from the selected index of the modules list.  The metadata will have to be adjusted manually if it
+    /// needs to be changed.
+    pub fn remove_child(&mut self, child_index: usize) {
+        if self.modules.len() <= child_index {
+            return error(&format!(
+                "Attempted to remove child module of index {} from composed module, but it only contains {}.",
+                child_index,
+                self.modules.len()
+            ));
+        } else {
+            self.modules.remove(child_index);
+            self.modules.shrink_to_fit();
+        }
+    }
+
+    /// Returns a JSON-encoded string describing the structure of this tree.  Each node has a module `genType` field which
+    /// corresponds to `GenType`, a `conf` field which contains that modules `NoiseModuleConf`, and if it's a `ComposedNoiseModule`
+    /// a `modules` field containing an array of more modules.
+    ///
+    /// Using this method allows for an up-to-date view of the backend to be obtained from the frontend at any time.
+    pub fn get_json_tree(&self) -> String {
+        #[derive(Serialize)]
+        struct TreeNode {
+            genType: GenType,
+            conf: NoiseModuleConf,
+            modules: Vec<TreeNode>,
+        }
+
+        unimplemented!(); // TODO
+    }
+}
+
+#[test]
+/// Makes sure that our weighted average composition scheme works and that we're properly dealing with raw pointers.
+fn weighted_average_accuracy() {
+    let real_modules: Vec<Box<Constant<f32>>> = vec![Box::new(Constant::new(0.1)), Box::new(Constant::new(0.9)), Box::new(Constant::new(0.3))];
+    let raw_modules: Vec<RawNoiseModule> = real_modules.into_iter().map(|module| {
+        RawNoiseModule {
+            engine_pointer: Box::into_raw(module) as *mut c_void,
+            conf: {
+                let mut conf = NoiseModuleConf::default();
+                conf.generator_type = GenType::Constant;
+                conf
+            },
+        }
+    }).collect();
+
+    let meta = WeightedAverageMeta {
+        weights: vec![0.2, 0.2, 0.6],
+    };
+
+    let composed_module = ComposedNoiseModule {
+        composer: NoiseModuleComposer {
+            scheme: CompositionScheme::WeightedAverage,
+            meta: Box::into_raw(Box::new(meta)) as *mut c_void,
+        },
+        modules: raw_modules,
+    };
+
+    let coord = [0., 0., 0.,];
+    assert_eq!(composed_module.get(coord), (0.1 * 0.2) + (0.9 * 0.2) + (0.3 * 0.6));
 }

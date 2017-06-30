@@ -22,4 +22,5 @@ export default {
   Value: uniteSets([NoiseModule, Seedable]),
   RidgedMulti: uniteSets([NoiseModule, MultiFractal, Seedable, Set(['attenuation'])]),
   BasicMulti: uniteSets([NoiseModule, MultiFractal, Seedable]),
+  Constant: Set(['constant']),
 };

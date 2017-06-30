@@ -11,6 +11,10 @@
 extern crate minutiae;
 extern crate noise;
 extern crate palette;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
 
 use std::ffi::CString;
 use std::os::raw::{c_char, c_void};
@@ -82,7 +86,7 @@ impl Engine<CS, ES, MES, CA, EA> for OurEngine {
 }
 
 /// Holds the noise generator's state.  A pointer to this is passed along with all configuraiton functions.
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct NoiseModuleConf {
     generator_type: GenType,
     canvas_size: usize,
@@ -97,6 +101,7 @@ pub struct NoiseModuleConf {
     range_function: InteropRangeFunction,
     enable_range: u32,
     displacement: f32,
+    constant: f32,
     needs_update: bool, // flag indicating whether or not there are new stettings that need to be applied
     needs_resize: bool, // flag indicating if the universe itself needs to be resized or not
     needs_new_noise_gen: bool, // the type of noise generator itself needs to be changed
@@ -117,6 +122,7 @@ impl Default for NoiseModuleConf {
             attenuation: 2.0,
             enable_range: 0,
             displacement: 1.0,
+            constant: 0.0, // only used for `GenType::Constant`
             range_function: InteropRangeFunction::Euclidean,
             needs_update: false,
             needs_resize: false,
@@ -166,6 +172,7 @@ fn create_noise_engine(id: GenType) -> *mut c_void {
         GenType::Value => Box::into_raw(Box::new(Value::new())) as *mut c_void,
         GenType::RidgedMulti => Box::into_raw(Box::new(RidgedMulti::new() as RidgedMulti<f32>)) as *mut c_void,
         GenType::BasicMulti => Box::into_raw(Box::new(BasicMulti::new() as BasicMulti<f32>)) as *mut c_void,
+        GenType::Constant => Box::into_raw(Box::new(Constant::new(0.0))) as *mut c_void,
         GenType::Composed => Box::into_raw(Box::new(ComposedNoiseModule::new())) as *mut c_void,
     }
 }
@@ -245,6 +252,11 @@ unsafe fn apply_settings(engine_conf: &NoiseModuleConf, engine: *mut c_void) -> 
             let gen = gen.set_persistence(engine_conf.persistence);
             Box::into_raw(Box::new(gen)) as *mut c_void
         },
+        GenType::Constant => {
+            let _ = Box::from_raw(engine as *mut Constant<f32>); // free the old one
+            let gen = Constant::new(engine_conf.constant);
+            Box::into_raw(Box::new(gen)) as *mut c_void
+        }
         GenType::Composed => {
             unimplemented!();
         }

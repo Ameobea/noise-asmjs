@@ -1,9 +1,14 @@
 //! Defines functions that are exported to the JavaScript frontend, allowing access to the engine during runtime from the JS side.
 
+use std::ffi::CStr;
 use std::mem::{self, transmute};
+use std::ptr;
 
 use noise::RangeFunction;
+use serde_json;
 
+use composed_module::NoiseModuleComposer;
+use composition_meta::WeightedAverageMeta;
 use super::*;
 
 #[repr(u32)]
@@ -22,10 +27,14 @@ pub enum SettingType {
     RangeFunction,
     EnableRange,
     Displacement,
+    /// Sets the value returned by a `Constant` noise module
+    Constant,
+    /// Sets the actual pointer for the module contained in the inner `RawModule` directly, bypassing the settings.
+    ModulePointer,
 }
 
 #[repr(u32)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub enum GenType {
     Fbm,
     Worley,
@@ -36,12 +45,12 @@ pub enum GenType {
     Value,
     RidgedMulti,
     BasicMulti,
+    Constant,
     Composed, // Custom noise module representing a `ComposedNoiseModule`.
 }
 
-
 #[repr(u32)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub enum InteropRangeFunction {
     Euclidean,
     EuclideanSquared,
@@ -150,6 +159,10 @@ pub unsafe extern "C" fn set_config(
         SettingType::RangeFunction => conf.range_function = transmute(val as u32),
         SettingType::EnableRange => conf.enable_range = val as u32,
         SettingType::Displacement => conf.displacement = val as f32,
+        SettingType::Constant => conf.constant = val as f32,
+        // this one's quite beautiful in its implementation.  We're passed a f32 representing the value of the pointer,
+        // we cast that to a usize, and then cast *that* to a void pointer.  This doesn't change the generator type.
+        SettingType::ModulePointer => target_module.engine_pointer = val as usize as *mut c_void,
         SettingType::CanvasSize => { return error("Attempted to set canvas size on non-master module config!"); },
     };
 
@@ -165,6 +178,50 @@ pub unsafe extern "C" fn set_config(
     // Convert the old module pointer back into a box so it can be dropped
     let old_module_pointer = mem::replace(&mut target_module.engine_pointer, new_noise_engine_pointer);
     let _ = Box::from_raw(old_module_pointer);
+}
+
+/// Creates a raw void pointer to a `ComposedNoiseModule` given a composition scheme JSON-encoded string containing
+/// its metadata.  `meta_json` should be a UTF8-encoded string.  This function returns a null pointer in the case of
+/// an error, so that must be checked for.
+#[no_mangle]
+pub unsafe extern "C" fn create_composed_module(raw_scheme: u32, meta_json_ptr: *const c_char) -> *const c_void {
+    let json_str: &str = match CStr::from_ptr(meta_json_ptr).to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            error("Invalid UTF8 string provided to `create_composer()`");
+            return ptr::null();
+        }
+    };
+
+    // Create a meta struct from the provided JSON string depending on the supplied composition scheme and hide it behind
+    // a raw void pointer so that it can be stored generically in the composer
+    let scheme: CompositionScheme = transmute(raw_scheme);
+    let meta_ptr: *const c_void = match scheme {
+        CompositionScheme::Average => ptr::null(),
+        CompositionScheme::WeightedAverage => {
+            let parsed_meta: WeightedAverageMeta = match serde_json::from_str::<WeightedAverageMeta>(json_str) {
+                Ok(meta) => meta,
+                Err(err) => {
+                    error(&format!("Error parsing JSON into `WeightedAverageMeta`: {:?}", err));
+                    return ptr::null();
+                },
+            };
+            Box::into_raw(Box::new(parsed_meta)) as *const c_void
+        }
+    };
+
+    // Create the composer given the constructed meta struct pointer and the scheme
+    let composer = NoiseModuleComposer {
+        meta: meta_ptr,
+        scheme,
+    };
+
+    // finally, create the composed noise module with an empty set of child modules
+    let composed_module = ComposedNoiseModule {
+        composer,
+        modules: Vec::new(),
+    };
+    Box::into_raw(Box::new(composed_module)) as *const c_void
 }
 
 /// Pauses the simulation by halting the Emscripten browser event loop.

@@ -149,6 +149,14 @@ const settingDefinitions = {
       </span>
     ),
   },
+  constant: {
+    title: 'Constant Value',
+    min: -1.0,
+    trueMin: -Infinity,
+    max: 1.0,
+    trueMax: Infinity,
+    hint: 'The constant value returned for all points',
+  },
   zoom: {
     title: 'Zoom',
     min: 0.0,

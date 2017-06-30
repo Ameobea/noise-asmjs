@@ -22,6 +22,8 @@ export const SETTING_TYPES = {
   RANGE_FUNCTION: 10,
   ENABLE_RANGE: 11,
   DISPLACEMENT: 12,
+  CONSTANT: 13,
+  MODULE_POINTER: 14,
 };
 
 export const MODULE_TYPES = {
@@ -33,7 +35,9 @@ export const MODULE_TYPES = {
   SUPER_SIMPLEX: 5,
   VALUE: 6,
   RIDGED_MULTI: 7,
-  COMPOSED: 8,
+  BASIC_MULTI: 8,
+  CONSTANT: 9,
+  COMPOSED: 10,
 };
 
 export const RANGE_FUNCTIONS = {
