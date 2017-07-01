@@ -54,6 +54,7 @@ use interop::*;
 // use composed_module::{ComposedNoiseModule, RawNoiseModule};
 // pub mod composition_meta;
 pub mod composition_tree;
+use self::composition_tree::CompositionTree;
 
 // Minutiae custom type declarations.
 // Since we're only using a very small subset of Minutiae's capabilities, these are mostly unused.
@@ -115,110 +116,6 @@ fn resize_universe(universe: &mut Universe<CS, ES, MES, CA, EA>, new_size: usize
     universe.conf.size = new_size;
 }
 
-/// Given the ID of a noise engine, allocates an instance of it on the heap and returns a void reference to it.
-/// Since `MultiFractal` can't be made into a trait object, this is the best optionsdfsfsdfsdfs
-fn create_noise_engine(id: GenType) -> *mut c_void {
-    match id {
-        GenType::Fbm => Box::into_raw(Box::new(Fbm::new() as Fbm<f32>)) as *mut c_void,
-        GenType::Worley => Box::into_raw(Box::new(Worley::new() as Worley<f32>)) as *mut c_void,
-        GenType::OpenSimplex => Box::into_raw(Box::new(OpenSimplex::new())) as *mut c_void,
-        GenType::Billow => Box::into_raw(Box::new(Billow::new() as Billow<f32>)) as *mut c_void,
-        GenType::HybridMulti => Box::into_raw(Box::new(HybridMulti::new() as HybridMulti<f32>)) as *mut c_void,
-        GenType::SuperSimplex => Box::into_raw(Box::new(SuperSimplex::new())) as *mut c_void,
-        GenType::Value => Box::into_raw(Box::new(Value::new())) as *mut c_void,
-        GenType::RidgedMulti => Box::into_raw(Box::new(RidgedMulti::new() as RidgedMulti<f32>)) as *mut c_void,
-        GenType::BasicMulti => Box::into_raw(Box::new(BasicMulti::new() as BasicMulti<f32>)) as *mut c_void,
-        GenType::Constant => Box::into_raw(Box::new(Constant::new(0.0))) as *mut c_void,
-        GenType::Composed => Box::into_raw(Box::new(ComposedNoiseModule::new())) as *mut c_void,
-    }
-}
-
-/// Given a pointer to a noise engine of variable type and a settings struct, applies those settings based
-/// on the capabilities of that noise modules.  For example, if the noise module doesn't implement `Seedable`,
-/// the `seed` setting is ignored.
-unsafe fn apply_settings(engine_conf: &NoiseModuleConf, engine: *mut c_void) -> *mut c_void {
-    match engine_conf.generator_type {
-        GenType::Fbm => {
-            let gen = Box::from_raw(engine as *mut Fbm<f32>);
-            let gen = gen.set_seed(engine_conf.seed as u32);
-            let gen = gen.set_octaves(engine_conf.octaves as usize);
-            let gen = gen.set_frequency(engine_conf.frequency);
-            let gen = gen.set_lacunarity(engine_conf.lacunarity);
-            let gen = gen.set_persistence(engine_conf.persistence);
-            Box::into_raw(Box::new(gen)) as *mut c_void
-        },
-        GenType::Worley => {
-            let gen = Box::from_raw(engine as *mut Worley<f32>);
-            let gen = gen.set_seed(engine_conf.seed as u32);
-            let gen = gen.set_frequency(engine_conf.frequency);
-            let gen = gen.set_range_function(engine_conf.range_function.into());
-            let gen = gen.enable_range(engine_conf.enable_range != 0);
-            let gen = gen.set_displacement(engine_conf.displacement);
-            Box::into_raw(Box::new(gen)) as *mut c_void
-        },
-        GenType::OpenSimplex => {
-            let gen = Box::from_raw(engine as *mut OpenSimplex);
-            let gen = gen.set_seed(engine_conf.seed as u32);
-            Box::into_raw(Box::new(gen)) as *mut c_void
-        },
-        GenType::Billow => {
-            let gen = Box::from_raw(engine as *mut Billow<f32>);
-            let gen = gen.set_seed(engine_conf.seed as u32);
-            let gen = gen.set_octaves(engine_conf.octaves as usize);
-            let gen = gen.set_frequency(engine_conf.frequency);
-            let gen = gen.set_lacunarity(engine_conf.lacunarity);
-            let gen = gen.set_persistence(engine_conf.persistence);
-            Box::into_raw(Box::new(gen)) as *mut c_void
-        },
-        GenType::HybridMulti => {
-            let gen = Box::from_raw(engine as *mut HybridMulti<f32>);
-            let gen = gen.set_seed(engine_conf.seed as u32);
-            let gen = gen.set_octaves(engine_conf.octaves as usize);
-            let gen = gen.set_frequency(engine_conf.frequency);
-            let gen = gen.set_lacunarity(engine_conf.lacunarity);
-            let gen = gen.set_persistence(engine_conf.persistence);
-            Box::into_raw(Box::new(gen)) as *mut c_void
-        },
-        GenType::SuperSimplex => {
-            let gen = Box::from_raw(engine as *mut SuperSimplex);
-            let gen = gen.set_seed(engine_conf.seed as u32);
-            Box::into_raw(Box::new(gen)) as *mut c_void
-        },
-        GenType::Value => {
-            let gen = Box::from_raw(engine as *mut Value);
-            let gen = gen.set_seed(engine_conf.seed as u32);
-            Box::into_raw(Box::new(gen)) as *mut c_void
-        },
-        GenType::RidgedMulti => {
-            let gen = Box::from_raw(engine as *mut RidgedMulti<f32>);
-            let gen = gen.set_seed(engine_conf.seed as u32);
-            let gen = gen.set_octaves(engine_conf.octaves as usize);
-            let gen = gen.set_frequency(engine_conf.frequency);
-            let gen = gen.set_lacunarity(engine_conf.lacunarity);
-            let gen = gen.set_persistence(engine_conf.persistence);
-            let gen = gen.set_attenuation(engine_conf.attenuation);
-            Box::into_raw(Box::new(gen)) as *mut c_void
-        },
-        GenType::BasicMulti => {
-            let gen = Box::from_raw(engine as *mut BasicMulti<f32>);
-            let gen = gen.set_seed(engine_conf.seed as u32);
-            let gen = gen.set_octaves(engine_conf.octaves as usize);
-            let gen = gen.set_frequency(engine_conf.frequency);
-            let gen = gen.set_lacunarity(engine_conf.lacunarity);
-            let gen = gen.set_persistence(engine_conf.persistence);
-            Box::into_raw(Box::new(gen)) as *mut c_void
-        },
-        GenType::Constant => {
-            let _ = Box::from_raw(engine as *mut Constant<f32>); // free the old one
-            let gen = Constant::new(engine_conf.constant);
-            Box::into_raw(Box::new(gen)) as *mut c_void
-        }
-        GenType::Composed => {
-            unimplemented!();
-        }
-    }
-}
-
 /// Configuration status and state for the entire backend.
 pub struct MasterConf {
     needs_resize: bool,
@@ -240,7 +137,7 @@ impl Default for MasterConf {
 
 /// Defines a middleware that sets the cell state of
 pub struct NoiseStepper {
-    root_module: Box<ComposedNoiseModule>, // The root node of the module composition tree
+    composition_tree: Box<CompositionTree>, // The root node of the module composition tree
     conf: MasterConf,
 }
 
@@ -254,7 +151,7 @@ impl Middleware<CS, ES, MES, CA, EA, OurEngine> for NoiseStepper {
             self.conf.needs_resize = false;
         }
 
-        drive_noise(&mut universe.cells, universe.seq, &*self.root_module, self.conf.canvas_size, self.conf.zoom, self.conf.speed);
+        drive_noise(&mut universe.cells, universe.seq, &*self.composition_tree, self.conf.canvas_size, self.conf.zoom, self.conf.speed);
     }
 }
 
@@ -276,10 +173,5 @@ impl Generator<CS, ES, MES, CA, EA> for WorldGenerator {
 }
 
 fn main() {
-    // only runs on Asm.JS/Emscripten which use 32-bit addressing
-    assert_eq!(std::mem::size_of::<usize>(), 4);
-    assert_eq!(std::mem::size_of::<SettingType>(), 4);
-    assert_eq!(std::mem::size_of::<GenType>(), 4);
-
     // Intentionally left blank; the engine itself is initialized by the JavaScript asynchronously.
 }

@@ -1,7 +1,30 @@
-use super::definition::CompositionTreeDefinitionNode;
-use interop::{GenType, InteropRangeFunction};
+//! Defines the data types used to create noise modules.
 
-use super::{CompositionScheme, ManagedNoiseModule};
+use super::composition::CompositionScheme;
+use super::definition::CompositionTreeDefinitionNode;
+
+use noise::RangeFunction;
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+pub enum InteropRangeFunction {
+    Euclidean,
+    EuclideanSquared,
+    Manhattan,
+    Chebyshev,
+    Quadratic,
+}
+
+impl Into<RangeFunction> for InteropRangeFunction {
+    fn into(self) -> RangeFunction {
+        match self {
+            InteropRangeFunction::Euclidean => RangeFunction::Euclidean,
+            InteropRangeFunction::EuclideanSquared => RangeFunction::EuclideanSquared,
+            InteropRangeFunction::Manhattan => RangeFunction::Manhattan,
+            InteropRangeFunction::Chebyshev => RangeFunction::Chebyshev,
+            InteropRangeFunction::Quadratic => RangeFunction::Quadratic,
+        }
+    }
+}
 
 /// Holds all possible configuration options for a noise module.  Since each module supports one or more of
 /// these enum variants, each `GenNoiseModule` will have an array of these that describe the configuration
