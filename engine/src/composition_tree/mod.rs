@@ -30,7 +30,15 @@ pub struct CompositionTree {
 impl CompositionTree {
     /// Removes the child from the given coordinate of the tree, shifting all other sibling modules to the left.  If the
     /// removal of the module will cause issues with the composition scheme, that will have to be adjusted or rebuilt manually.
-    fn remove_child(&mut self, depth: u32, index: u32) -> Result<(), String> {
+    pub fn delete_node(&mut self, depth: u32, index: u32) -> Result<(), String> {
+        unimplemented!();
+    }
+
+    pub fn add_node(&mut self, depth: u32, index: u32, node: CompositionTreeNode) -> Result<(), String> {
+        unimplemented!();
+    }
+
+    pub fn set_composition_scheme(&mut self, depth: u32, index: u32, new_scheme: CompositionScheme) -> Result<(), String> {
         unimplemented!();
     }
 }
@@ -49,10 +57,21 @@ pub enum CompositionTreeNode {
 impl CompositionTreeNode {
     /// Removes the child from the given coordinate of the tree, shifting all other sibling modules to the left.  If the
     /// removal of the module will cause issues with the composition scheme, that will have to be adjusted or rebuilt manually.
-    fn remove_child(&mut self, depth: u32, index: u32) -> Result<(), String> {
+    pub fn remove_child(&mut self, depth: u32, index: u32) -> Result<(), String> {
         match self {
             &mut CompositionTreeNode::Leaf(_) => Err(
                 format!("Tried to remove child from module at depth {} index {} but it's a leaf node!", depth, index)
+            ),
+            &mut CompositionTreeNode::Combined(ref composed_module) => {
+                unimplemented!(); // TODO
+            }
+        }
+    }
+
+    pub fn add_child(&mut self, depth: u32, index: u32) -> Result<(), String> {
+        match self {
+            &mut CompositionTreeNode::Leaf(_) => Err(
+                format!("Tried to add child to module at depth {} index {} but it's a leaf node!", depth, index)
             ),
             &mut CompositionTreeNode::Combined(ref composed_module) => {
                 unimplemented!(); // TODO

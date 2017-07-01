@@ -11,7 +11,7 @@ use super::{ComposedNoiseModule, CompositionTree, CompositionTreeNode, GlobalTre
 #[derive(Serialize, Deserialize)]
 pub struct CompositionTreeDefinition {
     global_conf: GlobalTreeConf,
-    root_node: CompositionTreeDefinitionNode,
+    root_node: CompositionTreeNodeDefinition,
 }
 
 /// Includes every possible type of noise module available through the tool.
@@ -50,26 +50,26 @@ impl NoiseModuleType {
 
 /// This is the primary unit of the composition tree.
 #[derive(Serialize, Deserialize)]
-pub enum CompositionTreeDefinitionNode {
+pub enum CompositionTreeNodeDefinition {
     Leaf {
         module_type: NoiseModuleType,
         module_conf: Vec<NoiseModuleConf>,
     },
     Composed {
         scheme: CompositionScheme,
-        children: Vec<CompositionTreeDefinitionNode>,
+        children: Vec<CompositionTreeNodeDefinition>,
     }
 }
 
-impl Into<CompositionTreeNode> for CompositionTreeDefinitionNode {
+impl Into<CompositionTreeNode> for CompositionTreeNodeDefinition {
     fn into(self) -> CompositionTreeNode {
         match self {
-            CompositionTreeDefinitionNode::Leaf { module_type, module_conf } => {
+            CompositionTreeNodeDefinition::Leaf { module_type, module_conf } => {
                 // Build a noise module out of the type and configurations
                 let built_module = module_type.build(&module_conf);
                 CompositionTreeNode::Leaf(built_module)
             },
-            CompositionTreeDefinitionNode::Composed { scheme, children } => {
+            CompositionTreeNodeDefinition::Composed { scheme, children } => {
                 // Build modules out of each of the children definitions, and combine them into a `CombinedModule`
                 let built_children: Vec<CompositionTreeNode> = children
                     .into_iter()
