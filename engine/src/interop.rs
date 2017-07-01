@@ -7,8 +7,6 @@ use std::ptr;
 use noise::RangeFunction;
 use serde_json;
 
-use composed_module::NoiseModuleComposer;
-use composition_meta::WeightedAverageMeta;
 use super::*;
 
 #[repr(u32)]
@@ -50,20 +48,13 @@ pub enum GenType {
 }
 
 #[repr(u32)]
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum InteropRangeFunction {
     Euclidean,
     EuclideanSquared,
     Manhattan,
     Chebyshev,
     Quadratic,
-}
-
-#[repr(u32)]
-#[derive(Clone, Copy, Debug)]
-pub enum CompositionScheme {
-    Average,
-    WeightedAverage,
 }
 
 impl Into<RangeFunction> for InteropRangeFunction {

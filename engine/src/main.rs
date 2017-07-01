@@ -7,6 +7,7 @@
 // TODO: Deprecate the entire cell mutator functionality in favor of entirely middleware-driven approaches
 
 // #![allow(unused_variables, dead_code)]
+#![feature(conservative_impl_trait)]
 
 extern crate minutiae;
 extern crate noise;
@@ -49,9 +50,10 @@ pub fn error(msg: &str) {
 
 pub mod interop;
 use interop::*;
-pub mod composed_module;
-use composed_module::{ComposedNoiseModule, RawNoiseModule};
-pub mod composition_meta;
+// pub mod composed_module;
+// use composed_module::{ComposedNoiseModule, RawNoiseModule};
+// pub mod composition_meta;
+pub mod composition_tree;
 
 // Minutiae custom type declarations.
 // Since we're only using a very small subset of Minutiae's capabilities, these are mostly unused.
@@ -82,52 +84,6 @@ impl Engine<CS, ES, MES, CA, EA> for OurEngine {
     fn step(&mut self, universe: &mut OurUniverse) {
         // no-op; all logic is handled by the middleware
         universe.seq += 1;
-    }
-}
-
-/// Holds the noise generator's state.  A pointer to this is passed along with all configuraiton functions.
-#[derive(Clone, Serialize)]
-pub struct NoiseModuleConf {
-    generator_type: GenType,
-    canvas_size: usize,
-    seed: usize,
-    octaves: usize,
-    frequency: f32,
-    lacunarity: f32,
-    persistence: f32,
-    zoom: f32,
-    speed: f32,
-    attenuation: f32,
-    range_function: InteropRangeFunction,
-    enable_range: u32,
-    displacement: f32,
-    constant: f32,
-    needs_update: bool, // flag indicating whether or not there are new stettings that need to be applied
-    needs_resize: bool, // flag indicating if the universe itself needs to be resized or not
-    needs_new_noise_gen: bool, // the type of noise generator itself needs to be changed
-}
-
-impl Default for NoiseModuleConf {
-    fn default() -> Self {
-        NoiseModuleConf {
-            generator_type: GenType::Fbm,
-            canvas_size: 0,
-            seed: 101269420,
-            octaves: 6,
-            frequency: 1.0,
-            lacunarity: 2.0,
-            persistence: 0.5,
-            speed: 0.00758,
-            zoom: 0.0132312,
-            attenuation: 2.0,
-            enable_range: 0,
-            displacement: 1.0,
-            constant: 0.0, // only used for `GenType::Constant`
-            range_function: InteropRangeFunction::Euclidean,
-            needs_update: false,
-            needs_resize: false,
-            needs_new_noise_gen: false,
-        }
     }
 }
 

@@ -12,46 +12,6 @@ use composition_meta::*;
 use interop::{CompositionScheme, GenType};
 use super::{error, NoiseModuleConf};
 
-/// Represents a generic noise module, stored as a pointer and a type.
-#[derive(Clone)]
-pub struct RawNoiseModule {
-    pub engine_pointer: *mut c_void,
-    pub conf: NoiseModuleConf,
-}
-
-impl NoiseModule<Point3<f32>, f32> for RawNoiseModule {
-    fn get(&self, coord: Point3<f32>) -> f32 {
-        match self.conf.generator_type {
-            GenType::Fbm => unsafe { &*(self.engine_pointer as *const Fbm<f32>) }.get(coord),
-            GenType::Worley => unsafe { &*(self.engine_pointer as *const Worley<f32>) }.get(coord),
-            GenType::OpenSimplex => unsafe { &*(self.engine_pointer as *const OpenSimplex) }.get(coord),
-            GenType::Billow => unsafe { &*(self.engine_pointer as *const Billow<f32>) }.get(coord),
-            GenType::HybridMulti => unsafe { &*(self.engine_pointer as *const HybridMulti<f32>) }.get(coord),
-            GenType::SuperSimplex => unsafe { &*(self.engine_pointer as *const SuperSimplex) }.get(coord),
-            GenType::Value => unsafe { &*(self.engine_pointer as *const Value) }.get(coord),
-            GenType::RidgedMulti => unsafe { &*(self.engine_pointer as *const RidgedMulti<f32>) }.get(coord),
-            GenType::BasicMulti => unsafe { &*(self.engine_pointer as *const BasicMulti<f32>) }.get(coord),
-            GenType::Constant => unsafe { &*(self.engine_pointer as *const noise::Constant<f32>) }.get(coord),
-            GenType::Composed => unsafe { &*(self.engine_pointer as *const ComposedNoiseModule ) }.get(coord),
-        }
-    }
-}
-
-/// Defines a method for composing multiple noise functions.
-pub struct NoiseModuleComposer {
-    pub scheme: CompositionScheme,
-    pub meta: *const c_void,
-}
-
-impl Default for NoiseModuleComposer {
-    fn default() -> Self {
-        NoiseModuleComposer {
-            scheme: CompositionScheme::Average,
-            meta: ptr::null(),
-        }
-    }
-}
-
 pub fn weighted_average(modules: &[RawNoiseModule], weights: &[f32], coord: Point3<f32>) -> f32 {
     println!("Modules: {}, Weights: {:?}", modules.len(), weights);
     modules.iter().enumerate().fold(0.0, |acc, (i, noise_module)| {
