@@ -2,6 +2,8 @@
 
 use noise::{NoiseModule, Point3};
 
+use super::CompositionTreeNode;
+
 /// Defines a way to combine the outputs of multiple noise modules into one.
 #[derive(Serialize, Deserialize)]
 pub enum CompositionScheme {
@@ -12,7 +14,7 @@ pub enum CompositionScheme {
 impl CompositionScheme {
     /// Given a set of children noise generators and a coordinate, combines the outputs of each of the child modules and
     /// returns a single output.
-    pub fn compose(&self, children: &[Box<NoiseModule<Point3<f32>, f32>>], coord: Point3<f32>) -> f32 {
+    pub fn compose(&self, children: &[CompositionTreeNode], coord: Point3<f32>) -> f32 {
         match self {
             &CompositionScheme::Average => {
                 unimplemented!(); // TODO

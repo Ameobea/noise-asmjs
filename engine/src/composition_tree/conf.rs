@@ -1,7 +1,7 @@
 //! Defines the data types used to create noise modules.
 
 use super::composition::CompositionScheme;
-use super::definition::CompositionTreeDefinitionNode;
+use super::definition::CompositionTreeNodeDefinition;
 
 use noise::RangeFunction;
 
@@ -54,6 +54,6 @@ pub enum NoiseModuleConf {
     },
     Composed {
         scheme: CompositionScheme,
-        children: Vec<CompositionTreeDefinitionNode>,
+        children: Vec<CompositionTreeNodeDefinition>,
     }
 }

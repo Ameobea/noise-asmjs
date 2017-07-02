@@ -1,6 +1,7 @@
 //! Defines functions that are exported to the JavaScript frontend, allowing access to the engine during runtime from the JS side.
 
 use std::ffi::CStr;
+use std::slice;
 
 use serde_json;
 
@@ -56,10 +57,11 @@ pub unsafe extern "C" fn init(canvas_size: usize, tree_def: *const c_char) {
 
 /// Deletes a node of the composition tree at the supplied depth and index.  Returns 0 if successful, 1 if there was an error.
 #[no_mangle]
-pub unsafe extern "C" fn delete_node(tree_pointer: *mut CompositionTree, depth: i32, index: i32) -> i32 {
+pub unsafe extern "C" fn delete_node(tree_pointer: *mut CompositionTree, depth: i32, coords: *const i32, index: i32) -> i32 {
     let mut tree = &mut *(tree_pointer);
+    let coords_slice = slice::from_raw_parts(coords, depth as usize);
 
-    match tree.delete_node(depth as u32, index as u32) {
+    match tree.delete_node(depth as usize, coords_slice, index as usize) {
         Ok(_) => 0,
         Err(err) => {
             error(&err);
@@ -75,7 +77,7 @@ pub unsafe extern "C" fn delete_node(tree_pointer: *mut CompositionTree, depth: 
 /// it will have to be updated manually.
 #[no_mangle]
 pub unsafe extern "C" fn add_node(
-    tree_pointer: *mut CompositionTree, depth: i32, index: i32, node_definition: *const c_char
+    tree_pointer: *mut CompositionTree, depth: i32, coords: *const i32, index: i32, node_definition: *const c_char
 ) -> i32 {
     let mut tree = &mut *(tree_pointer);
 
@@ -101,7 +103,8 @@ pub unsafe extern "C" fn add_node(
     let node: CompositionTreeNode = node_def.into();
 
     // attempt to add the created node as a child of the node at the supplied coordinates in the tree
-    match tree.add_node(depth as u32, index as u32, node) {
+    let coords_slice = slice::from_raw_parts(coords, depth as usize);
+    match tree.add_node(depth as usize, coords_slice, node, index as usize) {
         Ok(_) => 0,
         Err(err) => {
             error(&err);
@@ -115,19 +118,20 @@ pub unsafe extern "C" fn add_node(
 /// will be destroyed and re-built.  Returns early if the removal fails.
 #[no_mangle]
 pub unsafe extern "C" fn replace_node(
-    tree_pointer: *mut CompositionTree, depth: i32, index: i32, node_definition: *const c_char
+    tree_pointer: *mut CompositionTree, depth: i32, coords: *const i32, index: i32, node_definition: *const c_char
 ) -> i32 {
-    if let 1 = delete_node(tree_pointer, depth, index) {
+    let coords_slice = slice::from_raw_parts(coords, depth as usize);
+    if let 1 = delete_node(tree_pointer, depth, coords, index) {
         return 1;
     }
-    add_node(tree_pointer, depth, index, node_definition)
+    add_node(tree_pointer, depth, coords, index, node_definition)
 }
 
 /// Replaces the `CompositionScheme` of the composed tree node at (depth, index) with the supplied one.
 /// Returns 0 if it's successful and 1 if there's an error.
 #[no_mangle]
 pub unsafe extern "C" fn set_composition_scheme(
-    tree_pointer: *mut CompositionTree, depth: i32, index: i32, scheme_json: *const c_char
+    tree_pointer: *mut CompositionTree, depth: i32, coords: *const i32, scheme_json: *const c_char
 ) -> i32 {
     let mut tree = &mut *(tree_pointer);
 
@@ -150,7 +154,8 @@ pub unsafe extern "C" fn set_composition_scheme(
     };
 
     // Attempt to replace the scheme of the composition node at the supplied coordinates with the new scheme
-    match tree.set_composition_scheme(depth as u32, index as u32, new_scheme) {
+    let coords_slice = slice::from_raw_parts(coords, depth as usize);
+    match tree.set_composition_scheme(depth as usize, coords_slice, new_scheme) {
         Ok(_) => 0,
         Err(err) => {
             error(&err);
