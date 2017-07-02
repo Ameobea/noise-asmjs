@@ -52,8 +52,12 @@ pub enum NoiseModuleConf {
     Constant {
         constant: f32,
     },
-    Composed {
-        scheme: CompositionScheme,
-        children: Vec<CompositionTreeNodeDefinition>,
-    }
+}
+
+/// Configuration that applies to the entire composition tree.
+#[derive(Serialize, Deserialize)]
+pub struct GlobalTreeConf {
+    pub speed: f32,
+    pub zoom: f32,
+    pub canvas_size: u32,
 }

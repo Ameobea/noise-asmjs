@@ -2,3 +2,4 @@ dist/
 *.tgz
 target/
 Cargo.lock
+composition_tree_def_pretty.json

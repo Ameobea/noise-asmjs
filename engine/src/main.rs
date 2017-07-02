@@ -48,13 +48,14 @@ pub fn error(msg: &str) {
     unsafe { js_error(c_str.as_ptr()) };
 }
 
-pub mod interop;
-use interop::*;
-// pub mod composed_module;
-// use composed_module::{ComposedNoiseModule, RawNoiseModule};
-// pub mod composition_meta;
 pub mod composition_tree;
 use self::composition_tree::CompositionTree;
+pub mod interop;
+use interop::*;
+pub mod transformations;
+pub mod util;
+
+pub mod tests;
 
 // Minutiae custom type declarations.
 // Since we're only using a very small subset of Minutiae's capabilities, these are mostly unused.
@@ -155,6 +156,7 @@ impl Middleware<CS, ES, MES, CA, EA, OurEngine> for NoiseStepper {
     }
 }
 
+// TODO: Migrate to external color function
 fn calc_color(cell: &Cell<CS>, _: &[usize], _: &EntityContainer<CS, ES, MES>) -> [u8; 4] {
     // normalize into range from -180 to 180
     // let hue = (cell.state.0 * 360.0) + 180.0;

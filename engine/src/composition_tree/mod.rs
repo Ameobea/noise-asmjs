@@ -8,23 +8,15 @@ use noise::*;
 pub mod composition;
 use self::composition::CompositionScheme;
 pub mod conf;
-use self::conf::NoiseModuleConf;
+use self::conf::{GlobalTreeConf, NoiseModuleConf};
 pub mod definition;
 use self::definition::CompositionTreeDefinition;
-
-/// Configuration that applies to the entire composition tree.
-#[derive(Serialize, Deserialize)]
-pub struct GlobalTreeConf {
-    speed: f32,
-    zoom: f32,
-    canvas_size: u32,
-}
 
 /// The core of the noise module composition framework.  This struct is the parent of the entire composition tree
 /// And can be used to retrieve a value from the entire composition tree for a single coordinate.
 pub struct CompositionTree {
-    root_node: CompositionTreeNode,
-    global_conf: GlobalTreeConf,
+    pub root_node: CompositionTreeNode,
+    pub global_conf: GlobalTreeConf,
 }
 
 impl CompositionTree {
