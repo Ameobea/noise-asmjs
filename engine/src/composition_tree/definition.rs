@@ -136,6 +136,7 @@ pub enum InputTransformationDefinition {
         node_def: CompositionTreeNodeDefinition,
         replaced_dim: Dim,
     },
+    ScaleAll(f32),
 }
 
 impl Into<InputTransformation> for InputTransformationDefinition {
@@ -148,8 +149,8 @@ impl Into<InputTransformation> for InputTransformationDefinition {
                     node: built_node,
                     replaced_dim,
                 }
-            }
-
+            },
+            InputTransformationDefinition::ScaleAll(scale) => InputTransformation::ScaleAll(scale),
         }
     }
 }

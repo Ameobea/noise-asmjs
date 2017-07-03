@@ -31,10 +31,6 @@ impl Into<RangeFunction> for InteropRangeFunction {
 /// of that particular `GenNoiseModule`.
 #[derive(Serialize, Deserialize)]
 pub enum NoiseModuleConf {
-    NoiseModule {
-        zoom: f32,
-        speed: f32,
-    },
     MultiFractal {
         octaves: u32,
         frequency: f32,

@@ -5,7 +5,8 @@ use serde_json;
 use composition_tree::{CompositionTree, ComposedNoiseModule};
 use composition_tree::composition::CompositionScheme;
 use composition_tree::conf::{GlobalTreeConf, NoiseModuleConf};
-use composition_tree::definition::{CompositionTreeDefinition, CompositionTreeNodeDefinition, NoiseModuleType};
+use composition_tree::definition::{CompositionTreeDefinition, CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleType};
+use util::Dim;
 
 #[test]
 fn composition_tree_definition_serialization() {
@@ -20,8 +21,23 @@ fn composition_tree_definition_serialization() {
             children: vec![
                 CompositionTreeNodeDefinition::Leaf {
                     module_type: NoiseModuleType::Fbm,
+                    transformations: vec![
+                        InputTransformationDefinition::ZoomScale {zoom: 1.021, speed: 0.812},
+                        InputTransformationDefinition::HigherOrderNoiseModule {
+                            node_def: CompositionTreeNodeDefinition::Composed {
+                                scheme: CompositionScheme::Average,
+                                children: vec![
+                                    CompositionTreeNodeDefinition::Leaf {
+                                        module_type: NoiseModuleType::Billow,
+                                        module_conf: vec![],
+                                        transformations: vec![],
+                                    },
+                                ],
+                            },
+                            replaced_dim: Dim::Z,
+                        },
+                    ],
                     module_conf: vec![
-                        NoiseModuleConf::NoiseModule {speed: 0.101, zoom: 0.1239},
                         NoiseModuleConf::MultiFractal {
                             frequency: 1.1,
                             lacunarity: 2.0,
@@ -36,7 +52,6 @@ fn composition_tree_definition_serialization() {
                         CompositionTreeNodeDefinition::Leaf {
                             module_type: NoiseModuleType::RidgedMulti,
                             module_conf: vec![
-                                NoiseModuleConf::NoiseModule {speed: 0.101, zoom: 0.1239},
                                 NoiseModuleConf::MultiFractal {
                                     frequency: 1.1,
                                     lacunarity: 2.0,
@@ -44,6 +59,9 @@ fn composition_tree_definition_serialization() {
                                     persistence: 1.5,
                                 },
                             ],
+                            transformations: vec![
+                                InputTransformationDefinition::ZoomScale {zoom: 1.01, speed: 0.2},
+                            ]
                         }
                     ],
                 },
@@ -58,12 +76,15 @@ fn composition_tree_definition_serialization() {
 #[test]
 fn composition_tree_definition_deserialization_and_building() {
     let serialized_def = r#"
-        {"global_conf":{"speed":0.101,"zoom":0.123899996,"canvas_size":800},"root_node":{"Composed":{"scheme":
-        {"WeightedAverage":[0.2,0.1,0.7]},"children":[{"Leaf":{"module_type":"Fbm","module_conf":[{"NoiseModule":
-        {"zoom":0.123899996,"speed":0.101}},{"MultiFractal":{"octaves":5,"frequency":1.1,"lacunarity":2.0,
-        "persistence":1.5}}]}},{"Composed":{"scheme":"Average","children":[{"Leaf":{"module_type":"RidgedMulti",
-        "module_conf":[{"NoiseModule":{"zoom":0.123899996,"speed":0.101}},{"MultiFractal":{"octaves":5,
-        "frequency":1.1,"lacunarity":2.0,"persistence":1.5}}]}}]}}]}}}
+        {"global_conf":{"speed":0.101,"zoom":0.123899996,"canvas_size":800},"root_node":{"Composed":
+        {"scheme":{"WeightedAverage":[0.2,0.1,0.7]},"children":[{"Leaf":{"module_type":"Fbm",
+        "module_conf":[{"MultiFractal":{"octaves":5,"frequency":1.1,"lacunarity":2.0,"persistence":1.5
+        }}],"transformations":[{"ZoomScale":{"speed":0.812,"zoom":1.021}},{"HigherOrderNoiseModule":
+        {"node_def":{"Composed":{"scheme":"Average","children":[{"Leaf":{"module_type":"Billow",
+        "module_conf":[],"transformations":[]}}]}},"replaced_dim":"Z"}}]}},{"Composed":{"scheme":
+        "Average","children":[{"Leaf":{"module_type":"RidgedMulti","module_conf":[{"MultiFractal":
+        {"octaves":5,"frequency":1.1,"lacunarity":2.0,"persistence":1.5}}],"transformations":[{
+        "ZoomScale":{"speed":0.2,"zoom":1.01}}]}}]}}]}}}
     "#;
 
     let parsed_def: CompositionTreeDefinition = serde_json::from_str(serialized_def).unwrap();

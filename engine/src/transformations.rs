@@ -10,6 +10,8 @@ pub enum InputTransformation {
     ZoomScale {speed: f32, zoom: f32},
     /// Replaces the `replacement_dim` of the input with the result of passing it through the provided noise function.
     HigherOrderNoiseModule {node: CompositionTreeNode, replaced_dim: Dim},
+    /// Multiplies all of the input values by this value
+    ScaleAll(f32),
 }
 
 impl InputTransformation {
@@ -26,7 +28,8 @@ impl InputTransformation {
                     Dim::Y => [coord[0], val, coord[2]],
                     Dim::Z => [coord[0], coord[1], val],
                 }
-            }
+            },
+            &InputTransformation::ScaleAll(scale) => [coord[0] * scale, coord[1] * scale, coord[2] * scale],
         }
     }
 }
