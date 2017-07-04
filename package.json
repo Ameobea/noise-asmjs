@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "babel-plugin-import": "^1.2.1",
-    "react-scripts": "1.0.7",
+    "react-scripts": "^1.0.10",
     "semantic-ui": "^2.2.10"
   },
   "description": "Web application providing interactive demonstrations of the `noise-rs` library allowing users to select and configure their noise functions and view them dynamically in a canvas",

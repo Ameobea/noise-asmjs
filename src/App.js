@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Grid } from 'semantic-ui-react';
+import 'antd/dist/antd.css'
 
 import VizHeader from 'src/components/VizHeader';
 import Visualization from 'src/components/visualization';
