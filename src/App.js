@@ -4,7 +4,7 @@ import { Grid } from 'semantic-ui-react';
 
 import VizHeader from 'src/components/VizHeader';
 import Visualization from 'src/components/visualization';
-import VizSettings from 'src/components/VizSettings';
+import CompositionTreeGUI from 'src/components/tree';
 import 'src/index.css';
 
 const { Column, Row } = Grid;
@@ -24,8 +24,8 @@ const App = ({settingsVisible}) => (
         </Column>
 
         <Column computer={6} mobile={16}>
-          {/* VISUALIZATION SETTINGS */}
-          <VizSettings />
+          {/* MAIN SETTINGS / GUI */}
+          <CompositionTreeGUI />
         </Column>
       </Row>
     </Grid>

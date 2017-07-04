@@ -23,8 +23,8 @@ const handleSizeChange = actionDispatcher => {
   };
 };
 
-const Vizualization = ({form, setStageContainerSize}) => {
-  if(form.vizSettings) {
+const Vizualization = ({enginePointer, setStageContainerSize}) => {
+  if(enginePointer) {
     return (
       <div style={{marginBottom: 20, height: '100%', width: '100%'}} ref={handleSizeChange(setStageContainerSize)}>
         <ReactResizeDetector handleWidth handleHeight onResize={setStageContainerSize} />
@@ -37,7 +37,7 @@ const Vizualization = ({form, setStageContainerSize}) => {
 };
 
 const mapStateToProps = state => ({
-  form: state.form,
+  enginePointer: state.enginePointer.pointer,
 });
 
 export default connect(mapStateToProps, {setStageContainerSize})(Vizualization);
