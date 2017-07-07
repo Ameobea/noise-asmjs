@@ -3,24 +3,18 @@
  */
 
 import React from 'react';
-import { Tree } from 'antd';
-const TreeNode = Tree.TreeNode;
+import Tree, { TreeNode } from 'rc-tree';
+import 'rc-tree/assets/index.css';
+
+const handleSelect = (a, b, c) => {
+  console.log(a, b, c); // TODO
+};
 
 const TreeViewer = () => (
-  <div style={{backgroundColor: '#fff'}}>
-    <Tree
-      showLine
-      showIcon={false}
-      defaultExpandedKeys={[0]}
-    >
-      <TreeNode title='Global Configuration' key={-1} />
-      <TreeNode title='Root Node' key={0}>
-        <TreeNode title='children' key={1}>
-          <TreeNode title='Worley' key={2} />
-          <TreeNode title='Billow' key={3} />
-          <TreeNode title='SuperSimplex' key={4} />
-          <TreeNode title='Add...' key={5} />
-        </TreeNode>
+  <div>
+    <Tree showLine showIcon={false} onSelect={handleSelect}>
+      <TreeNode title='test' key='test'>
+        <TreeNode title='test 2' key='test2' isLeaf />
       </TreeNode>
     </Tree>
   </div>

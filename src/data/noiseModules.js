@@ -40,4 +40,8 @@ export default [{
   key: 'Constant',
   name: 'Constant Value',
   content: 'Noise module that returns a constant value for every input coordinate.  Not useful on its own, but can be helpful in composing more complicated noise modules.',
+}, {
+  key: 'Composed',
+  name: 'Composed Noise Module',
+  content: 'A noise module that combines the outputs of multiple child nodes using a composition scheme to return a single output value.',
 }];

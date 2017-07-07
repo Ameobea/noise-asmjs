@@ -6,20 +6,24 @@
  */
 
 import React from 'react';
-import { Row, Col } from 'antd';
+import { Grid } from 'semantic-ui-react';
 
 import TreeViewer from 'src/components/tree/TreeViewer';
 import LeafEditor from 'src/components/tree/LeafEditor';
 
+const { Row, Column } = Grid;
+
 const CompositionTreeGUI = () => (
-  <Row>
-    <Col md={12}>
-      <TreeViewer />
-    </Col>
-    <Col md={12}>
-      <LeafEditor />
-    </Col>
-  </Row>
+  <Grid columns={2}>
+    <Row>
+      <Column>
+        <TreeViewer />
+      </Column>
+      <Column>
+        <LeafEditor />
+      </Column>
+    </Row>
+  </Grid>
 );
 
 export default CompositionTreeGUI;
