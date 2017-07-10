@@ -8,20 +8,6 @@ import store from 'src/reducers';
 import { getEnginePointer } from 'src/selectors/enginePointer';
 import { setEnginePointer } from 'src/reducers/enginePointerReducer';
 
-export const MODULE_TYPES = {
-  FBM: 0,
-  WORLEY: 1,
-  OPEN_SIMPLEX: 2,
-  BILLOW: 3,
-  HYBRID_MULTI: 4,
-  SUPER_SIMPLEX: 5,
-  VALUE: 6,
-  RIDGED_MULTI: 7,
-  BASIC_MULTI: 8,
-  CONSTANT: 9,
-  COMPOSED: 10,
-};
-
 export const RANGE_FUNCTIONS = {
   euclidean: 0,
   euclideanSquared: 1,

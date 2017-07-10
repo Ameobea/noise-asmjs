@@ -1,21 +1,34 @@
-export default {
+/**
+ * The default composition tree that is loaded when the application is opened for the first time.
+ */
+
+const uuidv4 = require('uuid/v4');
+
+export default {node: {
+  id: '00000000-0000-0000-0000-000000000000',
   type: 'root',
-  settings: {
-    moduleType: 'composed',
-  },
-  children: [{
-    type: 'noiseModule',
-    settings: {
-      moduleType: 'Billow',
-      // TODO: MORE
-    },
-    children: null,
-  }, {
-    type: 'noiseModule',
-    settings: {
-      moduleType: 'Worley',
-      // TODO: MORE
-    },
-    children: null,
+  settings: [{
+    id: uuidv4(),
+    key: 'moduleType',
+    value: 'composed',
   }],
-};
+  children: [{
+    id: uuidv4(),
+    type: 'noiseModule',
+    settings: [{
+      id: uuidv4(),
+      key: 'moduleType',
+      value: 'Billow',
+    }],
+    children: [],
+  }, {
+    id: uuidv4(),
+    type: 'noiseModule',
+    settings: [{
+      id: uuidv4(),
+      key: 'moduleType',
+      value: 'Worley',
+    }],
+    children: [],
+  }],
+}};

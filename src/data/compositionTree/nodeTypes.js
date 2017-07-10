@@ -4,7 +4,7 @@
  *  - description: An explanation of what this node does, displayed to the user.
  *  - settings: An array of names of configurations that can be set for this node.
                 These are defined in `./nodeSettingDefinitions.js`.
- * - isLeaf: Boolean or function.  If function, it should take an object of {settingName : value} and return a boolean.
+ *  - isLeaf: Boolean or function.  If function, it should take an object of {settingName : value} and return a boolean.
  */
 
 export default {

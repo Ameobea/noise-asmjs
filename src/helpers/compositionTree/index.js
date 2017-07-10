@@ -3,4 +3,9 @@
  * expected by the backend.
  */
 
-// TODO
+/**
+ * Given a tree definition, transforms it into the tree GUI used by the tree viewer.
+ */
+export const buildTree = treeDef => {
+  // TODO
+};
