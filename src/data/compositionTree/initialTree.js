@@ -2,10 +2,12 @@
  * The default composition tree that is loaded when the application is opened for the first time.
  */
 
-const uuidv4 = require('uuid/v4');
+import uuidv4 from 'uuid/v4';
 
-export default {node: {
-  id: '00000000-0000-0000-0000-000000000000',
+import { NULL_UUID } from 'src/data/misc';
+
+export default {
+  id: NULL_UUID,
   type: 'root',
   settings: [{
     id: uuidv4(),
@@ -31,4 +33,4 @@ export default {node: {
     }],
     children: [],
   }],
-}};
+};

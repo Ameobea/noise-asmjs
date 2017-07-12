@@ -2,7 +2,6 @@
 
 import React from 'react';
 import _ from 'lodash';
-import { Field } from 'redux-form';
 import { Checkbox, Dropdown, Header, Icon, Input, Popup } from 'semantic-ui-react';
 // import { Slider } from 'material-ui/Slider';
 
@@ -28,7 +27,7 @@ const hashString = input => {
  * Defines the schema and content of all setting types for noise modules.  Using these definitions, an input field that
  * processes the entered input and relays it to the backend can be automatically constructed.
  */
-const settingDefinitions = {
+export const settingDefinitions = {
   octaves: {
     title: 'Octaves',
     min: 0.0,
@@ -173,23 +172,12 @@ const settingDefinitions = {
     trueMax: 10e10,
     hint: 'How fast the Z axis is traversed.  A value of 2.0 means that 2 units are traversed per tick of the visualization.',
   },
-  noiseModule: {
+  moduleType: {
     title: 'Noise Modules',
     enum: true,
     enumValues: noiseModules.map(({key, name, content}) => ({key, title: name, description: content})),
     hint: 'The noise module is the function that produces noise values.  For each pixel of the canvas, the X and Y coordinate is passed into this function along with the current sequence number which returns a value to color that pixel.',
   },
-};
-
-/// Stolen from https://stackoverflow.com/a/42422255/3833068
-const SemanticReduxFormField = (props) => {
-  const { input, as: As = Input, componentProps } = props;
-
-  const handleChange = (e, { value, checked }) => {
-    input.onChange(value || checked || '');
-  };
-
-  return <As value={input.value} onChange={handleChange} onFocus={_.noop} {...componentProps} />;
 };
 
 const SemanticField = ({name, as=Input, componentProps={}, label='', helpContent}) => {
@@ -216,7 +204,7 @@ const SemanticField = ({name, as=Input, componentProps={}, label='', helpContent
   return (
     <div>
       {labelContent}
-      <Field name={name} component={SemanticReduxFormField} as={as} componentProps={componentProps} />
+      <as {...componentProps} />
     </div>
   );
 };

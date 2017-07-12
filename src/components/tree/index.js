@@ -14,16 +14,18 @@ import LeafEditor from 'src/components/tree/LeafEditor';
 const { Row, Column } = Grid;
 
 const CompositionTreeGUI = () => (
-  <Grid columns={2}>
-    <Row>
-      <Column>
-        <TreeViewer />
-      </Column>
-      <Column>
-        <LeafEditor />
-      </Column>
-    </Row>
-  </Grid>
+  <div style={{marginRight: 20}}>
+    <Grid columns={2}>
+      <Row>
+        <Column>
+          <TreeViewer />
+        </Column>
+        <Column>
+          <LeafEditor />
+        </Column>
+      </Row>
+    </Grid>
+  </div>
 );
 
 export default CompositionTreeGUI;

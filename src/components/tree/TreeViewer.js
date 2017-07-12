@@ -3,21 +3,18 @@
  */
 
 import React from 'react';
-import Tree, { TreeNode } from 'rc-tree';
-import 'rc-tree/assets/index.css';
+import { connect } from 'react-redux';
 
-const handleSelect = (a, b, c) => {
-  console.log(a, b, c); // TODO
-};
+import { BuiltTree } from 'src/helpers/compositionTree';
 
-const TreeViewer = () => (
+const TreeViewer = ({ nodes, settings }) => (
   <div>
-    <Tree showLine showIcon={false} onSelect={handleSelect}>
-      <TreeNode title='test' key='test'>
-        <TreeNode title='test 2' key='test2' isLeaf />
-      </TreeNode>
-    </Tree>
+    <BuiltTree allNodes={nodes} allSettings={settings} />
   </div>
 );
 
-export default TreeViewer;
+const mapState = ({ compositionTree: { entities:  { nodes, settings } } }) => ({
+  nodes, settings
+});
+
+export default connect(mapState)(TreeViewer);

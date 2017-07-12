@@ -6,27 +6,35 @@ import R from 'ramda';
 
 import initialTree from 'src/data/compositionTree/initialTree';
 import { normalizeTree } from 'src/helpers/compositionTree/normalization';
+import { NULL_UUID } from 'src/data/misc';
+import { ADD_NODE, DELETE_NODE, REPLACE_NODE, SELECT_NODE } from 'src/actions/compositionTree';
 
-// Args: {parentId: Number, childIndex: Number, nodeDef: NodeDefinition}
-export const ADD_NODE = 'ADD_NODE';
-// Args: {nodeId: Number}
-export const DELETE_NODE = 'DELETE_NODE';
-// Args: {nodeId: Number, nodeDef: NodeDefinition}
-export const REPLACE_NODE = 'REPLACE_NODE';
+const initialState = R.merge(normalizeTree(initialTree), {selectedNode: NULL_UUID});
 
-console.log(initialTree);
-
-export default (state=normalizeTree(initialTree), action={}) => {
+export default (state=initialState, action={}) => {
   switch(action.type) {
-    case ADD_NODE: {
 
-      return state;
-    }
-    case DELETE_NODE: {
-
-      return state;
-    }
-    default:
-      return state;
+  case ADD_NODE: {
+    // TODO
+    return state;
   }
+
+  case DELETE_NODE: {
+    // TODO
+    return state;
+  }
+
+  case REPLACE_NODE: {
+    // TODO
+    return state;
+  }
+
+  case SELECT_NODE: {
+    return {...state, selectedNode: action.nodeId};
+  }
+
+  default: {
+    return state;
+  }}
+
 };
