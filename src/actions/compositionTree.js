@@ -12,6 +12,8 @@ export const REPLACE_NODE = 'REPLACE_NODE';
 export const SELECT_NODE = 'SELECT_NODE';
 // Args: {nodeId: UUID, name: String, value: Any}
 export const SET_SETTING = 'SET_SETTING';
+// Args: {id: UUID, name: String, value: Any}
+export const CREATE_SETTING = 'CREATE_SETTING';
 
 export const addNode = (parentId, childIndex, nodeDef) => ({
   type: ADD_NODE,
@@ -36,4 +38,9 @@ export const selectNode = nodeId => ({
 export const setSetting = (settingId, value) => ({
   type: SET_SETTING,
   settingId, value,
+});
+
+export const createSetting = (id, key, value) => ({
+  type: CREATE_SETTING,
+  id, key, value,
 });

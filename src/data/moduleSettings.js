@@ -6,11 +6,8 @@ import R from 'ramda';
 import { Checkbox, Dropdown, Header, Icon, Input, Popup } from 'semantic-ui-react';
 // import { Slider } from 'material-ui/Slider';
 
-import store from 'src/reducers';
 import noiseModules from 'src/data/noiseModules';
 import { setSetting } from 'src/actions/compositionTree';
-
-const maxStageSize = store.getState().maxStageSize;
 
 // stolen from https://stackoverflow.com/a/7616484/3833068
 // which stole it from http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
@@ -32,6 +29,7 @@ const hashString = input => {
 export const settingDefinitions = {
   octaves: {
     title: 'Octaves',
+    default: 6,
     min: 0.0,
     trueMin: 0.0,
     max: 80.0, // the limit that the user is capped at for sliders
@@ -48,6 +46,7 @@ export const settingDefinitions = {
   },
   frequency: {
     title: 'Frequency',
+    default: 1.0,
     min: 0.0,
     trueMin: 0.0,
     max: 20.0,
@@ -56,6 +55,7 @@ export const settingDefinitions = {
   },
   lacunarity: {
     title: 'Lacunarity',
+    default: 2.0,
     min: 1.0,
     trueMin: 0.0,
     max: 4.0,
@@ -72,6 +72,7 @@ export const settingDefinitions = {
   },
   persistence: {
     title: 'Persistence',
+    default: 0.5,
     min: 1.0,
     trueMin: 0.0,
     max: 4.0,
@@ -86,6 +87,7 @@ export const settingDefinitions = {
   },
   seed: {
     title: 'Seed',
+    default: '3YRQQJetSaodHS4h3cDurG3cjjTyWmHr',
     text: true, // indicates that this is a text-based field and to ignore any numeric constraints like `min` and `max`
     hint: 'The value entered here is hashed and used to seed the noise module.',
     processor: hashString, // Optional; a function that is applied to the entered value before scaling or sending to the backend
@@ -94,8 +96,8 @@ export const settingDefinitions = {
     title: 'Canvas Size',
     min: 50,
     trueMin: 1,
-    max: maxStageSize,
-    trueMax: maxStageSize,
+    max: Infinity,
+    trueMax: Infinity,
   },
   rangeFunction: {
     title: 'Range Function',
@@ -276,6 +278,7 @@ const buildTextField = (name, id, {title, hint}) => (
     id={id}
     label={title}
     helpContent={hint}
+    changeHandlerGenerator={setSetting => (event, props) => setSetting(id, props.value)}
   />
 );
 
@@ -287,6 +290,7 @@ const buildNumericField = (name, id, {title, hint}) => (
     id={id}
     label={title}
     helpContent={hint}
+    changeHandlerGenerator={setSetting => (event, props) => setSetting(id, props.value)}
   />
 );
 
@@ -307,6 +311,6 @@ export const SettingGui = ({ name, id }) => {
   } else if(def.text) {
     return buildTextField(name, id, def);
   } else {
-    return buildNumericField(name, def);
+    return buildNumericField(name, id, def);
   }
 };

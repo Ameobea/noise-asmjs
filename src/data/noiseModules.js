@@ -4,6 +4,7 @@ export default [{
   key: 'Fbm',
   name: 'Fractional Brownian Noise',
   content: 'Also known as Perlin Noise, Fractional Brownian Noise is a commonly used algorithm that has been used in a variety of notable applications including the terrain generation for MineCraft.',
+  multifractal: true,
 }, {
   key: 'Worley',
   name: 'Worley Noise',
@@ -16,10 +17,12 @@ export default [{
   key: 'Billow',
   name: 'Billow Noise',
   content: 'Produces "billowy" noise suitable for clouds or rocks.  This noise module is nearly identical to fBm noise, except this noise module modifes each octave with an absolute-value function.',
+  multifractal: true,
 }, {
   key: 'HybridMulti',
   name: 'Hybrid Multifractal Noise',
   content: 'The result of this multifractal noise is that valleys in the noise should have smooth bottoms at all altitudes.',
+  multifractal: true,
 }, {
   key: 'SuperSimplex',
   name: 'Super Simplex Noise',
@@ -32,10 +35,12 @@ export default [{
   key: 'RidgedMulti',
   name: 'Ridged Multifractal Noise',
   content: 'Heavily based on Perlin noise, this module mutates the output of each octave by modifying it by an absolute-value function',
+  multifractal: true,
 }, {
   key: 'BasicMulti',
   name: 'Basic Multifractal Noise',
   content: 'Outputs heterogenous Multifractal noise.  In areas near zero, higher frequencies will be heavily damped, resulting in the terrain remaining smooth. As the value moves further away from zero, higher frequencies will not be as damped and thus will grow more jagged as iteration progresses.',
+  multifractal: true,
 }, {
   key: 'Constant',
   name: 'Constant Value',

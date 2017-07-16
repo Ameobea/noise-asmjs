@@ -5,32 +5,21 @@
 import uuidv4 from 'uuid/v4';
 
 import { NULL_UUID } from 'src/data/misc';
+import { createSetting } from 'src/helpers/compositionTree';
 
 export default {
   id: NULL_UUID,
   type: 'root',
-  settings: [{
-    id: uuidv4(),
-    key: 'moduleType',
-    value: 'Composed',
-  }],
+  settings: [ createSetting('moduleType', 'Composed') ],
   children: [{
     id: uuidv4(),
     type: 'noiseModule',
-    settings: [{
-      id: uuidv4(),
-      key: 'moduleType',
-      value: 'Billow',
-    }],
+    settings: [ createSetting('moduleType', 'Billow') ],
     children: [],
   }, {
     id: uuidv4(),
     type: 'noiseModule',
-    settings: [{
-      id: uuidv4(),
-      key: 'moduleType',
-      value: 'Worley',
-    }],
+    settings: [ createSetting('moduleType', 'Worley') ],
     children: [],
   }],
 };
