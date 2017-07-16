@@ -12,7 +12,7 @@ export default {
   settings: [{
     id: uuidv4(),
     key: 'moduleType',
-    value: 'composed',
+    value: 'Composed',
   }],
   children: [{
     id: uuidv4(),

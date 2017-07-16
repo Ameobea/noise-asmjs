@@ -4,17 +4,9 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
-import R from 'ramda';
 
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
-import { settingDefinitions } from 'src/data/moduleSettings';
-
-const Setting = ({ settingName, value }) => (
-  <div>
-    <h2>{settingDefinitions[settingName].title || 'Unknown Setting'}</h2>
-    TODO
-  </div>
-);
+import { SettingGui } from 'src/data/moduleSettings';
 
 const LeafEditor = ({ selectedNode, allNodes, allSettings }) => {
   if(!selectedNode) {
@@ -31,10 +23,17 @@ const LeafEditor = ({ selectedNode, allNodes, allSettings }) => {
 
       <h1>Settings</h1>
       {
-        R.map( settingId => {
-          const { key, value } = allSettings[settingId];
-          return <Setting settingName={key} key={key} value={value} />;
-        }, settings)
+        settings.map(settingName => {
+          const { id, key } = allSettings[settingName];
+
+          return (
+            <SettingGui
+              id={id}
+              key={id}
+              name={key}
+            />
+          );
+        })
       }
     </div>
   );

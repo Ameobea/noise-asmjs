@@ -45,7 +45,7 @@ const mapSelectedNodes = selectedNodes => selectedNodes.length === 0 ? null : se
 /**
  * Given a tree definition in the "normalized" form, transforms it into the tree GUI used by the tree viewer.
  */
-const UnconnectedBuiltTree = ({ allNodes, allSettings, selectNode }) => {
+const UnconnectedBuiltTree = ({ allNodes, allSettings, selectedNode, selectNode }) => {
   const { id, type, children, settings } = allNodes[NULL_UUID];
 
   return (
@@ -53,6 +53,7 @@ const UnconnectedBuiltTree = ({ allNodes, allSettings, selectNode }) => {
       showLine
       showIcon={false}
       onSelect={R.compose(selectNode, mapSelectedNodes)}
+      selectedKeys={[selectedNode]}
       defaultExpandedKeys={[NULL_UUID]}
     >
       {
@@ -67,4 +68,4 @@ const UnconnectedBuiltTree = ({ allNodes, allSettings, selectNode }) => {
   );
 };
 
-export const BuiltTree = connect(state => ({}), {selectNode})(UnconnectedBuiltTree);
+export const BuiltTree = connect(({ compositionTree: { selectedNode } }) => ({ selectedNode }), {selectNode})(UnconnectedBuiltTree);

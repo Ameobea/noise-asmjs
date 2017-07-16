@@ -1,12 +1,14 @@
 //! Defines the parameters of all of the possible module setting fields.
 
 import React from 'react';
-import _ from 'lodash';
+import { connect } from 'react-redux';
+import R from 'ramda';
 import { Checkbox, Dropdown, Header, Icon, Input, Popup } from 'semantic-ui-react';
 // import { Slider } from 'material-ui/Slider';
 
-import store from '../reducers';
-import noiseModules from './noiseModules';
+import store from 'src/reducers';
+import noiseModules from 'src/data/noiseModules';
+import { setSetting } from 'src/actions/compositionTree';
 
 const maxStageSize = store.getState().maxStageSize;
 
@@ -173,26 +175,32 @@ export const settingDefinitions = {
     hint: 'How fast the Z axis is traversed.  A value of 2.0 means that 2 units are traversed per tick of the visualization.',
   },
   moduleType: {
-    title: 'Noise Modules',
+    title: 'Noise Module Type',
     enum: true,
     enumValues: noiseModules.map(({key, name, content}) => ({key, title: name, description: content})),
     hint: 'The noise module is the function that produces noise values.  For each pixel of the canvas, the X and Y coordinate is passed into this function along with the current sequence number which returns a value to color that pixel.',
   },
 };
 
-const SemanticField = ({name, as=Input, componentProps={}, label='', helpContent}) => {
-  const icon = helpContent ? (
-    <Popup
-      trigger={<Icon name='question circle' circular fitted style={{marginBottom: -10, marginTop: -10}} />}
-      style={{
-        borderRadius: 0,
-        border: '1px solid #555',
-      }}
-      inverted
-    >
-      {helpContent}
-    </Popup>
-  ) : <span />;
+const mapSettingState = ({ compositionTree: { entities: { settings } } }) => ({ settings });
+
+const HelpPopup = ({ helpContent }) => (
+  <Popup
+    trigger={<Icon name='question circle' circular fitted style={{marginBottom: -10, marginTop: -10}} />}
+    style={{
+      borderRadius: 0,
+      border: '1px solid #555',
+    }}
+    inverted
+  >
+    {helpContent}
+  </Popup>
+);
+
+const UnconnectedSemanticField = ({
+  name, id, as: As=Input, componentProps={}, label='', helpContent, settings, setSetting, changeHandlerGenerator
+}) => {
+  const icon = helpContent ? <HelpPopup helpContent={helpContent} /> : null;
 
   const labelContent = (
     <p style={{fontWeight: 'bold', marginBottom: 4}}>
@@ -201,29 +209,41 @@ const SemanticField = ({name, as=Input, componentProps={}, label='', helpContent
     </p>
   );
 
+  // If the setting definition has a change handler generator, use it to create the change handler
+  // otherwise, assume that the component expects a single argument which is the new value.
+  const changeHandler = changeHandlerGenerator ? changeHandlerGenerator(setSetting) : R.partial(setSetting, [id]);
+
   return (
     <div>
       {labelContent}
-      <as {...componentProps} />
+      <As {...componentProps} value={settings[id].value} onChange={changeHandler} />
     </div>
   );
 };
 
-const buildEnumField = (name, {title, hint, enumValues}) => (
+/**
+ * Wrapper around an inner component that wraps it in a popup displaying help text (if help text is supplied) and automatically
+ * wires up the inner component's `onChange` method to set the value into Redux.
+ */
+const SemanticField = connect(mapSettingState, { setSetting })(UnconnectedSemanticField);
+
+const buildEnumField = (name, id, {title, hint, enumValues}) => (
   <SemanticField
     name={name}
+    id={id}
     as={Dropdown}
     componentProps={{
       fluid: true,
       selection: true,
-      options: _.map(enumValues, ({key, title, description}) => ({
+      options: R.map(({key, title, description}) => ({
         key,
         text: title,
         value: key,
         content: <Header content={title} subheader={description} />
-      })),
+      }), enumValues),
       size: 'mini',
     }}
+    changeHandlerGenerator={setSetting => (event, props) => setSetting(id, props.value)}
     label={title}
     helpContent={hint}
   />
@@ -240,28 +260,31 @@ const CheckboxWrapper = props => {
   return <Checkbox {...mappedProps} />;
 };
 
-const buildBoolField = (name, {title, hint}) => (
+const buildBoolField = (name, id, {title, hint}) => (
   <SemanticField
     name={name}
+    id={id}
     as={CheckboxWrapper}
     label={title}
     helpContent={hint}
   />
 );
 
-const buildTextField = (name, {title, hint}) => (
+const buildTextField = (name, id, {title, hint}) => (
   <SemanticField
     name={name}
+    id={id}
     label={title}
     helpContent={hint}
   />
 );
 
-const buildNumericField = (name, {title, hint}) => (
+const buildNumericField = (name, id, {title, hint}) => (
   // TODO: Add support for toggling field to an input box for manually entering values
   // TODO: Proper validation, scaling, etc.
   <SemanticField
     name={name}
+    id={id}
     label={title}
     helpContent={hint}
   />
@@ -270,7 +293,7 @@ const buildNumericField = (name, {title, hint}) => (
 /**
  * Given a field definition from the above map, constructs a semantic UI field from it that can be used with `redux-form`.
  */
-export default (name) => {
+export const SettingGui = ({ name, id }) => {
   const def = settingDefinitions[name];
   if(!def) {
     console.error(`Attempted to create field for component with name ${name}, but no definition exists!`);
@@ -278,11 +301,11 @@ export default (name) => {
   }
 
   if(def.enum) {
-    return buildEnumField(name, def);
+    return buildEnumField(name, id, def);
   } else if(def.bool) {
-    return buildBoolField(name, def);
+    return buildBoolField(name, id, def);
   } else if(def.text) {
-    return buildTextField(name, def);
+    return buildTextField(name, id, def);
   } else {
     return buildNumericField(name, def);
   }

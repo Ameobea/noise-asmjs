@@ -24,7 +24,7 @@ export const getLeafTitle = (schema, settings) => typeof schema.title === 'funct
 
 const getSetting = (settings, settingName) => {
   const filteredSettings = R.filter(R.propEq('key', settingName), settings);
-  if(filteredSettings.length[0] === 0) {
+  if(filteredSettings.length === 0) {
     return console.error(`No settings with name ${settingName} found!`);
   } else if(settings.length !== 1) {
     console.error(`Multiple settings with name ${settingName} found!`);
