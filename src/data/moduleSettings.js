@@ -8,6 +8,7 @@ import { Checkbox, Dropdown, Header, Icon, Input, Popup } from 'semantic-ui-reac
 
 import noiseModules from 'src/data/noiseModules';
 import { setSetting } from 'src/actions/compositionTree';
+import compositionSchemes from 'src/data/compositionSchemes';
 
 // stolen from https://stackoverflow.com/a/7616484/3833068
 // which stole it from http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
@@ -21,6 +22,8 @@ const hashString = input => {
   }
   return hash;
 };
+
+const AverageWeights = ({ value }) => <div> {value} </div>;
 
 /**
  * Defines the schema and content of all setting types for noise modules.  Using these definitions, an input field that
@@ -178,17 +181,30 @@ export const settingDefinitions = {
   },
   moduleType: {
     title: 'Noise Module Type',
+    default: 'Fbm',
     enum: true,
-    enumValues: noiseModules.map(({key, name, content}) => ({key, title: name, description: content})),
+    enumValues: noiseModules.map( ({key, name, content}) => ({key, title: name, description: content})),
     hint: 'The noise module is the function that produces noise values.  For each pixel of the canvas, the X and Y coordinate is passed into this function along with the current sequence number which returns a value to color that pixel.',
   },
+  compositionScheme: {
+    title: 'Composition Scheme',
+    default: 'average',
+    enum: true,
+    enumValues: compositionSchemes.map( ({key, name, content}) => ({key, title: name, description: content})),
+    hint: '',
+  },
+  averageWeights: {
+    title: 'Weights',
+    default: [],
+    component: AverageWeights,
+  }
 };
 
 const mapSettingState = ({ compositionTree: { entities: { settings } } }) => ({ settings });
 
-const HelpPopup = ({ helpContent }) => (
+export const HelpPopup = ({ helpContent, style={} }) => (
   <Popup
-    trigger={<Icon name='question circle' circular fitted style={{marginBottom: -10, marginTop: -10}} />}
+    trigger={<Icon name='question circle' circular fitted style={{...style, marginBottom: -10, marginTop: -10}} />}
     style={{
       borderRadius: 0,
       border: '1px solid #555',
@@ -216,7 +232,7 @@ const UnconnectedSemanticField = ({
   const changeHandler = changeHandlerGenerator ? changeHandlerGenerator(setSetting) : R.partial(setSetting, [id]);
 
   return (
-    <div>
+    <div style={{marginTop: 5}}>
       {labelContent}
       <As {...componentProps} value={settings[id].value} onChange={changeHandler} />
     </div>
@@ -310,6 +326,17 @@ export const SettingGui = ({ name, id }) => {
     return buildBoolField(name, id, def);
   } else if(def.text) {
     return buildTextField(name, id, def);
+  } else if(def.component) {
+    return (
+      <SemanticField
+        name={name}
+        id={id}
+        label={def.title}
+        helpContent={def.hint}
+        as={def.component}
+        changeHandlerGenerator={setSetting => (event, props) => setSetting(id, props.value)}
+      />
+    );
   } else {
     return buildNumericField(name, id, def);
   }

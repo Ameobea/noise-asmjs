@@ -8,6 +8,7 @@ import { connect } from 'react-redux';
 import { getNodeData, getLeafAttr } from 'src/data/compositionTree/nodeTypes';
 import { SettingGui } from 'src/data/moduleSettings';
 import { mapIdsToEntites } from 'src/helpers/compositionTree';
+import { HelpPopup } from 'src/data/moduleSettings';
 
 const LeafEditor = ({ selectedNode, allNodes, allSettings }) => {
   if(!selectedNode) {
@@ -33,10 +34,12 @@ const LeafEditor = ({ selectedNode, allNodes, allSettings }) => {
 
   return (
     <div>
-      <h1>{nodeSchema.name}</h1>
-      <p>{nodeSchema.description}</p>
+      <div style={{paddingBottom: 5, borderBottom: '1px solid #aaa'}}>
+        <HelpPopup helpContent={nodeSchema.description} style={{verticalAlign: 'super'}} />
+        <h1 style={{display: 'inline', marginTop: 5}}>{nodeSchema.name}</h1>
+      </div>
 
-      <h1>Settings</h1>
+      <h1 style={{marginTop: 5}}>Settings</h1>
       {
         filteredMappedSettings.map( ({id, key, value}) => (
           <SettingGui

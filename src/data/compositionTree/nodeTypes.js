@@ -7,10 +7,12 @@
  *  - isLeaf: Boolean or function.  If function, it should take an object of {settingName : value} and return a boolean.
  */
 
+import React from 'react';
 import R from 'ramda';
 
 import moduleTypes from 'src/data/noiseModules';
 import { getSetting } from 'src/helpers/compositionTree';
+import compositionSchemes from 'src/data/compositionSchemes';
 
 const unknownNode = type => ({
   name: 'Unknown Node',
@@ -34,8 +36,13 @@ const multifractalModules = R.map(R.prop('key'), R.filter(R.prop('multifractal')
 const multifractalSettings = ['octaves', 'frequency', 'lacunarity', 'persistence'];
 
 const noiseModuleSettings = settings => {
-  const isMultifractal = multifractalModules.includes(getSetting(settings, 'moduleType'));
-  return isMultifractal ? ['moduleType', ...multifractalSettings] : ['moduleType'];
+  const moduleType = getSetting(settings, 'moduleType');
+
+  if(multifractalModules.includes(moduleType)){
+    return ['moduleType', ...multifractalSettings];
+  } else {
+    return ['moduleType'];
+  }
 };
 
 export const getNodeData =  nodeType => ({
@@ -44,13 +51,23 @@ export const getNodeData =  nodeType => ({
     title: 'Root Node',
     description: 'The root of the entire composition tree.  This node and all of its children are queried each tick to determine the noise values for each coordinate of the canvas.',
     settings: noiseModuleSettings,
-    isLeaf: settings => !(getSetting(settings, 'moduleType') === 'composed'), // Only has children if it's a composed module
+    isLeaf: settings => !(getSetting(settings, 'moduleType') === 'Composed'), // Only has children if it's a composed module
   },
   'noiseModule': {
     name: 'Noise Module',
     title: settings => R.filter(R.propEq('key', getSetting(settings, 'moduleType')), moduleTypes)[0].name,
     description: 'Noise modeules are the core components of the composition tree.  At its core, a noise module takes a 3-dimensional coordinate and returns a single floating point value.  These are then mapped onto the canvas as a 2D slice with Z as the current sequence number.',
     settings: noiseModuleSettings,
-    isLeaf: settings => !(getSetting(settings, 'moduleType') === 'composed'), // Only has children if it's a composed module
+    isLeaf: settings => !(getSetting(settings, 'moduleType') === 'Composed'), // Only has children if it's a composed module
   },
+  'compositionScheme': {
+    name: 'Composition Scheme',
+    title: <span style={{color: 'red'}}>Composition Scheme</span>,
+    description: 'Composition schemes define methods to combine the outputs of multiple noise modules into a single value.',
+    settings: settings => [
+      'compositionScheme',
+      ...compositionSchemes.filter( ({ key }) => key === getSetting(settings, 'compositionScheme'))[0].settings,
+    ],
+    isLeaf: settings => compositionSchemes.filter( ({ key }) => key === getSetting(settings, 'compositionScheme'))[0].settings.length === 0,
+  }
 }[nodeType] || unknownNode(nodeType));

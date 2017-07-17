@@ -63,6 +63,7 @@ export default (state=initialState, action={}) => {
     // find the names of all settings that are required but not present in the current node
     const missingSettingNames = requiredSettingNames.filter( settingName => !getSetting(mappedSettings, settingName) );
     // create new settings for each of the missing ones
+    console.log(missingSettingNames);
     const newSettings = missingSettingNames.map(settingName => {
       return createSetting(settingName, settingDefinitions[settingName].default || `NO DEFAULT FOR ${settingName}`);
     });

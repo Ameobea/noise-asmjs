@@ -13,6 +13,11 @@ export default {
   settings: [ createSetting('moduleType', 'Composed') ],
   children: [{
     id: uuidv4(),
+    type: 'compositionScheme',
+    settings: [ createSetting('compositionScheme', 'average') ],
+    children: [],
+  }, {
+    id: uuidv4(),
     type: 'noiseModule',
     settings: [ createSetting('moduleType', 'Billow') ],
     children: [],

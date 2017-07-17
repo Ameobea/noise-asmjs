@@ -46,13 +46,14 @@ const buildTreeNode = (allNodes, allSettings, node) => {
     settings: mapIdsToEntites(allSettings, props.settings),
   }), childNodes);
   // Passing even an empty array still gives the node a `+` expander icon, so this is necessary to remove that.
-  const realChildren = children.length !== 0 ? children : undefined;
+  const isLeaf = getLeafAttr('isLeaf', nodeSchema, settings);
+  const realChildren = isLeaf ? undefined : children;
 
   return (
     <TreeNode
       title={ getLeafAttr('title', nodeSchema, settings) }
       key={id}
-      isLeaf={ getLeafAttr('isLeaf', nodeSchema, settings) }
+      isLeaf={isLeaf}
       filterTreeNode={ R.T }
     >
       { realChildren }
