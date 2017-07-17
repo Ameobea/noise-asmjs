@@ -5,7 +5,7 @@
 import uuidv4 from 'uuid/v4';
 
 import { NULL_UUID } from 'src/data/misc';
-import { createSetting } from 'src/helpers/compositionTree';
+import { createSetting } from 'src/helpers/compositionTree/util';
 
 export default {
   id: NULL_UUID,

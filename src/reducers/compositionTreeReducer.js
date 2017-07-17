@@ -12,9 +12,8 @@ import {
   ADD_NODE, DELETE_NODE, REPLACE_NODE, SELECT_NODE, SET_SETTING, CREATE_SETTING
 } from 'src/actions/compositionTree';
 import { getLeafAttr, getNodeData } from 'src/data/compositionTree/nodeTypes';
-import { createSetting, mapIdsToEntites } from 'src/helpers/compositionTree';
+import { createSetting, getSetting, mapIdsToEntites } from 'src/helpers/compositionTree/util';
 import { settingDefinitions } from 'src/data/moduleSettings';
-import { getSetting } from 'src/helpers/compositionTree';
 
 const initialState = R.merge(normalizeTree(initialTree), {selectedNode: NULL_UUID});
 
@@ -87,6 +86,8 @@ export default (state=initialState, action={}) => {
 
   default: {
     return state;
-  }}
+  }
+
+  }
 
 };

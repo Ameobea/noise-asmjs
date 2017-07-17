@@ -5,7 +5,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { BuiltTree } from 'src/helpers/compositionTree';
+import { BuiltTree } from 'src/helpers/compositionTree/util';
 
 const TreeViewer = ({ nodes, settings }) => (
   <div>

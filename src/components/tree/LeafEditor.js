@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 
 import { getNodeData, getLeafAttr } from 'src/data/compositionTree/nodeTypes';
 import { SettingGui } from 'src/data/moduleSettings';
-import { mapIdsToEntites } from 'src/helpers/compositionTree';
+import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
 import { HelpPopup } from 'src/data/moduleSettings';
 
 const LeafEditor = ({ selectedNode, allNodes, allSettings }) => {

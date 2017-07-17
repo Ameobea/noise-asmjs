@@ -11,7 +11,7 @@ import React from 'react';
 import R from 'ramda';
 
 import moduleTypes from 'src/data/noiseModules';
-import { getSetting } from 'src/helpers/compositionTree';
+import { getSetting } from 'src/helpers/compositionTree/util';
 import compositionSchemes from 'src/data/compositionSchemes';
 
 const unknownNode = type => ({
@@ -68,6 +68,6 @@ export const getNodeData =  nodeType => ({
       'compositionScheme',
       ...compositionSchemes.filter( ({ key }) => key === getSetting(settings, 'compositionScheme'))[0].settings,
     ],
-    isLeaf: settings => compositionSchemes.filter( ({ key }) => key === getSetting(settings, 'compositionScheme'))[0].settings.length === 0,
+    isLeaf: true,
   }
 }[nodeType] || unknownNode(nodeType));
