@@ -9,6 +9,8 @@ import { Checkbox, Dropdown, Header, Icon, Input, Popup } from 'semantic-ui-reac
 import noiseModules from 'src/data/noiseModules';
 import { setSetting } from 'src/actions/compositionTree';
 import compositionSchemes from 'src/data/compositionSchemes';
+import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
+import { getNodeData, getLeafAttr } from 'src/data/compositionTree/nodeTypes';
 
 // stolen from https://stackoverflow.com/a/7616484/3833068
 // which stole it from http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
@@ -23,7 +25,63 @@ const hashString = input => {
   return hash;
 };
 
-const AverageWeights = ({ value }) => <div> {value} </div>;
+class UnconnectedAverageWeights extends React.Component {
+  componentWillMount() {
+    this.updateSettings(this.props);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.updateSettings(nextProps);
+  }
+
+  updateSettings = props => {
+    const { value, parentNodeId, nodes, onChange } = props;
+
+    // We're given `parentNodeId` which is the id of the Composition Scheme, but we need to get the id of its parent in
+    // order to determine the number of child nodes that it has.
+    const childIds = R.values(nodes).filter( ({ children }) => children.includes(parentNodeId) )[0].children;
+    // TODO: handle the fact that the composition scheme is being counted among the children of the composed noise module
+    const defaultSettings = childIds.reduce( (acc, id) => ({...acc, [id]: 0}), {});
+
+    if(R.keys(value).length !== childIds.length) {
+      // This is the first render or a new child module has been added, so we should update the state now.
+      onChange({...defaultSettings, ...value});
+    }
+  }
+
+  render() {
+    const { value, onChange: handleParentChange, nodes, settings: allSettings } = this.props;
+
+    // Create input fields mapped to each of the children of the composed noise module
+    const inputs = R.keys(value).map(key => {
+      // The schema of a sibling node that is a child of the parent composed noise module
+      const { type, settings } = nodes[key];
+      const nodeSchema = getNodeData(type);
+      // TODO: This project is in serious need of abstraction...
+      const title = getLeafAttr('title', nodeSchema, mapIdsToEntites(allSettings, settings));
+
+      return (
+        <div key={key}>
+          { title }
+          <Input
+            value={value[key]}
+            onChange={(e, inputProps) => handleParentChange({...value, [key]: inputProps.value})}
+          />
+        </div>
+      );
+    });
+
+    return (
+      <div>
+        { inputs }
+      </div>
+    );
+  }
+}
+
+const mapAverageWeightsState = ({ compositionTree: { entities: { nodes, settings } } }) => ({ nodes, settings });
+
+const AverageWeights = connect(mapAverageWeightsState)(UnconnectedAverageWeights);
 
 /**
  * Defines the schema and content of all setting types for noise modules.  Using these definitions, an input field that
@@ -195,7 +253,7 @@ export const settingDefinitions = {
   },
   averageWeights: {
     title: 'Weights',
-    default: [],
+    default: {},
     component: AverageWeights,
   }
 };
@@ -313,7 +371,7 @@ const buildNumericField = (name, id, {title, hint}) => (
 /**
  * Given a field definition from the above map, constructs a semantic UI field from it that can be used with `redux-form`.
  */
-export const SettingGui = ({ name, id }) => {
+const UnconnectedSettingGui = ({ name, id, nodes }) => {
   const def = settingDefinitions[name];
   if(!def) {
     console.error(`Attempted to create field for component with name ${name}, but no definition exists!`);
@@ -327,6 +385,9 @@ export const SettingGui = ({ name, id }) => {
   } else if(def.text) {
     return buildTextField(name, id, def);
   } else if(def.component) {
+    const parentNodeId = R.values(nodes).find( ({ settings }) => settings.includes(id) ).id;
+
+    // The custom setting GUI component defined in the node's definition is passed the parent node's id
     return (
       <SemanticField
         name={name}
@@ -334,10 +395,15 @@ export const SettingGui = ({ name, id }) => {
         label={def.title}
         helpContent={def.hint}
         as={def.component}
-        changeHandlerGenerator={setSetting => (event, props) => setSetting(id, props.value)}
+        componentProps={{ parentNodeId }}
       />
     );
   } else {
     return buildNumericField(name, id, def);
   }
 };
+
+// TODO: Create parent node id selector based on setting id
+const mapState = ({ compositionTree: { entities: { nodes } } }) => ({ nodes });
+
+export const SettingGui = connect(mapState)(UnconnectedSettingGui);
