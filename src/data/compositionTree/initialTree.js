@@ -6,6 +6,7 @@ import uuidv4 from 'uuid/v4';
 
 import { NULL_UUID } from 'src/data/misc';
 import { createSetting } from 'src/helpers/compositionTree/util';
+import { multifractalSettings, settingDefinitions } from 'src/data/moduleSettings';
 
 export default {
   id: NULL_UUID,
@@ -19,7 +20,10 @@ export default {
   }, {
     id: uuidv4(),
     type: 'noiseModule',
-    settings: [ createSetting('moduleType', 'Billow') ],
+    settings: [
+      createSetting('moduleType', 'Billow'),
+      ...multifractalSettings.map(name => createSetting(name, settingDefinitions[name].default)),
+    ],
     children: [],
   }, {
     id: uuidv4(),

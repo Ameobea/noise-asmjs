@@ -11,8 +11,9 @@ import React from 'react';
 import R from 'ramda';
 
 import moduleTypes from 'src/data/noiseModules';
-import { getSetting } from 'src/helpers/compositionTree/util';
+import { getSettingByName } from 'src/selectors/compositionTree';
 import compositionSchemes from 'src/data/compositionSchemes';
+import { multifractalSettings } from 'src/data/moduleSettings';
 
 const unknownNode = type => ({
   name: 'Unknown Node',
@@ -21,23 +22,15 @@ const unknownNode = type => ({
   isLeaf: true,
 });
 
-/**
- * For node schema definitions, each attribute is either a value or a function that takes the node's settings as an argument and
- * returns a value.  This helper method checks whether or not it's a function and, if it is, automatically calls it with the
- * supplied settings to produce a value.
- */
-export const getLeafAttr = (attr, schema, settings) => {
-  return typeof schema[attr] === 'function' ? schema[attr](settings) : schema[attr];
-};
-
 // A list of the names of all noise modules that are multifractal
-const multifractalModules = R.map(R.prop('key'), R.filter(R.prop('multifractal'), moduleTypes));
-// A list of settings that apply to all multifractal noise modules
-const multifractalSettings = ['octaves', 'frequency', 'lacunarity', 'persistence'];
+const multifractalModules = moduleTypes
+  .filter( R.prop('multifractal') )
+  .map( R.prop('key') );
 
 const noiseModuleSettings = settings => {
-  const moduleType = getSetting(settings, 'moduleType');
+  const moduleType = getSettingByName(settings, 'moduleType');
 
+  // TODO: Make use of the `src/data/moduleCapabilities` to generate settings for the other modules type
   if(multifractalModules.includes(moduleType)){
     return ['moduleType', ...multifractalSettings];
   } else {
@@ -45,20 +38,20 @@ const noiseModuleSettings = settings => {
   }
 };
 
-export const getNodeData =  nodeType => ({
+export const getNodeData = nodeType => ({
   'root': {
     name: 'Root Node',
     title: 'Root Node',
     description: 'The root of the entire composition tree.  This node and all of its children are queried each tick to determine the noise values for each coordinate of the canvas.',
     settings: noiseModuleSettings,
-    isLeaf: settings => !(getSetting(settings, 'moduleType') === 'Composed'), // Only has children if it's a composed module
+    isLeaf: settings => !(getSettingByName(settings, 'moduleType') === 'Composed'), // Only has children if it's a composed module
   },
   'noiseModule': {
     name: 'Noise Module',
-    title: settings => R.filter(R.propEq('key', getSetting(settings, 'moduleType')), moduleTypes)[0].name,
+    title: settings => moduleTypes.find(R.propEq('key', getSettingByName(settings, 'moduleType'))).name,
     description: 'Noise modeules are the core components of the composition tree.  At its core, a noise module takes a 3-dimensional coordinate and returns a single floating point value.  These are then mapped onto the canvas as a 2D slice with Z as the current sequence number.',
     settings: noiseModuleSettings,
-    isLeaf: settings => !(getSetting(settings, 'moduleType') === 'Composed'), // Only has children if it's a composed module
+    isLeaf: settings => !(getSettingByName(settings, 'moduleType') === 'Composed'), // Only has children if it's a composed module
   },
   'compositionScheme': {
     name: 'Composition Scheme',
@@ -66,7 +59,7 @@ export const getNodeData =  nodeType => ({
     description: 'Composition schemes define methods to combine the outputs of multiple noise modules into a single value.',
     settings: settings => [
       'compositionScheme',
-      ...compositionSchemes.filter( ({ key }) => key === getSetting(settings, 'compositionScheme'))[0].settings,
+      ...compositionSchemes.find( ({ key }) => key === getSettingByName(settings, 'compositionScheme')).settings,
     ],
     isLeaf: true,
   }

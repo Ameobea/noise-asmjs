@@ -11,9 +11,10 @@ import { NULL_UUID } from 'src/data/misc';
 import {
   ADD_NODE, DELETE_NODE, REPLACE_NODE, SELECT_NODE, SET_SETTING, CREATE_SETTING
 } from 'src/actions/compositionTree';
-import { getLeafAttr, getNodeData } from 'src/data/compositionTree/nodeTypes';
-import { createSetting, getSetting, mapIdsToEntites } from 'src/helpers/compositionTree/util';
+import { getNodeData } from 'src/data/compositionTree/nodeTypes';
+import { createSetting, mapIdsToEntites } from 'src/helpers/compositionTree/util';
 import { settingDefinitions } from 'src/data/moduleSettings';
+import { getLeafAttr, getSettingByName } from 'src/selectors/compositionTree';
 
 const initialState = R.merge(normalizeTree(initialTree), {selectedNode: NULL_UUID});
 
@@ -60,9 +61,8 @@ export default (state=initialState, action={}) => {
 
     const requiredSettingNames = getLeafAttr('settings', ownerNodeSchema, mappedSettings);
     // find the names of all settings that are required but not present in the current node
-    const missingSettingNames = requiredSettingNames.filter( settingName => !getSetting(mappedSettings, settingName) );
+    const missingSettingNames = requiredSettingNames.filter( settingName => !getSettingByName(mappedSettings, settingName) );
     // create new settings for each of the missing ones
-    console.log(missingSettingNames);
     const newSettings = missingSettingNames.map(settingName => {
       return createSetting(settingName, settingDefinitions[settingName].default || `NO DEFAULT FOR ${settingName}`);
     });
@@ -70,7 +70,9 @@ export default (state=initialState, action={}) => {
     // add the newly created settings into the state and add their ids to the owner node's settings list.
     return {...state,
       entities: {...state.entities,
-        settings: {...updatedSettings, ...R.reduce( (acc, setting) => ({...acc, [setting.id]: setting}), {}, newSettings)},
+        settings: {...updatedSettings,
+          ...newSettings.reduce((acc, setting) => ({...acc, [setting.id]: setting}), {})
+        },
         nodes: {...state.entities.nodes,
           [ownerNodeId]: {...state.entities.nodes[ownerNodeId],
             settings: [...state.entities.nodes[ownerNodeId].settings, ...R.map(R.prop('id'), newSettings)],

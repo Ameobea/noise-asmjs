@@ -1,7 +1,6 @@
 //! Defines which configuration settings are compabitle with which noise modules.
 
 import { Set } from 'immutable';
-import _ from 'lodash';
 
 // \/ I have no idea what I was saying here but I'm leaving it in anyway.
 // definitions of the various parameters that modules that inherit different traits have
@@ -10,7 +9,7 @@ const MultiFractal = Set(['octaves', 'frequency', 'lacunarity', 'persistence']);
 const Seedable = Set(['seed']);
 
 // Given a list of sets, returns a set that is the union of all their elements.
-const uniteSets = sets => _.reduce(sets, (result, value, key) => result.union(value), Set([]));
+const uniteSets = sets => sets.reduce((acc, value, key) => acc.union(value), Set([]));
 
 export default {
   Fbm: uniteSets([NoiseModule, MultiFractal, Seedable]),

@@ -9,8 +9,7 @@ import { Checkbox, Dropdown, Header, Icon, Input, Popup } from 'semantic-ui-reac
 import noiseModules from 'src/data/noiseModules';
 import { setSetting } from 'src/actions/compositionTree';
 import compositionSchemes from 'src/data/compositionSchemes';
-import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
-import { getNodeData, getLeafAttr } from 'src/data/compositionTree/nodeTypes';
+import { getLeafAttrById, getSiblingIds } from 'src/selectors/compositionTree';
 
 // stolen from https://stackoverflow.com/a/7616484/3833068
 // which stole it from http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
@@ -25,6 +24,9 @@ const hashString = input => {
   return hash;
 };
 
+// A list of settings that apply to all multifractal noise modules
+export const multifractalSettings = ['octaves', 'frequency', 'lacunarity', 'persistence'];
+
 class UnconnectedAverageWeights extends React.Component {
   componentWillMount() {
     this.updateSettings(this.props);
@@ -34,31 +36,34 @@ class UnconnectedAverageWeights extends React.Component {
     this.updateSettings(nextProps);
   }
 
+  /**
+   * If noise modules are added or removed from the parent composed noise module, then the values that are stored in
+   * Redux need to be updated to account for that.  This function creates the new `value` object based on the current
+   * state of the composed module's children and sets it into Redux.
+   */
   updateSettings = props => {
     const { value, parentNodeId, nodes, onChange } = props;
 
     // We're given `parentNodeId` which is the id of the Composition Scheme, but we need to get the id of its parent in
     // order to determine the number of child nodes that it has.
-    const childIds = R.values(nodes).filter( ({ children }) => children.includes(parentNodeId) )[0].children;
-    // TODO: handle the fact that the composition scheme is being counted among the children of the composed noise module
-    const defaultSettings = childIds.reduce( (acc, id) => ({...acc, [id]: 0}), {});
+    const siblingIds = getSiblingIds(nodes, parentNodeId);
+    const defaultSettings = siblingIds.reduce( (acc, id) => ({...acc, [id]: 0}), {});
 
-    if(R.keys(value).length !== childIds.length) {
+    // TODO: handle the fact that the composition scheme is being counted among the children of the composed noise module
+    // TODO: remove values if noise modules are removed.
+
+    if(R.keys(value).length !== siblingIds.length) {
       // This is the first render or a new child module has been added, so we should update the state now.
       onChange({...defaultSettings, ...value});
     }
   }
 
   render() {
-    const { value, onChange: handleParentChange, nodes, settings: allSettings } = this.props;
+    const { value, onChange: handleParentChange, nodes: allNodes, settings: allSettings } = this.props;
 
     // Create input fields mapped to each of the children of the composed noise module
     const inputs = R.keys(value).map(key => {
-      // The schema of a sibling node that is a child of the parent composed noise module
-      const { type, settings } = nodes[key];
-      const nodeSchema = getNodeData(type);
-      // TODO: This project is in serious need of abstraction...
-      const title = getLeafAttr('title', nodeSchema, mapIdsToEntites(allSettings, settings));
+      const title = getLeafAttrById(allNodes, allSettings, key, 'title');
 
       return (
         <div key={key}>

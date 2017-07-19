@@ -5,10 +5,11 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { getNodeData, getLeafAttr } from 'src/data/compositionTree/nodeTypes';
+import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import { SettingGui } from 'src/data/moduleSettings';
 import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
 import { HelpPopup } from 'src/data/moduleSettings';
+import { getLeafAttr } from 'src/selectors/compositionTree';
 
 const LeafEditor = ({ selectedNode, allNodes, allSettings }) => {
   if(!selectedNode) {

@@ -10,9 +10,10 @@ import 'rc-tree/assets/index.css';
 import R from 'ramda';
 import uuidv4 from 'uuid/v4';
 
-import { getNodeData, getLeafAttr } from 'src/data/compositionTree/nodeTypes';
+import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import { NULL_UUID } from 'src/data/misc';
 import { selectNode } from 'src/actions/compositionTree';
+import { getLeafAttr } from 'src/selectors/compositionTree';
 
 /**
  * Given a list of entities and a list of entity IDs, produces a list of entities that match those IDs.
@@ -20,20 +21,6 @@ import { selectNode } from 'src/actions/compositionTree';
 export const mapIdsToEntites = (entities, ids) => R.map(id => entities[id], ids);
 
 export const createSetting = (key, value) => ({ id: uuidv4(), key, value });
-
-/**
- * Given an array of settings in `{key, value, id}` format, returns the value of the setting with the supplied `settingName`.
- */
-export const getSetting = (settings, settingName) => {
-  const filteredSettings = R.filter(R.propEq('key', settingName), settings);
-  if(filteredSettings.length === 0) {
-    return null;
-  } else if(filteredSettings.length !== 1) {
-    console.error(`Multiple settings with name ${settingName} found!`);
-  }
-
-  return filteredSettings[0].value;
-};
 
 const buildTreeNode = (allNodes, allSettings, node) => {
   const { id, type, childNodes, settings } = node;
