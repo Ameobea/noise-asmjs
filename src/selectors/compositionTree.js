@@ -9,6 +9,11 @@ import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
 
 /**
+ * Given the global Redux state and the ID of a node, selects it from the store and returns it.
+ */
+export const getNodeById = ({ entities: { nodes } }, nodeId) => nodes[nodeId];
+
+/**
  * Finds the node that is the parent to the setting with the given id and returns its data (`{id, settings, children}`).
  */
 export const getSettingParent = (allNodes, settingId) => {
@@ -53,7 +58,7 @@ export const getSiblingIds = (allNodes, nodeId) => getNodeParent(allNodes, nodeI
  * Given an array of settings in `{key, value, id}` format, returns the value of the setting with the supplied `settingName`.
  */
 export const getSettingByName = (settings, settingName) => {
-  const filteredSettings = R.filter(R.propEq('key', settingName), settings);
+  const filteredSettings = settings.filter(R.propEq('key', settingName));
   if(filteredSettings.length === 0) {
     return null;
   } else if(filteredSettings.length !== 1) {

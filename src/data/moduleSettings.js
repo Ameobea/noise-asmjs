@@ -9,6 +9,7 @@ import { Checkbox, Dropdown, Header, Icon, Input, Popup } from 'semantic-ui-reac
 import noiseModules from 'src/data/noiseModules';
 import { setSetting } from 'src/actions/compositionTree';
 import compositionSchemes from 'src/data/compositionSchemes';
+import { inputTransformationTypes } from 'src/data/inputTransformations';
 
 import WeightedAverages from 'src/components/settingGuis/WeightedAverages';
 
@@ -168,6 +169,7 @@ export const settingDefinitions = {
   },
   zoom: {
     title: 'Zoom',
+    default: 1,
     min: 0.0,
     trueMin: 0.0,
     max: 10e6,
@@ -176,6 +178,7 @@ export const settingDefinitions = {
   },
   speed: {
     title: 'Speed',
+    default: 1,
     min: 0.00000001,
     trueMin: 0.0,
     max: 10e4,
@@ -186,7 +189,7 @@ export const settingDefinitions = {
     title: 'Noise Module Type',
     default: 'Fbm',
     enum: true,
-    enumValues: noiseModules.map( ({key, name, content}) => ({key, title: name, description: content})),
+    enumValues: noiseModules.map( ({key, name, content}) => ({key, title: name, description: content}) ),
     hint: 'The noise module is the function that produces noise values.  For each pixel of the canvas, the X and Y coordinate is passed into this function along with the current sequence number which returns a value to color that pixel.',
   },
   compositionScheme: {
@@ -200,7 +203,23 @@ export const settingDefinitions = {
     title: 'Weights',
     default: {},
     component: WeightedAverages,
-  }
+  },
+  inputTransformationType: {
+    title: 'Transformation Type',
+    default: 'zoomScale',
+    enum: true,
+    enumValues: inputTransformationTypes.map( ({key, name, content}) => ({key, title: name, description: content}) ),
+  },
+  replacedDim: {
+    title: 'Replaced Dimension',
+    default: 'x',
+    enum: true,
+    enumValues: [
+      { key: 'x', title: 'X' },
+      { key: 'y', title: 'Y' },
+      { key: 'z', title: 'Z' },
+    ],
+  },
 };
 
 const mapSettingState = ({ compositionTree: { entities: { settings } } }) => ({ settings });

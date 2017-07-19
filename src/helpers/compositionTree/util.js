@@ -12,6 +12,7 @@ import uuidv4 from 'uuid/v4';
 
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import { NULL_UUID } from 'src/data/misc';
+import { multifractalSettings, settingDefinitions } from 'src/data/moduleSettings';
 import { selectNode } from 'src/actions/compositionTree';
 import { getLeafAttr } from 'src/selectors/compositionTree';
 
@@ -21,6 +22,33 @@ import { getLeafAttr } from 'src/selectors/compositionTree';
 export const mapIdsToEntites = (entities, ids) => R.map(id => entities[id], ids);
 
 export const createSetting = (key, value) => ({ id: uuidv4(), key, value });
+
+/**
+ * Creates a new default noise module tree node initialized with a random UUID and the default multiFractal settings.
+ */
+export const defaultNoiseModule = () => ({
+  id: uuidv4(),
+  type: 'noiseModule',
+  settings: [
+    createSetting('moduleType', 'Fbm'),
+    ...multifractalSettings.map(name => createSetting(name, settingDefinitions[name].default)),
+  ],
+  children: [],
+});
+
+export const defaultCompositionScheme = () => ({
+  id: uuidv4(),
+  type: 'compositionScheme',
+  settings: [ createSetting('compositionScheme', 'average') ],
+  children: [],
+});
+
+export const defaultInputTransformations = () => ({
+  id: uuidv4(),
+  type: 'inputTransformations',
+  settings: [],
+  children: [],
+});
 
 const buildTreeNode = (allNodes, allSettings, node) => {
   const { id, type, childNodes, settings } = node;
@@ -60,6 +88,8 @@ const UnconnectedBuiltTree = ({ allNodes, allSettings, selectedNode, selectNode 
     <Tree
       showLine
       showIcon={false}
+      draggable
+      onDrop={console.log}
       onSelect={R.compose(selectNode, mapSelectedNodes)}
       selectedKeys={[selectedNode]}
       defaultExpandedKeys={[NULL_UUID]}

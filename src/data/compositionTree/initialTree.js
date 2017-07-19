@@ -5,30 +5,33 @@
 import uuidv4 from 'uuid/v4';
 
 import { NULL_UUID } from 'src/data/misc';
-import { createSetting } from 'src/helpers/compositionTree/util';
-import { multifractalSettings, settingDefinitions } from 'src/data/moduleSettings';
+import { createSetting, defaultCompositionScheme, defaultNoiseModule } from 'src/helpers/compositionTree/util';
 
 export default {
   id: NULL_UUID,
   type: 'root',
   settings: [ createSetting('moduleType', 'Composed') ],
-  children: [{
-    id: uuidv4(),
-    type: 'compositionScheme',
-    settings: [ createSetting('compositionScheme', 'average') ],
-    children: [],
-  }, {
-    id: uuidv4(),
-    type: 'noiseModule',
-    settings: [
-      createSetting('moduleType', 'Billow'),
-      ...multifractalSettings.map(name => createSetting(name, settingDefinitions[name].default)),
-    ],
-    children: [],
-  }, {
-    id: uuidv4(),
-    type: 'noiseModule',
-    settings: [ createSetting('moduleType', 'Worley') ],
-    children: [],
-  }],
+  children: [
+    defaultCompositionScheme(), {
+      id: uuidv4(),
+      type: 'inputTransformations',
+      settings: [],
+      children: [{
+        id: uuidv4(),
+        type: 'inputTransformation',
+        settings: [
+          createSetting('inputTransformationType', 'zoomScale'),
+          createSetting('speed', 1.1),
+          createSetting('zoom', 1),
+        ],
+        children: [],
+      }],
+    },
+    defaultNoiseModule(), {
+      id: uuidv4(),
+      type: 'noiseModule',
+      settings: [ createSetting('moduleType', 'Worley') ],
+      children: [],
+    }
+  ],
 };

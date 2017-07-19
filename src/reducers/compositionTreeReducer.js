@@ -58,6 +58,7 @@ export default (state=initialState, action={}) => {
     });
     const ownerNodeSchema = getNodeData(state.entities.nodes[ownerNodeId].type);
     const mappedSettings = mapIdsToEntites(updatedSettings, state.entities.nodes[ownerNodeId].settings);
+    const mappedChildren = mapIdsToEntites(state.entities.nodes, state.entities.nodes[ownerNodeId].children);
 
     const requiredSettingNames = getLeafAttr('settings', ownerNodeSchema, mappedSettings);
     // find the names of all settings that are required but not present in the current node
@@ -67,16 +68,30 @@ export default (state=initialState, action={}) => {
       return createSetting(settingName, settingDefinitions[settingName].default || `NO DEFAULT FOR ${settingName}`);
     });
 
+    // find any new nodes that have to be created as children to the parent node of the setting that just changed.
+    const newChildren = ownerNodeSchema.newChildren ? ownerNodeSchema.newChildren(mappedSettings, mappedChildren) : [];
+    const normalizedNewChildren = newChildren
+      .map(newChild => normalizeTree(newChild))
+      .reduce((acc, normalizedChild) => ({
+        settings: {...acc.settings, ...normalizedChild.entities.settings},
+        nodes: {...acc.nodes, ...normalizedChild.entities.nodes},
+      }), { settings: {}, children: {} });
+
     // add the newly created settings into the state and add their ids to the owner node's settings list.
     return {...state,
       entities: {...state.entities,
         settings: {...updatedSettings,
-          ...newSettings.reduce((acc, setting) => ({...acc, [setting.id]: setting}), {})
+          // add all new settings created in response to this setting being changed
+          ...newSettings.reduce((acc, setting) => ({...acc, [setting.id]: setting}), {}),
+          // also add all new settings created by children created in response to this setting being changed
+          ...normalizedNewChildren.settings,
         },
         nodes: {...state.entities.nodes,
           [ownerNodeId]: {...state.entities.nodes[ownerNodeId],
             settings: [...state.entities.nodes[ownerNodeId].settings, ...R.map(R.prop('id'), newSettings)],
+            children: [...state.entities.nodes[ownerNodeId].children, ...newChildren.map(R.prop('id'))],
           },
+          ...normalizedNewChildren.nodes,
         },
       },
     };

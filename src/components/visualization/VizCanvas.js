@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
-import _ from 'lodash';
+import R from 'ramda';
 
 import { getEnginePointer } from 'src/selectors/enginePointer';
 import { getTrueCanvasSize } from 'src/selectors/stageSize';
@@ -51,7 +51,7 @@ class VizCanvas extends React.Component {
 
 const mapState = state => ({
   chosenCanvasSize: state.form.vizSettings && state.form.vizSettings.values.canvasSize,
-  maxStageContainerSize: state.stageSize.containerSize && _.min([state.stageSize.containerSize.height, state.stageSize.containerSize.width]),
+  maxStageContainerSize: state.stageSize.containerSize && R.min(state.stageSize.containerSize.height, state.stageSize.containerSize.width),
 });
 
 export default connect(mapState)(VizCanvas);

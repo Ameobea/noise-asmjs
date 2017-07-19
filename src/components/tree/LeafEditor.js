@@ -10,13 +10,14 @@ import { SettingGui } from 'src/data/moduleSettings';
 import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
 import { HelpPopup } from 'src/data/moduleSettings';
 import { getLeafAttr } from 'src/selectors/compositionTree';
+import { AddChildButton, DeleteChildButton } from 'src/components/tree/NodeActionButtons';
 
-const LeafEditor = ({ selectedNode, allNodes, allSettings }) => {
-  if(!selectedNode) {
+const LeafEditor = ({ selectedNodeId, allNodes, allSettings }) => {
+  if(!selectedNodeId) {
     return <div />;
   }
 
-  const { type, settings } = allNodes[selectedNode];
+  const { type, settings } = allNodes[selectedNodeId];
   const mappedSettings = mapIdsToEntites(allSettings, settings);
 
   const nodeSchema = getNodeData(type);
@@ -32,6 +33,8 @@ const LeafEditor = ({ selectedNode, allNodes, allSettings }) => {
   */
   const realSettingNames = getLeafAttr('settings', nodeSchema, mappedSettings);
   const filteredMappedSettings = mappedSettings.filter( ({ key }) => realSettingNames.includes(key) );
+  const canAddChildren = getLeafAttr('canAddChildren', nodeSchema, mappedSettings);
+  const canBeDeleted = getLeafAttr('canBeDeleted', nodeSchema, mappedSettings);
 
   return (
     <div>
@@ -39,6 +42,9 @@ const LeafEditor = ({ selectedNode, allNodes, allSettings }) => {
         <HelpPopup helpContent={nodeSchema.description} style={{verticalAlign: 'super'}} />
         <h1 style={{display: 'inline', marginTop: 5}}>{nodeSchema.name}</h1>
       </div>
+
+      { canAddChildren && <AddChildButton parentId={selectedNodeId} childDefinition={null /* TODO */} /> }
+      { canBeDeleted && <DeleteChildButton nodeId={selectedNodeId} /> }
 
       <h1 style={{marginTop: 5}}>Settings</h1>
       {
@@ -55,7 +61,7 @@ const LeafEditor = ({ selectedNode, allNodes, allSettings }) => {
 };
 
 const mapState = ({ compositionTree: { selectedNode, entities: { nodes, settings } } }) => ({
-  selectedNode,
+  selectedNodeId: selectedNode,
   allNodes: nodes,
   allSettings: settings,
 });
