@@ -33,8 +33,8 @@ const LeafEditor = ({ selectedNodeId, allNodes, allSettings }) => {
   */
   const realSettingNames = getLeafAttr('settings', nodeSchema, mappedSettings);
   const filteredMappedSettings = mappedSettings.filter( ({ key }) => realSettingNames.includes(key) );
-  const canAddChildren = getLeafAttr('canAddChildren', nodeSchema, mappedSettings);
   const canBeDeleted = getLeafAttr('canBeDeleted', nodeSchema, mappedSettings);
+  const newChildDefinition = getLeafAttr('newChildDefinition', nodeSchema, mappedSettings);
 
   return (
     <div>
@@ -43,7 +43,7 @@ const LeafEditor = ({ selectedNodeId, allNodes, allSettings }) => {
         <h1 style={{display: 'inline', marginTop: 5}}>{nodeSchema.name}</h1>
       </div>
 
-      { canAddChildren && <AddChildButton parentId={selectedNodeId} childDefinition={null /* TODO */} /> }
+      { newChildDefinition && <AddChildButton parentId={selectedNodeId} childDefinition={newChildDefinition} /> }
       { canBeDeleted && <DeleteChildButton nodeId={selectedNodeId} /> }
 
       <h1 style={{marginTop: 5}}>Settings</h1>

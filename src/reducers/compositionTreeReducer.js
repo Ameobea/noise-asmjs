@@ -14,21 +14,63 @@ import {
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import { createSetting, mapIdsToEntites } from 'src/helpers/compositionTree/util';
 import { settingDefinitions } from 'src/data/moduleSettings';
-import { getLeafAttr, getSettingByName } from 'src/selectors/compositionTree';
+import { getLeafAttr, getNodeParent, getSettingByName } from 'src/selectors/compositionTree';
 
-const initialState = R.merge(normalizeTree(initialTree), {selectedNode: NULL_UUID});
+const initialState = R.merge(normalizeTree(initialTree), { selectedNode: NULL_UUID });
+
+/**
+ * Recursively collects an array of all children and settings of the node with the provided ID.
+ */
+const traverseNodes = (allNodes, nodeId) => {
+  return allNodes[nodeId].children.reduce((acc, childId) => {
+    // collect the children and settings of the entire subtree defined by this current child.
+    const { nodes: subtreeNodes, settings: subtreeSettings } = traverseNodes(allNodes, childId);
+
+    return {
+      nodes: [...acc.nodes, childId, ...subtreeNodes],
+      settings: [...acc.settings, ...allNodes[childId].settings, ...subtreeSettings],
+    };
+  }, { nodes: [nodeId], settings: allNodes[nodeId].settings });
+};
 
 export default (state=initialState, action={}) => {
   switch(action.type) {
 
   case ADD_NODE: {
-    // TODO
-    return state;
+    const { entities: { nodes, settings } } = normalizeTree(action.nodeDef);
+
+    return {...state,
+      entities: {...state.entities,
+        nodes: {...state.entities.nodes,
+          ...nodes,
+          [action.parentId]: {...state.entities.nodes[action.parentId],
+            children: [...state.entities.nodes[action.parentId].children, action.nodeDef.id],
+          },
+        },
+        settings: R.merge(state.entities.settings, settings),
+      },
+    };
   }
 
+  /**
+   * The node is removed from the children of its parent.  Its settings and children (and their settings and children etc.)
+   * are recursively deleted as well.
+   */
   case DELETE_NODE: {
-    // TODO
-    return state;
+    const { id: parentId, children: parentChildren } = getNodeParent(state.entities.nodes, action.nodeId);
+    const { nodes: deletedNodes, settings: deletedSettings } = traverseNodes(state.entities.nodes, action.nodeId);
+
+    return {...state,
+      entities: {...state.entities,
+        nodes: {...R.omit(deletedNodes, state.entities.nodes),
+          [parentId]: {...state.entities.nodes[parentId],
+            children: R.without([action.nodeId], parentChildren),
+          },
+        },
+        settings: R.omit(deletedSettings, state.entities.settings),
+      },
+      selectedNode: parentId,
+    };
   }
 
   case REPLACE_NODE: {

@@ -17,6 +17,7 @@ import { multifractalSettings } from 'src/data/moduleSettings';
 import { inputTransformationTypes } from 'src/data/inputTransformations';
 import {
   defaultCompositionScheme,
+  defaultInputTransformation,
   defaultInputTransformations,
   defaultNoiseModule
 } from 'src/helpers/compositionTree/util';
@@ -75,12 +76,21 @@ const getInputTransformationNewChildren = (settings, children) => {
 /**
  * Returns `true` if the node with the supplied settings is a composed noise module.
  */
-const isComposed = settings => (getSettingByName(settings, 'moduleType') === 'Composed');
+const isComposed = settings => getSettingByName(settings, 'moduleType') === 'Composed';
 
 /**
  * Returns `true` if the node with the supplied settings is a higher order noise function input transformation.
  */
-const isHONF = settings => getSettingByName(settings, 'inputTransformationType') !== 'honf';
+const isHONF = settings => getSettingByName(settings, 'inputTransformationType') === 'honf';
+
+/**
+ * If the module type is composed, then returns a new child that is a default noise module.  If not, then
+ * is unable to have children.
+ */
+const composedNoiseModuleChildDefinition = R.compose(
+  composed => composed ? defaultNoiseModule() : false,
+  isComposed
+);
 
 export const getNodeData = nodeType => ({
   root: {
@@ -90,7 +100,7 @@ export const getNodeData = nodeType => ({
     settings: getNoiseModuleSettings,
     isLeaf: R.compose(R.not, isComposed), // Only has children if it's a composed module
     newChildren: getNoiseModuleNewChildren, // Expects function with signature `(settings, children) => [node]` or `null`.
-    canAddChildren: isComposed,
+    newChildDefinition: composedNoiseModuleChildDefinition,
     canBeDeleted: false,
   },
   noiseModule: {
@@ -100,7 +110,7 @@ export const getNodeData = nodeType => ({
     settings: getNoiseModuleSettings,
     isLeaf: R.compose(R.not, isComposed), // Only has children if it's a composed module
     newChildren: getNoiseModuleNewChildren,
-    canAddChildren: isComposed,
+    newChildDefinition: composedNoiseModuleChildDefinition,
     canBeDeleted: true, // TODO: Only allow them to be deleted if they're not the only child of their parent.
   },
   compositionScheme: {
@@ -113,7 +123,7 @@ export const getNodeData = nodeType => ({
     ],
     isLeaf: true,
     newChildren: null,
-    canAddChildren: false,
+    newChildDefinition: false,
     canBeDeleted: false,
   },
   inputTransformations: {
@@ -123,7 +133,7 @@ export const getNodeData = nodeType => ({
     settings: [],
     isLeaf: false,
     newChildren: null,
-    canAddChildren: true,
+    newChildDefinition: defaultInputTransformation(),
     canBeDeleted: false,
   },
   inputTransformation: {
@@ -134,9 +144,9 @@ export const getNodeData = nodeType => ({
     },
     description: 'A transformation that is applied to the three-dimensional input coordinate of a noise function before being passed to the noise function.',
     settings: getInputTransformationSettings,
-    isLeaf: isHONF,
+    isLeaf: R.compose(R.not, isHONF),
     newChildren: getInputTransformationNewChildren,
-    canAddChildren: isHONF,
+    newChildDefinition: R.compose(honf => honf ? defaultNoiseModule() : false, isHONF),
     canBeDeleted: true,
   },
 }[nodeType] || unknownNode(nodeType));

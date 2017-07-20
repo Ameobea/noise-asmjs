@@ -43,6 +43,17 @@ export const defaultCompositionScheme = () => ({
   children: [],
 });
 
+export const defaultInputTransformation = () => ({
+  id: uuidv4(),
+  type: 'inputTransformation',
+  settings: [
+    createSetting('inputTransformationType', 'zoomScale'),
+    createSetting('speed', 1),
+    createSetting('zoom', 1),
+  ],
+  children: [],
+});
+
 export const defaultInputTransformations = () => ({
   id: uuidv4(),
   type: 'inputTransformations',
