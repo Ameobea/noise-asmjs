@@ -12,7 +12,16 @@ export default {
   type: 'root',
   settings: [ createSetting('moduleType', 'Composed') ],
   children: [
-    defaultCompositionScheme(), {
+    defaultCompositionScheme(),
+    {
+      id: uuidv4(),
+      type: 'globalConf',
+      settings: [
+        createSetting('speed', '1'),
+        createSetting('zoom', '1'),
+      ],
+      children: [],
+    }, {
       id: uuidv4(),
       type: 'inputTransformations',
       settings: [],
@@ -21,8 +30,8 @@ export default {
         type: 'inputTransformation',
         settings: [
           createSetting('inputTransformationType', 'zoomScale'),
-          createSetting('speed', 1.1),
-          createSetting('zoom', 1),
+          createSetting('speed', '1.1'),
+          createSetting('zoom', '1'),
         ],
         children: [],
       }],

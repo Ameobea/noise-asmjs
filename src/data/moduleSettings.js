@@ -220,6 +220,11 @@ export const settingDefinitions = {
       { key: 'z', title: 'Z' },
     ],
   },
+  scaleFactor: {
+    title: 'Scale Factor',
+    default: 1,
+    hint: 'All input coordinates are multipled by this number before being passed to the inner noise function.',
+  },
 };
 
 const mapSettingState = ({ compositionTree: { entities: { settings } } }) => ({ settings });

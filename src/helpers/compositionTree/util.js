@@ -23,6 +23,8 @@ export const mapIdsToEntites = (entities, ids) => R.map(id => entities[id], ids)
 
 export const createSetting = (key, value) => ({ id: uuidv4(), key, value });
 
+export const initialUncommitedChanges = () => ({ new: [], updated: [], deleted: [] });
+
 /**
  * Creates a new default noise module tree node initialized with a random UUID and the default multiFractal settings.
  */
@@ -48,8 +50,8 @@ export const defaultInputTransformation = () => ({
   type: 'inputTransformation',
   settings: [
     createSetting('inputTransformationType', 'zoomScale'),
-    createSetting('speed', 1),
-    createSetting('zoom', 1),
+    createSetting('speed', '1'),
+    createSetting('zoom', '1'),
   ],
   children: [],
 });

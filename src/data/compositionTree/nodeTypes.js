@@ -68,9 +68,9 @@ const getInputTransformationNewChildren = (settings, children) => {
     if(children.length === 0) {
       return [ defaultNoiseModule(), defaultNoiseModule() ];
     }
-  } else {
-    return [];
   }
+
+  return [];
 };
 
 /**
@@ -95,13 +95,25 @@ const composedNoiseModuleChildDefinition = R.compose(
 export const getNodeData = nodeType => ({
   root: {
     name: 'Root Node',
-    title: 'Root Node',
+    title: <span style={{color: 'white'}}>Root Node</span>,
     description: 'The root of the entire composition tree.  This node and all of its children are queried each tick to determine the noise values for each coordinate of the canvas.',
     settings: getNoiseModuleSettings,
     isLeaf: R.compose(R.not, isComposed), // Only has children if it's a composed module
     newChildren: getNoiseModuleNewChildren, // Expects function with signature `(settings, children) => [node]` or `null`.
     newChildDefinition: composedNoiseModuleChildDefinition,
     canBeDeleted: false,
+    subscribedToParent: false,
+  },
+  globalConf: {
+    name: 'Global Configuration',
+    title: <span style={{color: 'green'}}>Global Configuration</span>,
+    description: 'Configuration options for the composition tree that affect the entire tree.',
+    settings: ['zoom', 'speed'],
+    isLeaf: true,
+    newChildren: null,
+    newChildDefinition: false,
+    canBeDeleted: false,
+    subscribedToParent: false,
   },
   noiseModule: {
     name: 'Noise Module',
@@ -112,6 +124,7 @@ export const getNodeData = nodeType => ({
     newChildren: getNoiseModuleNewChildren,
     newChildDefinition: composedNoiseModuleChildDefinition,
     canBeDeleted: true, // TODO: Only allow them to be deleted if they're not the only child of their parent.
+    subscribedToParent: false,
   },
   compositionScheme: {
     name: 'Composition Scheme',
@@ -125,6 +138,7 @@ export const getNodeData = nodeType => ({
     newChildren: null,
     newChildDefinition: false,
     canBeDeleted: false,
+    subscribedToParent: settings => getSettingByName(settings, 'compositionScheme') === 'weightedAverage',
   },
   inputTransformations: {
     name: 'Input Transformation',
@@ -135,6 +149,7 @@ export const getNodeData = nodeType => ({
     newChildren: null,
     newChildDefinition: defaultInputTransformation(),
     canBeDeleted: false,
+    subscribedToParent: false,
   },
   inputTransformation: {
     name: 'Input Transformation',
@@ -148,5 +163,6 @@ export const getNodeData = nodeType => ({
     newChildren: getInputTransformationNewChildren,
     newChildDefinition: R.compose(honf => honf ? defaultNoiseModule() : false, isHONF),
     canBeDeleted: true,
+    subscribedToParent: false,
   },
 }[nodeType] || unknownNode(nodeType));

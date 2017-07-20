@@ -18,6 +18,3 @@ node.define({
 });
 
 export const normalizeTree = R.partialRight(normalize, [node]);
-
-// TODO
-// export const denormalizeTree = R.partialRight(denormalize, [])

@@ -3,20 +3,24 @@
  */
 
 import R from 'ramda';
-import { setIn } from 'zaphod/compat';
+import { set, setIn } from 'zaphod/compat';
 
 import initialTree from 'src/data/compositionTree/initialTree';
 import { normalizeTree } from 'src/helpers/compositionTree/normalization';
 import { NULL_UUID } from 'src/data/misc';
 import {
-  ADD_NODE, DELETE_NODE, REPLACE_NODE, SELECT_NODE, SET_SETTING, CREATE_SETTING
+  ADD_NODE, DELETE_NODE, REPLACE_NODE, SELECT_NODE, SET_SETTING, CREATE_SETTING,
+  ADD_UNCOMMITED_CHANGES, CLEAR_UNCOMMITED_CHANGES,
 } from 'src/actions/compositionTree';
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
-import { createSetting, mapIdsToEntites } from 'src/helpers/compositionTree/util';
+import { createSetting, initialUncommitedChanges, mapIdsToEntites } from 'src/helpers/compositionTree/util';
 import { settingDefinitions } from 'src/data/moduleSettings';
 import { getLeafAttr, getNodeParent, getSettingByName } from 'src/selectors/compositionTree';
 
-const initialState = R.merge(normalizeTree(initialTree), { selectedNode: NULL_UUID });
+const initialState = R.merge(normalizeTree(initialTree), {
+  selectedNode: NULL_UUID,
+  uncommitedChanges: initialUncommitedChanges(),
+});
 
 /**
  * Recursively collects an array of all children and settings of the node with the provided ID.
@@ -141,6 +145,15 @@ export default (state=initialState, action={}) => {
 
   case CREATE_SETTING: {
     return setIn(state, ['entities', 'settings', action.id], {id: action.id, key: action.key, value: action.valuue});
+  }
+
+  case ADD_UNCOMMITED_CHANGES: {
+    // TODO: It may be necessary to trim children of new nodes from the `new` list and only retain the root of new subtrees
+    return set(state, 'uncommitedChanges', R.mergeWith(R.union, state.uncommitedChanges, action.changes));
+  }
+
+  case CLEAR_UNCOMMITED_CHANGES: {
+    return {...state, uncommitedChanges: initialUncommitedChanges()};
   }
 
   default: {

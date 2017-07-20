@@ -14,6 +14,10 @@ export const SELECT_NODE = 'SELECT_NODE';
 export const SET_SETTING = 'SET_SETTING';
 // Args: {id: UUID, name: String, value: Any}
 export const CREATE_SETTING = 'CREATE_SETTING';
+// Args: {id: UUID}
+export const ADD_UNCOMMITED_CHANGES = 'ADD_UNCOMMITED_CHANGES';
+// Args: {}
+export const CLEAR_UNCOMMITED_CHANGES = 'CLEAR_UNCOMMITED_CHANGES';
 
 export const addNode = (parentId, childIndex, nodeDef) => ({
   type: ADD_NODE,
@@ -43,4 +47,13 @@ export const setSetting = (settingId, value) => ({
 export const createSetting = (id, key, value) => ({
   type: CREATE_SETTING,
   id, key, value,
+});
+
+export const addUncommitedChanges = changes => ({
+  type: ADD_UNCOMMITED_CHANGES,
+  changes,
+});
+
+export const clearUncommitedChanges = () => ({
+  type: CLEAR_UNCOMMITED_CHANGES,
 });

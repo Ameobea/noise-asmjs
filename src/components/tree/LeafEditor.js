@@ -10,7 +10,7 @@ import { SettingGui } from 'src/data/moduleSettings';
 import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
 import { HelpPopup } from 'src/data/moduleSettings';
 import { getLeafAttr } from 'src/selectors/compositionTree';
-import { AddChildButton, DeleteChildButton } from 'src/components/tree/NodeActionButtons';
+import NodeActionButtons from 'src/components/tree/NodeActionButtons';
 
 const LeafEditor = ({ selectedNodeId, allNodes, allSettings }) => {
   if(!selectedNodeId) {
@@ -43,8 +43,11 @@ const LeafEditor = ({ selectedNodeId, allNodes, allSettings }) => {
         <h1 style={{display: 'inline', marginTop: 5}}>{nodeSchema.name}</h1>
       </div>
 
-      { newChildDefinition && <AddChildButton parentId={selectedNodeId} childDefinition={newChildDefinition} /> }
-      { canBeDeleted && <DeleteChildButton nodeId={selectedNodeId} /> }
+      <NodeActionButtons
+        newChildDefinition={newChildDefinition}
+        canBeDeleted={canBeDeleted}
+        nodeId={selectedNodeId}
+      />
 
       <h1 style={{marginTop: 5}}>Settings</h1>
       {
