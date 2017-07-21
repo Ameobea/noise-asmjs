@@ -12,7 +12,6 @@ use util::Dim;
 fn composition_tree_definition_serialization() {
     let def = CompositionTreeDefinition {
         global_conf: GlobalTreeConf {
-            canvas_size: 800,
             speed: 0.101,
             zoom: 0.1239,
         },

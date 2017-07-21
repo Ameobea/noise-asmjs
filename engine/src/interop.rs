@@ -8,25 +8,14 @@ use serde_json;
 use super::*;
 use composition_tree::{CompositionTree, CompositionTreeNode};
 use composition_tree::composition::CompositionScheme;
-use composition_tree::definition::{CompositionTreeDefinition, CompositionTreeNodeDefinition};
+use composition_tree::definition::CompositionTreeNodeDefinition;
+use composition_tree::initial_tree::create_initial_tree;
 
-/// Initializes the minutiae engine and the internal noise generator engine.  Takes a JSON-encoded string that is able to be
-/// `deserialize()`d into a `CompositionTreeDefinition` with which to build a `CompositionTree`
+/// Initializes the minutiae engine and the internal noise generator engine with the default initial composition tree.
 #[no_mangle]
-pub unsafe extern "C" fn init(canvas_size: usize, tree_def: *const c_char) {
-    let json_str: &str = match CStr::from_ptr(tree_def).to_str() {
-        Ok(s) => s,
-        Err(_) => { return error("Invalid UTF8 string provided to `create_composer()`"); },
-    };
-    // Attempt to deserialize the provided definition string into a `CompositionTreeDefinition`
-    let tree_def = match serde_json::from_str::<CompositionTreeDefinition>(json_str) {
-        Ok(def) => def,
-        Err(err) => { return error(
-            &format!("Error while trying to deserialize provided JSON definition string into `CompositionTreeDefinition`: {:?}", err)
-        ) },
-    };
-    // Now, build that tree definition into an actual `CompositionTree`
-    let master_tree: CompositionTree = tree_def.into();
+pub unsafe extern "C" fn init(canvas_size: usize) {
+    // Create the initial composition tree
+    let master_tree: CompositionTree = create_initial_tree();
     // Put the composition tree into a box so I feel more confident that it never moves
     let boxed_noise_engine = Box::new(master_tree);
 

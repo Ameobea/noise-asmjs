@@ -5,7 +5,7 @@ use noise::*;
 use transformations::InputTransformation;
 use util::Dim;
 use super::composition::CompositionScheme;
-use super::conf::NoiseModuleConf;
+use super::conf::{apply_multifractal_conf, apply_seedable_conf, apply_worley_conf, apply_constant_conf, NoiseModuleConf};
 use super::{ComposedNoiseModule, CompositionTree, CompositionTreeNode, GlobalTreeConf};
 
 /// Defines a meta-representation of a `CompositionTree` designed to be passed into the backend from the JS frontend.  It
@@ -50,21 +50,9 @@ impl NoiseFn<Point3<f64>> for TransformedNoiseModule {
 impl NoiseModuleType {
     /// Given a module type and an array of configuration, builds the noise module.
     pub fn build(
-        &self, conf: &[NoiseModuleConf], transformation_definitions: Vec<InputTransformationDefinition>
+        &self, confs: &[NoiseModuleConf], transformation_definitions: Vec<InputTransformationDefinition>
     ) -> Box<NoiseFn<Point3<f64>>> {
-        unimplemented!(); // TODO
-        let inner = match self {
-            &NoiseModuleType::Fbm => Box::new(Fbm::new()) as Box<NoiseFn<Point3<f64>>>,
-            &NoiseModuleType::Worley => Box::new(Worley::new()),
-            &NoiseModuleType::OpenSimplex => Box::new(OpenSimplex::new()),
-            &NoiseModuleType::Billow => Box::new(Billow::new()),
-            &NoiseModuleType::HybridMulti => Box::new(HybridMulti::new()),
-            &NoiseModuleType::SuperSimplex => Box::new(SuperSimplex::new()),
-            &NoiseModuleType::Value => Box::new(Value::new()),
-            &NoiseModuleType::RidgedMulti => Box::new(RidgedMulti::new()),
-            &NoiseModuleType::BasicMulti => Box::new(BasicMulti::new()),
-            &NoiseModuleType::Constant => Box::new(Constant::new(0.0)),
-        };
+        let inner = Self::construct_noise_fn(self, confs);
 
         // If we have transformations to apply, create a `TransformedNoiseModule`; otherwise just return the inner module.
         if transformation_definitions.len() != 0 {
@@ -77,6 +65,137 @@ impl NoiseModuleType {
             Box::new(transformed_module)
         } else {
             inner
+        }
+    }
+
+    pub fn construct_noise_fn(&self, confs: &[NoiseModuleConf]) -> Box<NoiseFn<Point3<f64>>> {
+        match self {
+            &NoiseModuleType::Fbm => {
+                let configured_module = confs.iter().fold(Fbm::new(), |acc, conf| {
+                    match conf {
+                        &NoiseModuleConf::MultiFractal {..} => apply_multifractal_conf(conf, acc),
+                        &NoiseModuleConf::Seedable {..} => apply_seedable_conf(conf, acc),
+                        _ => {
+                            println!("Invalid configuration provided to Fbm module: {:?}", conf);
+                            acc
+                        },
+                    }
+                });
+                Box::new(configured_module) as Box<NoiseFn<Point3<f64>>>
+            },
+            &NoiseModuleType::Worley => {
+                let configured_module = confs.iter().fold(Worley::new(), |acc, conf| {
+                    match conf {
+                        &NoiseModuleConf::Seedable {..} => apply_seedable_conf(conf, acc),
+                        &NoiseModuleConf::Worley {..} => apply_worley_conf(conf, acc),
+                        _ => {
+                            println!("Invalid configuration provided to Worley module: {:?}", conf);
+                            acc
+                        },
+                    }
+                });
+                Box::new(configured_module)
+            },
+            &NoiseModuleType::OpenSimplex => {
+                let configured_module = confs.iter().fold(OpenSimplex::new(), |acc, conf| {
+                    match conf {
+                        &NoiseModuleConf::Seedable {..} => apply_seedable_conf(conf, acc),
+                        _ => {
+                            println!("Invalid configuration provided to OpenSimplex module: {:?}", conf);
+                            acc
+                        },
+                    }
+                });
+                Box::new(configured_module)
+            },
+            &NoiseModuleType::Billow => {
+                let configured_module = confs.iter().fold(Billow::new(), |acc, conf| {
+                    match conf {
+                        &NoiseModuleConf::MultiFractal {..} => apply_multifractal_conf(conf, acc),
+                        &NoiseModuleConf::Seedable {..} => apply_seedable_conf(conf, acc),
+                        _ => {
+                            println!("Invalid configuration provided to Billow module: {:?}", conf);
+                            acc
+                        },
+                    }
+                });
+                Box::new(configured_module)
+            },
+            &NoiseModuleType::HybridMulti => {
+                let configured_module = confs.iter().fold(HybridMulti::new(), |acc, conf| {
+                    match conf {
+                        &NoiseModuleConf::MultiFractal {..} => apply_multifractal_conf(conf, acc),
+                        &NoiseModuleConf::Seedable {..} => apply_seedable_conf(conf, acc),
+                        _ => {
+                            println!("Invalid configuration provided to HybridMulti module: {:?}", conf);
+                            acc
+                        },
+                    }
+                });
+                Box::new(configured_module)
+            },
+            &NoiseModuleType::SuperSimplex => {
+                let configured_module = confs.iter().fold(SuperSimplex::new(), |acc, conf| {
+                    match conf {
+                        &NoiseModuleConf::Seedable {..} => apply_seedable_conf(conf, acc),
+                        _ => {
+                            println!("Invalid configuration provided to SuperSimplex module: {:?}", conf);
+                            acc
+                        },
+                    }
+                });
+                Box::new(configured_module)
+            },
+            &NoiseModuleType::Value => {
+                let configured_module = confs.iter().fold(Value::new(), |acc, conf| {
+                    match conf {
+                        &NoiseModuleConf::Seedable {..} => apply_seedable_conf(conf, acc),
+                        _ => {
+                            println!("Invalid configuration provided to Value module: {:?}", conf);
+                            acc
+                        },
+                    }
+                });
+                Box::new(configured_module)
+            },
+            &NoiseModuleType::RidgedMulti => {
+                let configured_module = confs.iter().fold(RidgedMulti::new(), |acc, conf| {
+                    match conf {
+                        &NoiseModuleConf::MultiFractal {..} => apply_multifractal_conf(conf, acc),
+                        &NoiseModuleConf::Seedable {..} => apply_seedable_conf(conf, acc),
+                        _ => {
+                            println!("Invalid configuration provided to RidgedMulti module: {:?}", conf);
+                            acc
+                        },
+                    }
+                });
+                Box::new(configured_module)
+            },
+            &NoiseModuleType::BasicMulti => {
+                let configured_module = confs.iter().fold(BasicMulti::new(), |acc, conf| {
+                    match conf {
+                        &NoiseModuleConf::MultiFractal {..} => apply_multifractal_conf(conf, acc),
+                        &NoiseModuleConf::Seedable {..} => apply_seedable_conf(conf, acc),
+                        _ => {
+                            println!("Invalid configuration provided to BasicMulti module: {:?}", conf);
+                            acc
+                        },
+                    }
+                });
+                Box::new(configured_module)
+            },
+            &NoiseModuleType::Constant => {
+                let configured_module = confs.iter().fold(Constant::new(0.), |acc, conf| {
+                    match conf {
+                        &NoiseModuleConf::Constant{..} => apply_constant_conf(conf, acc),
+                        _ => {
+                            println!("Invalid configuration provided to Constant module: {:?}", conf);
+                            acc
+                        },
+                    }
+                });
+                Box::new(configured_module)
+            },
         }
     }
 }
