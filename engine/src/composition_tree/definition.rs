@@ -32,14 +32,14 @@ pub enum NoiseModuleType {
 }
 
 pub struct TransformedNoiseModule {
-    inner: Box<NoiseModule<Point3<f32>, f32>>,
+    inner: Box<NoiseFn<Point3<f64>>>,
     transformations: Vec<InputTransformation>,
 }
 
-impl NoiseModule<Point3<f32>, f32> for TransformedNoiseModule {
-    fn get(&self, coord: Point3<f32>) -> f32 {
+impl NoiseFn<Point3<f64>> for TransformedNoiseModule {
+    fn get(&self, coord: Point3<f64>) -> f64 {
         // apply all transformations to the input in order, passing the final value to the inner noise function
-        let final_coord: Point3<f32> = self.transformations
+        let final_coord: Point3<f64> = self.transformations
             .iter()
             .fold(coord, |acc, transformation| transformation.transform(acc));
 
@@ -51,10 +51,10 @@ impl NoiseModuleType {
     /// Given a module type and an array of configuration, builds the noise module.
     pub fn build(
         &self, conf: &[NoiseModuleConf], transformation_definitions: Vec<InputTransformationDefinition>
-    ) -> Box<NoiseModule<Point3<f32>, f32>> {
+    ) -> Box<NoiseFn<Point3<f64>>> {
         unimplemented!(); // TODO
         let inner = match self {
-            &NoiseModuleType::Fbm => Box::new(Fbm::new()) as Box<NoiseModule<Point3<f32>, f32>>,
+            &NoiseModuleType::Fbm => Box::new(Fbm::new()) as Box<NoiseFn<Point3<f64>>>,
             &NoiseModuleType::Worley => Box::new(Worley::new()),
             &NoiseModuleType::OpenSimplex => Box::new(OpenSimplex::new()),
             &NoiseModuleType::Billow => Box::new(Billow::new()),
@@ -129,14 +129,14 @@ impl Into<CompositionTree> for CompositionTreeDefinition {
 #[derive(Serialize, Deserialize)]
 pub enum InputTransformationDefinition {
     ZoomScale {
-        speed: f32,
-        zoom: f32,
+        speed: f64,
+        zoom: f64,
     },
     HigherOrderNoiseModule {
         node_def: CompositionTreeNodeDefinition,
         replaced_dim: Dim,
     },
-    ScaleAll(f32),
+    ScaleAll(f64),
 }
 
 impl Into<InputTransformation> for InputTransformationDefinition {

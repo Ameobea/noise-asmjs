@@ -10,7 +10,8 @@ use self::composition::CompositionScheme;
 pub mod conf;
 use self::conf::{GlobalTreeConf, NoiseModuleConf};
 pub mod definition;
-use self::definition::CompositionTreeDefinition;
+use self::definition::{CompositionTreeDefinition, CompositionTreeNodeDefinition, NoiseModuleType};
+pub mod initial_tree;
 
 /// The core of the noise module composition framework.  This struct is the parent of the entire composition tree
 /// And can be used to retrieve a value from the entire composition tree for a single coordinate.
@@ -75,12 +76,12 @@ impl CompositionTree {
     }
 }
 
-impl NoiseModule<Point3<f32>, f32> for CompositionTree {
-    fn get(&self, coord: Point3<f32>) -> f32 { self.root_node.get(coord) }
+impl NoiseFn<Point3<f64>> for CompositionTree {
+    fn get(&self, coord: Point3<f64>) -> f64 { self.root_node.get(coord) }
 }
 
 pub enum CompositionTreeNode {
-    Leaf(Box<NoiseModule<Point3<f32>, f32>>),
+    Leaf(Box<NoiseFn<Point3<f64>>>),
     Combined(ComposedNoiseModule),
 }
 
@@ -137,8 +138,8 @@ impl CompositionTreeNode {
     }
 }
 
-impl NoiseModule<Point3<f32>, f32> for CompositionTreeNode {
-    fn get(&self, coord: Point3<f32>) -> f32 {
+impl NoiseFn<Point3<f64>> for CompositionTreeNode {
+    fn get(&self, coord: Point3<f64>) -> f64 {
         match self {
             &CompositionTreeNode::Leaf(ref module) => module.get(coord),
             &CompositionTreeNode::Combined(ref combined_module) => combined_module.get(coord),
@@ -173,6 +174,6 @@ impl ComposedNoiseModule {
     }
 }
 
-impl NoiseModule<Point3<f32>, f32> for ComposedNoiseModule {
-    fn get(&self, coord: Point3<f32>) -> f32 { self.composer.compose(&self.children, coord) }
+impl NoiseFn<Point3<f64>> for ComposedNoiseModule {
+    fn get(&self, coord: Point3<f64>) -> f64 { self.composer.compose(&self.children, coord) }
 }

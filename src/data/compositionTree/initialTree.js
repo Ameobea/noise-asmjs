@@ -5,7 +5,9 @@
 import uuidv4 from 'uuid/v4';
 
 import { NULL_UUID } from 'src/data/misc';
-import { createSetting, defaultCompositionScheme, defaultNoiseModule } from 'src/helpers/compositionTree/util';
+import {
+  createMultifractalSettings, createSetting, defaultInputTransformations, defaultCompositionScheme, defaultNoiseModule
+} from 'src/helpers/compositionTree/util';
 
 export default {
   id: NULL_UUID,
@@ -36,11 +38,15 @@ export default {
         children: [],
       }],
     },
-    defaultNoiseModule(), {
+    defaultNoiseModule(),
+    {
       id: uuidv4(),
       type: 'noiseModule',
-      settings: [ createSetting('moduleType', 'Worley') ],
-      children: [],
+      settings: [
+        createSetting('moduleType', 'Billow'),
+        ...createMultifractalSettings(),
+      ],
+      children: [ defaultInputTransformations() ],
     }
   ],
 };

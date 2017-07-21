@@ -120,7 +120,7 @@ export const getNodeData = nodeType => ({
     title: settings => moduleTypes.find(R.propEq('key', getSettingByName(settings, 'moduleType'))).name,
     description: 'Noise modeules are the core components of the composition tree.  At its core, a noise module takes a 3-dimensional coordinate and returns a single floating point value.  These are then mapped onto the canvas as a 2D slice with Z as the current sequence number.',
     settings: getNoiseModuleSettings,
-    isLeaf: R.compose(R.not, isComposed), // Only has children if it's a composed module
+    isLeaf: false,
     newChildren: getNoiseModuleNewChildren,
     newChildDefinition: composedNoiseModuleChildDefinition,
     canBeDeleted: true, // TODO: Only allow them to be deleted if they're not the only child of their parent.

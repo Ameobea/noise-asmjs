@@ -25,6 +25,10 @@ export const createSetting = (key, value) => ({ id: uuidv4(), key, value });
 
 export const initialUncommitedChanges = () => ({ new: [], updated: [], deleted: [] });
 
+export const createMultifractalSettings = () => {
+  return multifractalSettings.map(name => createSetting(name, settingDefinitions[name].default));
+};
+
 /**
  * Creates a new default noise module tree node initialized with a random UUID and the default multiFractal settings.
  */
@@ -33,9 +37,9 @@ export const defaultNoiseModule = () => ({
   type: 'noiseModule',
   settings: [
     createSetting('moduleType', 'Fbm'),
-    ...multifractalSettings.map(name => createSetting(name, settingDefinitions[name].default)),
+    ...createMultifractalSettings(),
   ],
-  children: [],
+  children: [ defaultInputTransformations() ],
 });
 
 export const defaultCompositionScheme = () => ({

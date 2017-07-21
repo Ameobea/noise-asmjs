@@ -55,13 +55,14 @@ use interop::*;
 pub mod transformations;
 pub mod util;
 
+#[cfg(test)]
 pub mod tests;
 
 // Minutiae custom type declarations.
 // Since we're only using a very small subset of Minutiae's capabilities, these are mostly unused.
 
 #[derive(Clone)]
-struct CS(f32);
+struct CS(f64);
 impl CellState for CS {}
 
 #[derive(Clone)]
@@ -91,12 +92,12 @@ impl Engine<CS, ES, MES, CA, EA> for OurEngine {
 
 /// given a buffer containing all of the cells in the universe, calculates values for each of them using
 /// perlin noise and sets their states according to the result.
-fn drive_noise(cells_buf: &mut [Cell<CS>], seq: usize, noise: &NoiseModule<Point3<f32>, f32>, universe_size: usize, zoom: f32, speed: f32) {
-    let fseq = seq as f32;
+fn drive_noise(cells_buf: &mut [Cell<CS>], seq: usize, noise: &NoiseFn<Point3<f64>>, universe_size: usize, zoom: f64, speed: f64) {
+    let fseq = seq as f64;
     for y in 0..universe_size {
         for x in 0..universe_size {
             // calculate noise value for current coordinate and sequence number
-            let val = noise.get([x as f32 * zoom, y as f32 * zoom, fseq * speed]);
+            let val = noise.get([x as f64 * zoom, y as f64 * zoom, fseq * speed]);
 
             // set the cell's state equal to that value
             let index = get_index(x, y, universe_size);
@@ -121,8 +122,8 @@ fn resize_universe(universe: &mut Universe<CS, ES, MES, CA, EA>, new_size: usize
 pub struct MasterConf {
     needs_resize: bool,
     canvas_size: usize,
-    zoom: f32,
-    speed: f32,
+    zoom: f64,
+    speed: f64,
 }
 
 impl Default for MasterConf {

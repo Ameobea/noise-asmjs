@@ -55,5 +55,4 @@ pub enum NoiseModuleConf {
 pub struct GlobalTreeConf {
     pub speed: f32,
     pub zoom: f32,
-    pub canvas_size: u32,
 }

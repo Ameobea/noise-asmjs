@@ -9,7 +9,7 @@ import 'src/index.css';
 
 const { Column, Row } = Grid;
 
-const App = ({settingsVisible}) => (
+const App = ({ settingsVisible }) => (
   <div style={{width: '100%', height: '100%'}}>
     {/* HEADER */}
     <div style={{height: '10vh'}}>
@@ -32,8 +32,8 @@ const App = ({settingsVisible}) => (
   </div>
 );
 
-const mapState = state => ({
-  settingsVisible: state.settingsVisible,
+const mapState = ({ settingsVisible }) => ({
+  settingsVisible,
 });
 
 export default connect(mapState)(App);
