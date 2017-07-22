@@ -1,7 +1,7 @@
 //! Defines the structure of the initial composition tree that is loaded at application initialization.
 
 use composition_tree::{CompositionTree, GlobalTreeConf, NoiseModuleType};
-use super::{CompositionScheme, CompositionTreeDefinition, CompositionTreeNodeDefinition, NoiseModuleConf};
+use super::{CompositionScheme, CompositionTreeDefinition, CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleConf};
 
 fn create_initial_tree_definition() -> CompositionTreeDefinition {
     CompositionTreeDefinition {
@@ -41,6 +41,12 @@ fn create_initial_tree_definition() -> CompositionTreeDefinition {
                         },
                     ],
                     transformations: Vec::new(),
+                },
+            ],
+            transformations: vec![
+                InputTransformationDefinition::ZoomScale {
+                    speed: 1.,
+                    zoom: 1.1,
                 },
             ],
         },

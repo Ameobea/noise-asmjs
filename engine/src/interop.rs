@@ -17,7 +17,7 @@ pub unsafe extern "C" fn init(canvas_size: usize) {
     // Create the initial composition tree
     let master_tree: CompositionTree = create_initial_tree();
     // Put the composition tree into a box so I feel more confident that it never moves
-    let boxed_noise_engine = Box::new(master_tree);
+    let boxed_composition_tree = Box::new(master_tree);
 
     // initialize emscripten universe and start the minutiae simulation
     let mut conf = UniverseConf::default();
@@ -25,20 +25,28 @@ pub unsafe extern "C" fn init(canvas_size: usize) {
     let universe = Universe::new(conf, &mut WorldGenerator, |_, _| { None }, |_, _, _, _, _, _, _| {});
 
     // get the pointer of the box by taking it apart and putting it back together again
-    let boxed_noise_engine_ptr = Box::into_raw(boxed_noise_engine);
-    let boxed_noise_engine = Box::from_raw(boxed_noise_engine_ptr);
+    let boxed_tree_pointer = Box::into_raw(boxed_composition_tree);
+    let boxed_composition_tree = Box::from_raw(boxed_tree_pointer);
 
     // send a pointer to the engine state to the JS side to be used for dynamic configuration
+    debug("Calling `setTreePointer`...");
+    setTreePointer(boxed_tree_pointer as *const c_void);
+
+    // create the middleware that manages the image buffer and populates it each tick
+    let noise_stepper = Box::new(NoiseStepper {
+        conf: MasterConf::default(),
+        composition_tree: boxed_composition_tree,
+    });
+    let boxed_engine_ptr = Box::into_raw(noise_stepper);
+    let boxed_noise_stepper = Box::from_raw(boxed_engine_ptr);
+
     debug("Calling `setEnginePointer`...");
-    setEnginePointer(boxed_noise_engine_ptr as *const c_void);
+    setEnginePointer(boxed_engine_ptr as *const c_void);
 
     // Initialize the simulation, registering with the emscripten Browser event loop
     EmscriptenDriver.init(universe, OurEngine, &mut [
         // middleware that calculates noise values for each of the universe's cells using the current sequence number
-        Box::new(NoiseStepper {
-            conf: MasterConf::default(),
-            composition_tree: boxed_noise_engine,
-        }),
+        boxed_noise_stepper,
         // middleware that renders the current universe to the canvas each tick using the supplied color calculator function
         Box::new(CanvasRenderer::new(canvas_size, calc_color, canvas_render))
     ]);
@@ -151,6 +159,14 @@ pub unsafe extern "C" fn set_composition_scheme(
             1
         },
     }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn set_canvas_size(engine_pointer: *mut NoiseStepper, size: usize) {
+    debug(&format!("Setting canvas size to {} on the Rust side...", size));
+    let engine = &mut *engine_pointer;
+    engine.conf.canvas_size = size;
+    engine.conf.needs_resize = true;
 }
 
 /// Pauses the simulation by halting the Emscripten browser event loop.

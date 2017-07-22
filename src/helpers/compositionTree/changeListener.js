@@ -34,12 +34,12 @@ const handleChanges = ({current, prev, data: { store }}) => {
 
     case 'A':
     case 'E': {
-      if(path[0] === 'nodes') {
-        return {...acc, updated: R.union(acc.updated, [path[1]])};
-      } else {
+      if(path[0] === 'settings') {
         // mark the parent of the setting as updated
         const { id: updatedNodeId } = getSettingParent(current.nodes, path[1]);
         return {...acc, updated: R.union(acc.updated, [updatedNodeId])};
+      } else {
+        return acc;
       }
     }
 

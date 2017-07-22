@@ -23,13 +23,15 @@ use std::os::raw::{c_char, c_void};
 use minutiae::prelude::*;
 use minutiae::emscripten::{EmscriptenDriver, CanvasRenderer};
 use noise::*;
-// use palette::{FromColor, Hsv, Rgb};
+use palette::{FromColor, Hsv, Rgb};
 
 extern {
     /// Given a pointer to our pixel data buffer, draws its contents to the canvas.
     pub fn canvas_render(ptr: *const u8);
     /// Given a pointer to the noise engine's state, registers it on the JS side into the Redux store
     pub fn setEnginePointer(ptr: *const c_void);
+    /// Given a pointer to the composition tree, registers it on the JS side in the Redux store.
+    pub fn setTreePointer(ptr: *const c_void);
     /// Direct line to `console.log` from JS since the simulated `stdout` is dead after `main()` completes
     pub fn js_debug(msg: *const c_char);
     /// Direct line to `console.error` from JS since the simulated `stdout` is dead after `main()` completes
@@ -160,10 +162,11 @@ impl Middleware<CS, ES, MES, CA, EA, OurEngine> for NoiseStepper {
 // TODO: Migrate to external color function
 fn calc_color(cell: &Cell<CS>, _: &[usize], _: &EntityContainer<CS, ES, MES>) -> [u8; 4] {
     // normalize into range from -180 to 180
-    // let hue = (cell.state.0 * 360.0) + 180.0;
-    // let hsv_color = Hsv::new(hue.into(), 1.0, 1.0);
-    // let rgb_color = Rgb::from_hsv(hsv_color);
-    [(cell.state.0 * 255.0) as u8, (cell.state.0 * 255.0) as u8, (cell.state.0 * 255.0) as u8, 255]
+    let hue = (cell.state.0 * 360.0) + 180.0;
+    let hsv_color = Hsv::new(hue.into(), 1.0, 1.0);
+    let rgb_color = Rgb::from_hsv(hsv_color);
+    [(rgb_color.red * 255.) as u8, (rgb_color.green * 255.) as u8, (rgb_color.blue * 255.) as u8, 255]
+    // [(cell.state.0 * 255.0) as u8, (cell.state.0 * 255.0) as u8, (cell.state.0 * 255.0) as u8, 255]
 }
 
 struct WorldGenerator;

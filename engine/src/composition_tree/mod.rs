@@ -1,16 +1,16 @@
 //! Defines the primary structure used to nest noise modules and build up a composition tree that sets up
 //! how the modules are related.
 
-use std::os::raw::c_void;
-
 use noise::*;
+
+use transformations::InputTransformation;
 
 pub mod composition;
 use self::composition::CompositionScheme;
 pub mod conf;
 use self::conf::{GlobalTreeConf, NoiseModuleConf};
 pub mod definition;
-use self::definition::{CompositionTreeDefinition, CompositionTreeNodeDefinition, NoiseModuleType};
+use self::definition::{CompositionTreeDefinition, CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleType};
 pub mod initial_tree;
 
 /// The core of the noise module composition framework.  This struct is the parent of the entire composition tree
@@ -27,7 +27,7 @@ impl CompositionTree {
         let target_parent = self.root_node.traverse_mut(coords)?;
 
         match target_parent {
-            &mut CompositionTreeNode::Combined(ref mut composed_module) => composed_module.remove_child(index)?,
+            &mut CompositionTreeNode::Combined{ ref mut composed_module, .. } => composed_module.remove_child(index)?,
             &mut CompositionTreeNode::Leaf(_) => {
                 return Err(format!(
                     "Attempted to remove child node from module at depth {} index {}, but it is a leaf node!",
@@ -44,7 +44,7 @@ impl CompositionTree {
         let target_parent = self.root_node.traverse_mut(coords)?;
 
         match target_parent {
-            &mut CompositionTreeNode::Combined(ref mut composed_module) => composed_module.add_child(index, node),
+            &mut CompositionTreeNode::Combined{ ref mut composed_module, .. } => composed_module.add_child(index, node),
             &mut CompositionTreeNode::Leaf(_) => {
                 return Err(format!(
                     "Attempted to add child node to module at depth {} index {}, but it is a leaf node!",
@@ -61,7 +61,7 @@ impl CompositionTree {
         let target_node = self.root_node.traverse_mut(coords)?;
 
         match target_node {
-            &mut CompositionTreeNode::Combined(ref mut composed_module) => composed_module.composer = new_scheme,
+            &mut CompositionTreeNode::Combined{ ref mut composed_module, .. } => composed_module.composer = new_scheme,
             &mut CompositionTreeNode::Leaf(_) => {
                 return Err(format!(
                     "Attempted to set composition scheme of node at depth {} index {} but it's a leaf node!",
@@ -82,7 +82,10 @@ impl NoiseFn<Point3<f64>> for CompositionTree {
 
 pub enum CompositionTreeNode {
     Leaf(Box<NoiseFn<Point3<f64>>>),
-    Combined(ComposedNoiseModule),
+    Combined {
+        composed_module: ComposedNoiseModule,
+        transformations: Vec<InputTransformation>,
+    },
 }
 
 impl CompositionTreeNode {
@@ -91,14 +94,14 @@ impl CompositionTreeNode {
     pub fn remove_child(&mut self, index: usize) -> Result<(), String> {
         match self {
             &mut CompositionTreeNode::Leaf(_) => Err("Tried to remove child from module but it's a leaf node!".into()),
-            &mut CompositionTreeNode::Combined(ref mut composed_module) => composed_module.remove_child(index),
+            &mut CompositionTreeNode::Combined{ ref mut composed_module, .. } => composed_module.remove_child(index),
         }
     }
 
     pub fn add_child(&mut self, child: CompositionTreeNode, index: usize) -> Result<(), String> {
         match self {
             &mut CompositionTreeNode::Leaf(_) => Err("Tried to add child to module but it's a leaf node!".into()),
-            &mut CompositionTreeNode::Combined(ref mut composed_module) => {
+            &mut CompositionTreeNode::Combined{ ref mut composed_module, .. } => {
                 composed_module.add_child(index, child);
                 Ok(())
             }
@@ -110,7 +113,7 @@ impl CompositionTreeNode {
         let index = *coords.first().unwrap() as usize;
 
         let child = match self {
-            &mut CompositionTreeNode::Combined(ref mut composed_module) => {
+            &mut CompositionTreeNode::Combined{ ref mut composed_module, .. } => {
                 let num_children = composed_module.children.len();
                 match composed_module.children.get_mut(index) {
                     Some(child) => child,
@@ -142,7 +145,7 @@ impl NoiseFn<Point3<f64>> for CompositionTreeNode {
     fn get(&self, coord: Point3<f64>) -> f64 {
         match self {
             &CompositionTreeNode::Leaf(ref module) => module.get(coord),
-            &CompositionTreeNode::Combined(ref combined_module) => combined_module.get(coord),
+            &CompositionTreeNode::Combined{ ref composed_module, .. } => composed_module.get(coord),
         }
     }
 }

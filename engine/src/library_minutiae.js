@@ -25,6 +25,11 @@ mergeInto(LibraryManager.library, {
     Module.registerEnginePointer(ptr);
   },
 
+  setTreePointer: function(ptr) {
+    console.log('Setting tree pointer...');
+    Module.registerTreePointer(ptr);
+  },
+
   /**
    * Wrappers around `console.log` and `console.error` that circumvents the emulated stdout so it can be used after main exits
    */

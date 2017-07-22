@@ -2,5 +2,6 @@
 
 import Simr from 'simr';
 
-export const stageSizeReducer = new Simr.Reducer('stageSize', {containerSize: false});
+export const stageSizeReducer = new Simr.Reducer('stageSize', {containerSize: 0, lastSetCanvasSize: false});
 stageSizeReducer.addSetter('containerSize');
+stageSizeReducer.addSetter('lastSetCanvasSize');

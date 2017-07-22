@@ -33,3 +33,11 @@ impl InputTransformation {
         }
     }
 }
+
+/// Applies a list of transformations to the given input coordinate, returning the transformed result.
+pub fn apply_transformations(transformations: &[InputTransformation], coord: Point3<f64>) -> Point3<f64> {
+    transformations.iter()
+        .fold(coord, |acc, transformation| {
+            transformation.transform(acc)
+        })
+}

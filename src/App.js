@@ -32,8 +32,6 @@ const App = ({ settingsVisible }) => (
   </div>
 );
 
-const mapState = ({ settingsVisible }) => ({
-  settingsVisible,
-});
+const mapState = ({ settingsVisible }) => ({ settingsVisible });
 
 export default connect(mapState)(App);

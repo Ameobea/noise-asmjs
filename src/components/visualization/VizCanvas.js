@@ -8,11 +8,17 @@ import R from 'ramda';
 
 import { getEnginePointer } from 'src/selectors/enginePointer';
 import { getTrueCanvasSize } from 'src/selectors/stageSize';
+import { init, setCanvasSize } from 'src/interop';
 
 class VizCanvas extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { lastSetCanvasSize: 0 };
+  }
+
   // Add a reference to the canvas to the `Module` every time we render
   connectModule = canvas => {
-    this.setState({canvas});
+    this.setState({ canvas });
 
     Module.canvas = (function() {
       var canvas;
@@ -32,25 +38,38 @@ class VizCanvas extends React.Component {
   };
 
   render() {
-    const trueCanvasSize = getTrueCanvasSize(this.props.chosenCanvasSize, this.props.maxStageContainerSize);
-
     // This is the real source of truth for the universe size that should be passed down into the backend
     // so do all kinds of anti-pattern horrors and dispatch that setting from within the render
-    const enginePointer = getEnginePointer();
-    if(enginePointer !== 0) {
-      // TODO
+    const trueCanvasSize = getTrueCanvasSize(this.props.chosenCanvasSize, this.props.maxStageContainerSize);
+    console.log('true canvas size: ', trueCanvasSize);
+
+    if(trueCanvasSize !== this.state.lastSetCanvasSize) {
+      if(this.props.enginePointer) {
+        if(trueCanvasSize !== 0) {
+          setCanvasSize(this.props.enginePointer, trueCanvasSize);
+        }
+      } else {
+        init(trueCanvasSize);
+      }
     }
 
     return (
       <center>
-        <canvas id='mainCanvas' width={trueCanvasSize} height={trueCanvasSize} style={{backgroundColor: '#000'}} ref={this.connectModule} />
+        <canvas
+          id='mainCanvas'
+          width={trueCanvasSize}
+          height={trueCanvasSize}
+          style={{backgroundColor: '#000'}}
+          ref={this.connectModule}
+        />
       </center>
     );
   }
 }
 
 const mapState = state => ({
-  chosenCanvasSize: state.form.vizSettings && state.form.vizSettings.values.canvasSize,
+  chosenCanvasSize: 10000, // TODO
+  enginePointer: state.enginePointer.enginePointer,
   maxStageContainerSize: state.stageSize.containerSize && R.min(state.stageSize.containerSize.height, state.stageSize.containerSize.width),
 });
 

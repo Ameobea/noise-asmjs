@@ -47,15 +47,15 @@ impl NoiseFn<Point3<f64>> for TransformedNoiseModule {
     }
 }
 
-fn build_transformations(transformation_definitions: &[InputTransformationDefinition]) -> Vec<InputTransformation> {
+fn build_transformations(transformation_definitions: Vec<InputTransformationDefinition>) -> Vec<InputTransformation> {
     transformation_definitions
         .into_iter()
-        .map(|def| (*def).into())
+        .map(|def| def.into())
         .collect()
 }
 
 fn transform_noise_module(
-    module: Box<NoiseFn<Point3<f64>>>, transformation_definitions: &[InputTransformationDefinition]
+    module: Box<NoiseFn<Point3<f64>>>, transformation_definitions: Vec<InputTransformationDefinition>
 ) -> Box<NoiseFn<Point3<f64>>> {
     // If we have transformations to apply, create a `TransformedNoiseModule`; otherwise just return the inner module.
     if transformation_definitions.len() != 0 {
@@ -78,7 +78,7 @@ impl NoiseModuleType {
         &self, confs: &[NoiseModuleConf], transformation_definitions: Vec<InputTransformationDefinition>
     ) -> Box<NoiseFn<Point3<f64>>> {
         let inner = Self::construct_noise_fn(self, confs);
-        transform_noise_module(inner, &transformation_definitions)
+        transform_noise_module(inner, transformation_definitions)
     }
 
     pub fn construct_noise_fn(&self, confs: &[NoiseModuleConf]) -> Box<NoiseFn<Point3<f64>>> {
@@ -243,7 +243,12 @@ impl Into<CompositionTreeNode> for CompositionTreeNodeDefinition {
                     .map(|child_def| { child_def.into() })
                     .collect();
 
-                CompositionTreeNode::Combined(ComposedNoiseModule { composer: scheme, children: built_children })
+                let built_transformations = build_transformations(transformations);
+
+                CompositionTreeNode::Combined {
+                    composed_module: ComposedNoiseModule { composer: scheme, children: built_children },
+                    transformations: built_transformations,
+                }
             }
         }
     }

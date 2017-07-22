@@ -16,25 +16,21 @@ const measureElementSizeChange = element => ({
 // returns another function that accepts an element and calls the provided action dispatcher with its height and width
 const handleSizeChange = actionDispatcher => {
   return element => {
-    if(!element)
+    if(!element){
       return;
+    }
+
     const {height, width} = measureElementSizeChange(element);
     actionDispatcher(height, width);
   };
 };
 
-const Vizualization = ({enginePointer, setStageContainerSize}) => {
-  if(enginePointer) {
-    return (
-      <div style={{marginBottom: 20, height: '100%', width: '100%'}} ref={handleSizeChange(setStageContainerSize)}>
-        <ReactResizeDetector handleWidth handleHeight onResize={setStageContainerSize} />
-        <VizCanvas />
-      </div>
-    );
-  } else {
-    return <div>Loading...</div>;
-  }
-};
+const Vizualization = ({enginePointer, setStageContainerSize}) => (
+  <div style={{marginBottom: 20, height: '100%', width: '100%'}} ref={handleSizeChange(setStageContainerSize)}>
+    <ReactResizeDetector handleWidth handleHeight onResize={setStageContainerSize} />
+    <VizCanvas />
+  </div>
+);
 
 const mapStateToProps = state => ({
   enginePointer: state.enginePointer.pointer,
