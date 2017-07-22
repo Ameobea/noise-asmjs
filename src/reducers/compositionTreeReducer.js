@@ -115,7 +115,9 @@ export default (state=initialState, action={}) => {
     });
 
     // find any new nodes that have to be created as children to the parent node of the setting that just changed.
-    const newChildren = ownerNodeSchema.newChildren ? ownerNodeSchema.newChildren(mappedSettings, mappedChildren) : [];
+    const { new: newChildren, deleted: deletedChildrenTypes } = ownerNodeSchema.newChildren
+      ? ownerNodeSchema.newChildren(mappedSettings, mappedChildren)
+      : { new: [], deleted: [] };
     const normalizedNewChildren = newChildren
       .map(newChild => normalizeTree(newChild))
       .reduce((acc, normalizedChild) => ({
@@ -123,19 +125,51 @@ export default (state=initialState, action={}) => {
         nodes: {...acc.nodes, ...normalizedChild.entities.nodes},
       }), { settings: {}, children: {} });
 
+    // determine if any child nodes need to be deleted
+    const deletedSubtreeIds = deletedChildrenTypes
+      .reduce((acc, deletedType) => {
+        const matchedChild = mappedChildren.find( ({ type }) => type === deletedType);
+        if(matchedChild) {
+          return [...acc, matchedChild.id];
+        } else {
+          return acc;
+        }
+      }, []);
+
+    // traverse the subtrees of all nodes that need to be deleted and collect their node and setting ids
+    const { deletedNodeIds, deletedSettingIds } = deletedSubtreeIds.reduce((acc, subtreeNodeId) => {
+      const { nodes: deletedNodeIds, settings: deletedSettingIds } = traverseNodes(state.entities.nodes, subtreeNodeId);
+      return {
+        deletedNodeIds: R.concat(acc.deletedNodeIds, deletedNodeIds),
+        deletedSettingIds: R.concat(acc.deletedSettingIds, deletedSettingIds),
+      };
+    }, { deletedNodeIds: [], deletedSettingIds: [] });
+
     // add the newly created settings into the state and add their ids to the owner node's settings list.
     return {...state,
       entities: {...state.entities,
-        settings: {...updatedSettings,
+        // Remove settings from the deleted subtree to avoid "memory leak"
+        settings: {...R.omit(deletedSettingIds, updatedSettings),
           // add all new settings created in response to this setting being changed
           ...newSettings.reduce((acc, setting) => ({...acc, [setting.id]: setting}), {}),
           // also add all new settings created by children created in response to this setting being changed
           ...normalizedNewChildren.settings,
         },
-        nodes: {...state.entities.nodes,
+        // Remove nodes from the deleted subtree to avoid "memory leak"
+        nodes: {...R.omit(deletedNodeIds, state.entities.nodes),
           [ownerNodeId]: {...state.entities.nodes[ownerNodeId],
-            settings: [...state.entities.nodes[ownerNodeId].settings, ...R.map(R.prop('id'), newSettings)],
-            children: [...state.entities.nodes[ownerNodeId].children, ...newChildren.map(R.prop('id'))],
+            settings: [
+              // Remove the ids of all the children that we deleted from our children list
+              ...R.without(deletedSettingIds, state.entities.nodes[ownerNodeId].settings),
+              // And add the ids of all the new ones we've created
+              ...newSettings.map(R.prop('id'))
+            ],
+            children: [
+              // Remove the ids of all the settings that we deleted from our settings list
+              ...R.without(deletedNodeIds, state.entities.nodes[ownerNodeId].children),
+              // and add the ids of all the new ones we've created
+              ...newChildren.map(R.prop('id'))
+            ],
           },
           ...normalizedNewChildren.nodes,
         },

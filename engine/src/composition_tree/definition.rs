@@ -47,25 +47,38 @@ impl NoiseFn<Point3<f64>> for TransformedNoiseModule {
     }
 }
 
+fn build_transformations(transformation_definitions: &[InputTransformationDefinition]) -> Vec<InputTransformation> {
+    transformation_definitions
+        .into_iter()
+        .map(|def| (*def).into())
+        .collect()
+}
+
+fn transform_noise_module(
+    module: Box<NoiseFn<Point3<f64>>>, transformation_definitions: &[InputTransformationDefinition]
+) -> Box<NoiseFn<Point3<f64>>> {
+    // If we have transformations to apply, create a `TransformedNoiseModule`; otherwise just return the inner module.
+    if transformation_definitions.len() != 0 {
+        let built_transformations: Vec<InputTransformation> = build_transformations(transformation_definitions);
+
+        let transformed_module = TransformedNoiseModule {
+            inner: module,
+            transformations: built_transformations
+        };
+
+        Box::new(transformed_module)
+    } else {
+        module
+    }
+}
+
 impl NoiseModuleType {
     /// Given a module type and an array of configuration, builds the noise module.
     pub fn build(
         &self, confs: &[NoiseModuleConf], transformation_definitions: Vec<InputTransformationDefinition>
     ) -> Box<NoiseFn<Point3<f64>>> {
         let inner = Self::construct_noise_fn(self, confs);
-
-        // If we have transformations to apply, create a `TransformedNoiseModule`; otherwise just return the inner module.
-        if transformation_definitions.len() != 0 {
-            let built_transformations: Vec<InputTransformation> = transformation_definitions
-                .into_iter()
-                .map(|def| def.into())
-                .collect();
-
-            let transformed_module = TransformedNoiseModule { inner, transformations: built_transformations };
-            Box::new(transformed_module)
-        } else {
-            inner
-        }
+        transform_noise_module(inner, &transformation_definitions)
     }
 
     pub fn construct_noise_fn(&self, confs: &[NoiseModuleConf]) -> Box<NoiseFn<Point3<f64>>> {
@@ -211,6 +224,7 @@ pub enum CompositionTreeNodeDefinition {
     Composed {
         scheme: CompositionScheme,
         children: Vec<CompositionTreeNodeDefinition>,
+        transformations: Vec<InputTransformationDefinition>,
     }
 }
 
@@ -222,7 +236,7 @@ impl Into<CompositionTreeNode> for CompositionTreeNodeDefinition {
                 let built_module = module_type.build(&module_conf, transformations);
                 CompositionTreeNode::Leaf(built_module)
             },
-            CompositionTreeNodeDefinition::Composed { scheme, children } => {
+            CompositionTreeNodeDefinition::Composed { scheme, children, transformations } => {
                 // Build modules out of each of the children definitions, and combine them into a `CombinedModule`
                 let built_children: Vec<CompositionTreeNode> = children
                     .into_iter()

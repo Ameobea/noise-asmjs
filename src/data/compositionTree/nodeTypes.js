@@ -18,7 +18,6 @@ import { inputTransformationTypes } from 'src/data/inputTransformations';
 import {
   defaultCompositionScheme,
   defaultInputTransformation,
-  defaultInputTransformations,
   defaultNoiseModule
 } from 'src/helpers/compositionTree/util';
 
@@ -46,10 +45,20 @@ const getNoiseModuleSettings = settings => {
 };
 
 const getNoiseModuleNewChildren = (settings, children) => {
-  if(getSettingByName(settings, 'moduleType') === 'Composed' && children.length === 0) {
-    return [ defaultCompositionScheme(), defaultInputTransformations(), defaultNoiseModule() ];
+  if(getSettingByName(settings, 'moduleType') === 'Composed') {
+    if(children.length <= 1) {
+      return {
+        new: [ defaultCompositionScheme(), defaultNoiseModule() ],
+        deleted: [],
+      };
+    } else {
+      return { new: [], deleted: [] };
+    }
   } else {
-    return [];
+    return {
+      new: [],
+      deleted: ['noiseModule', 'compositionScheme'],
+    };
   }
 };
 
@@ -66,11 +75,20 @@ const getInputTransformationSettings = settings => {
 const getInputTransformationNewChildren = (settings, children) => {
   if(getSettingByName(settings, 'inputTransformationType') === 'honf') {
     if(children.length === 0) {
-      return [ defaultNoiseModule(), defaultNoiseModule() ];
+      return {
+        new: [ defaultNoiseModule() ],
+        deleted: [],
+      };
+    } else {
+      return { new: [], deleted: [] };
     }
+  } else {
+    // If changing from a HONF to any other input transformation, clear all children.
+    return {
+      new: [],
+      deleted: ['noiseModule', 'compositionScheme', 'inputTransformations'],
+    };
   }
-
-  return [];
 };
 
 /**
@@ -99,7 +117,10 @@ export const getNodeData = nodeType => ({
     description: 'The root of the entire composition tree.  This node and all of its children are queried each tick to determine the noise values for each coordinate of the canvas.',
     settings: getNoiseModuleSettings,
     isLeaf: R.compose(R.not, isComposed), // Only has children if it's a composed module
-    newChildren: getNoiseModuleNewChildren, // Expects function with signature `(settings, children) => [node]` or `null`.
+    // Function that is called with the node's settings every time a setting is changed.
+    // Expects function with signature `(settings, children) => {new: [node], deleted: ['moduleType']` or `null`.
+    newChildren: getNoiseModuleNewChildren,
+    // The node defined by the schema returned from this function will be added as a child when the "add child" button is pressed.
     newChildDefinition: composedNoiseModuleChildDefinition,
     canBeDeleted: false,
     subscribedToParent: false,
