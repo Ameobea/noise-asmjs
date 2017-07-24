@@ -6,14 +6,13 @@ import React from 'react';
 import { connect } from 'react-redux';
 import R from 'ramda';
 
-import { getEnginePointer } from 'src/selectors/enginePointer';
 import { getTrueCanvasSize } from 'src/selectors/stageSize';
 import { init, setCanvasSize } from 'src/interop';
 
 class VizCanvas extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { lastSetCanvasSize: 0 };
+    this.state = { trueCanvasSize: 25 };
   }
 
   // Add a reference to the canvas to the `Module` every time we render
@@ -22,7 +21,7 @@ class VizCanvas extends React.Component {
 
     Module.canvas = (function() {
       var canvas;
-      while(!canvas) { // wait until React has loaded in in
+      while(!canvas) { // wait until React has loaded it in
         canvas = document.getElementById('mainCanvas');
       }
 
@@ -37,28 +36,35 @@ class VizCanvas extends React.Component {
     })();
   };
 
-  render() {
+  componentWillReceiveProps(nextProps) {
+    this.calcCanvasSize(nextProps);
+  }
+
+  calcCanvasSize = props => {
     // This is the real source of truth for the universe size that should be passed down into the backend
     // so do all kinds of anti-pattern horrors and dispatch that setting from within the render
-    const trueCanvasSize = getTrueCanvasSize(this.props.chosenCanvasSize, this.props.maxStageContainerSize);
-    console.log('true canvas size: ', trueCanvasSize);
+    const trueCanvasSize = getTrueCanvasSize(props.chosenCanvasSize, props.maxStageContainerSize);
 
-    if(trueCanvasSize !== this.state.lastSetCanvasSize) {
-      if(this.props.enginePointer) {
+    if(trueCanvasSize !== this.state.trueCanvasSize) {
+      if(props.enginePointer) {
         if(trueCanvasSize !== 0) {
-          setCanvasSize(this.props.enginePointer, trueCanvasSize);
+          setCanvasSize(props.enginePointer, trueCanvasSize);
         }
       } else {
-        init(trueCanvasSize);
+        // init(trueCanvasSize);
       }
     }
 
+    this.setState({ trueCanvasSize });
+  };
+
+  render() {
     return (
       <center>
         <canvas
           id='mainCanvas'
-          width={trueCanvasSize}
-          height={trueCanvasSize}
+          width={this.state.trueCanvasSize}
+          height={this.state.trueCanvasSize}
           style={{backgroundColor: '#000'}}
           ref={this.connectModule}
         />

@@ -29,7 +29,7 @@ pub unsafe extern "C" fn init(canvas_size: usize) {
     let boxed_composition_tree = Box::from_raw(boxed_tree_pointer);
 
     // send a pointer to the engine state to the JS side to be used for dynamic configuration
-    debug("Calling `setTreePointer`...");
+    // debug("Calling `setTreePointer`...");
     setTreePointer(boxed_tree_pointer as *const c_void);
 
     // create the middleware that manages the image buffer and populates it each tick
@@ -40,7 +40,7 @@ pub unsafe extern "C" fn init(canvas_size: usize) {
     let boxed_engine_ptr = Box::into_raw(noise_stepper);
     let boxed_noise_stepper = Box::from_raw(boxed_engine_ptr);
 
-    debug("Calling `setEnginePointer`...");
+    // debug("Calling `setEnginePointer`...");
     setEnginePointer(boxed_engine_ptr as *const c_void);
 
     // Initialize the simulation, registering with the emscripten Browser event loop
@@ -163,7 +163,7 @@ pub unsafe extern "C" fn set_composition_scheme(
 
 #[no_mangle]
 pub unsafe extern "C" fn set_canvas_size(engine_pointer: *mut NoiseStepper, size: usize) {
-    debug(&format!("Setting canvas size to {} on the Rust side...", size));
+    // debug(&format!("Setting canvas size to {} on the Rust side...", size));
     let engine = &mut *engine_pointer;
     engine.conf.canvas_size = size;
     engine.conf.needs_resize = true;

@@ -32,8 +32,8 @@ export const getNodeParent = (allNodes, nodeId) => {
  * returns a value.  This helper method checks whether or not it's a function and, if it is, automatically calls it with the
  * supplied settings to produce a value.
  */
-export const getLeafAttr = (attr, schema, settings) => {
-  return typeof schema[attr] === 'function' ? schema[attr](settings) : schema[attr];
+export const getLeafAttr = (attr, schema, settings, parentNode, allNodes, allSettings) => {
+  return typeof schema[attr] === 'function' ? schema[attr](settings, parentNode, allNodes, allSettings) : schema[attr];
 };
 
 /**
@@ -54,10 +54,7 @@ export const getLeafAttrById = (allNodes, allSettings, nodeId, attr) => {
  */
 export const getSiblingIds = (allNodes, nodeId) => getNodeParent(allNodes, nodeId).children;
 
-/**
- * Given an array of settings in `{key, value, id}` format, returns the value of the setting with the supplied `settingName`.
- */
-export const getSettingByName = (settings, settingName) => {
+export const getSettingDataByName = (settings, settingName) => {
   const filteredSettings = settings.filter(R.propEq('key', settingName));
   if(filteredSettings.length === 0) {
     return null;
@@ -65,5 +62,18 @@ export const getSettingByName = (settings, settingName) => {
     console.error(`Multiple settings with name ${settingName} found!`);
   }
 
-  return filteredSettings[0].value;
+  return filteredSettings[0];
+};
+
+/**
+ * Given an array of settings in `{key, value, id}` format, returns the value of the setting with the supplied `settingName`.
+ */
+export const getSettingByName = (settings, settingName) => {
+  const setting = getSettingDataByName(settings, settingName);
+  return setting && setting.value;
+};
+
+export const getSettingIdByName = (settings, settingName) => {
+  const setting = getSettingDataByName(settings, settingName);
+  return setting && setting.id;
 };

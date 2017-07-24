@@ -9,5 +9,9 @@ export const getStageSize = () => store.getState().stageSize;
  * If the entered value is smaller than the wrapper, we use that; if not, we use the size of the wrapper.
  */
 export const getTrueCanvasSize = (chosenCanvasSize, maxStageContainerSize) => {
-  return chosenCanvasSize > maxStageContainerSize ? maxStageContainerSize : _.max([chosenCanvasSize, 20]);
+  if(process.env.NODE_ENV === 'development') {
+    return maxStageContainerSize === 0 ? 0 : 300;
+  } else {
+    return chosenCanvasSize > maxStageContainerSize ? maxStageContainerSize : _.max([chosenCanvasSize, 20]);
+  }
 };

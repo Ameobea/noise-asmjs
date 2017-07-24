@@ -17,7 +17,9 @@ export const CREATE_SETTING = 'CREATE_SETTING';
 // Args: {id: UUID}
 export const ADD_UNCOMMITED_CHANGES = 'ADD_UNCOMMITED_CHANGES';
 // Args: {}
-export const CLEAR_UNCOMMITED_CHANGES = 'CLEAR_UNCOMMITED_CHANGES';
+export const COMMIT_CHANGES = 'COMMIT_CHANGES';
+// Args: {id: UUID}
+export const UPDATE_NODE = 'UPDATE_NODE';
 
 export const addNode = (parentId, childIndex, nodeDef) => ({
   type: ADD_NODE,
@@ -54,6 +56,11 @@ export const addUncommitedChanges = changes => ({
   changes,
 });
 
-export const clearUncommitedChanges = () => ({
-  type: CLEAR_UNCOMMITED_CHANGES,
+export const commitChanges = () => ({
+  type: COMMIT_CHANGES,
+});
+
+export const updateNode = id => ({
+  type: UPDATE_NODE,
+  id,
 });

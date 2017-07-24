@@ -1,6 +1,4 @@
 import { combineReducers, createStore } from 'redux';
-import { batchedSubscribe } from 'redux-batched-subscribe';
-import { unstable_batchedUpdates } from 'react-dom';
 
 import { stageSizeReducer } from 'src/reducers/stageSizeReducer';
 import { enginePointerReducer } from 'src/reducers/enginePointerReducer';
@@ -16,7 +14,6 @@ const reducers = combineReducers({
 const store = createStore(
   reducers,
   window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__(),
-  batchedSubscribe(unstable_batchedUpdates)
 );
 
 // subscribe to changes, applying side effects and keeping the backend up to date

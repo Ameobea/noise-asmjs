@@ -9,16 +9,18 @@
 
 import React from 'react';
 import R from 'ramda';
+import { set } from 'zaphod/compat';
 
 import moduleTypes from 'src/data/noiseModules';
-import { getSettingByName } from 'src/selectors/compositionTree';
+import { getSettingByName, getSettingDataByName } from 'src/selectors/compositionTree';
 import compositionSchemes from 'src/data/compositionSchemes';
 import { multifractalSettings } from 'src/data/moduleSettings';
 import { inputTransformationTypes } from 'src/data/inputTransformations';
 import {
+  createSetting,
   defaultCompositionScheme,
   defaultInputTransformation,
-  defaultNoiseModule
+  defaultNoiseModule,
 } from 'src/helpers/compositionTree/util';
 
 const unknownNode = type => ({
@@ -48,17 +50,55 @@ const getNoiseModuleNewChildren = (settings, children) => {
   if(getSettingByName(settings, 'moduleType') === 'Composed') {
     if(children.length <= 1) {
       return {
-        new: [ defaultCompositionScheme(), defaultNoiseModule() ],
-        deleted: [],
+        newChildren: [ defaultCompositionScheme(), defaultNoiseModule() ],
+        deletedChildrenTypes: [],
       };
     } else {
-      return { new: [], deleted: [] };
+      return { newChildren: [], deletedChildrenTypes: [] };
     }
   } else {
     return {
-      new: [],
-      deleted: ['noiseModule', 'compositionScheme'],
+      newChildren: [],
+      deletedChildrenTypes: ['noiseModule', 'compositionScheme'],
     };
+  }
+};
+
+const getCompositionSchemeSettings = settings => [
+  'compositionScheme',
+  ...compositionSchemes.find( ({ key }) => key === getSettingByName(settings, 'compositionScheme') ).settings,
+];
+
+const getCompositionSchemeChangedSettings = (settings, parentNode, allNodes, allSettings) => {
+  if(getSettingByName(settings, 'compositionScheme') === 'weightedAverage') {
+    if(!parentNode) {
+      console.log('No parent node for node with settings ', settings);
+      return [];
+    }
+
+    // weighted average's value depends on its sibling nodes.
+    const requiredValues = parentNode.children.reduce((acc, id) => {
+      if(allNodes[id].type === 'noiseModule') {
+        return {...acc, [id]: 0};
+      } else {
+        return acc;
+      }
+    }, {});
+    const value = getSettingByName(settings, 'averageWeights');
+
+    if(R.keys(value).length !== R.keys(requiredValues).length) {
+      // Remove all keys for modules that no longer exist and add new ones for new mdules.
+      const newValue = R.merge(requiredValues, R.pick(R.keys(requiredValues), value || {}));
+      const existingSetting = getSettingDataByName(settings, 'averageWeights');
+
+      // create the setting if it doesn't already exist.
+      const updatedSetting = existingSetting
+        ? set(existingSetting, 'value',  newValue)
+        : createSetting('averageWeights', newValue);
+      return { [updatedSetting.id]: updatedSetting };
+    }
+  } else {
+    return [];
   }
 };
 
@@ -76,16 +116,16 @@ const getInputTransformationNewChildren = (settings, children) => {
   if(getSettingByName(settings, 'inputTransformationType') === 'honf') {
     if(children.length === 0) {
       return {
-        new: [ defaultNoiseModule() ],
-        deleted: [],
+        newChildren: [ defaultNoiseModule() ],
+        deletedChildrenTypes: [],
       };
     } else {
-      return { new: [], deleted: [] };
+      return { newChildren: [], deletedChildrenTypes: [] };
     }
   } else {
     // If changing from a HONF to any other input transformation, clear all children.
     return {
-      new: [],
+      newChildren: [],
       deleted: ['noiseModule', 'compositionScheme', 'inputTransformations'],
     };
   }
@@ -116,61 +156,65 @@ export const getNodeData = nodeType => ({
     title: <span style={{color: 'white'}}>Root Node</span>,
     description: 'The root of the entire composition tree.  This node and all of its children are queried each tick to determine the noise values for each coordinate of the canvas.',
     settings: getNoiseModuleSettings,
+    // If null, the values of all existing settings are kept the same.  Otherwise, it's a function that takes the node's current settings,
+    // the node's parent, allNodes, and allSettings as arguments and returns an object of `{settingId: settingValue}`s containing updated settings.
+    changedSettings: null,
     isLeaf: R.compose(R.not, isComposed), // Only has children if it's a composed module
     // Function that is called with the node's settings every time a setting is changed.
-    // Expects function with signature `(settings, children) => {new: [node], deleted: ['moduleType']` or `null`.
+    // Expects function with signature `(settings, children) => {newChildren: [node], deletedChildrenTypes: ['moduleType']` or `null`.
     newChildren: getNoiseModuleNewChildren,
     // The node defined by the schema returned from this function will be added as a child when the "add child" button is pressed.
     newChildDefinition: composedNoiseModuleChildDefinition,
     canBeDeleted: false,
-    subscribedToParent: false,
+    dependentOnParent: false,
   },
   globalConf: {
     name: 'Global Configuration',
     title: <span style={{color: 'green'}}>Global Configuration</span>,
     description: 'Configuration options for the composition tree that affect the entire tree.',
     settings: ['zoom', 'speed'],
+    changedSettings: null,
     isLeaf: true,
     newChildren: null,
     newChildDefinition: false,
     canBeDeleted: false,
-    subscribedToParent: false,
+    dependentOnParent: false,
   },
   noiseModule: {
     name: 'Noise Module',
     title: settings => moduleTypes.find(R.propEq('key', getSettingByName(settings, 'moduleType'))).name,
     description: 'Noise modeules are the core components of the composition tree.  At its core, a noise module takes a 3-dimensional coordinate and returns a single floating point value.  These are then mapped onto the canvas as a 2D slice with Z as the current sequence number.',
     settings: getNoiseModuleSettings,
+    changedSettings: null,
     isLeaf: false,
     newChildren: getNoiseModuleNewChildren,
     newChildDefinition: composedNoiseModuleChildDefinition,
     canBeDeleted: true, // TODO: Only allow them to be deleted if they're not the only child of their parent.
-    subscribedToParent: false,
+    dependentOnParent: false,
   },
   compositionScheme: {
     name: 'Composition Scheme',
     title: <span style={{color: 'red'}}>Composition Scheme</span>,
     description: 'Composition schemes define methods to combine the outputs of multiple noise modules into a single value.',
-    settings: settings => [
-      'compositionScheme',
-      ...compositionSchemes.find( ({ key }) => key === getSettingByName(settings, 'compositionScheme') ).settings,
-    ],
+    settings: getCompositionSchemeSettings,
+    changedSettings: getCompositionSchemeChangedSettings,
     isLeaf: true,
     newChildren: null,
     newChildDefinition: false,
     canBeDeleted: false,
-    subscribedToParent: settings => getSettingByName(settings, 'compositionScheme') === 'weightedAverage',
+    dependentOnParent: settings => getSettingByName(settings, 'compositionScheme') === 'weightedAverage',
   },
   inputTransformations: {
     name: 'Input Transformation',
     title: <span style={{color: 'purple'}}>Input Transformations</span>,
     description: 'Input transformations are sort of noise function preprocessors.  Given the three-dimensional input coordinate, they alter its values in some way and then pass the altered coordinate on to the noise function.',
     settings: [],
+    changedSettings: null,
     isLeaf: false,
     newChildren: null,
     newChildDefinition: defaultInputTransformation(),
     canBeDeleted: false,
-    subscribedToParent: false,
+    dependentOnParent: false,
   },
   inputTransformation: {
     name: 'Input Transformation',
@@ -180,10 +224,11 @@ export const getNodeData = nodeType => ({
     },
     description: 'A transformation that is applied to the three-dimensional input coordinate of a noise function before being passed to the noise function.',
     settings: getInputTransformationSettings,
+    changedSettings: null,
     isLeaf: R.compose(R.not, isHONF),
     newChildren: getInputTransformationNewChildren,
     newChildDefinition: R.compose(honf => honf ? defaultNoiseModule() : false, isHONF),
     canBeDeleted: true,
-    subscribedToParent: false,
+    dependentOnParent: false,
   },
 }[nodeType] || unknownNode(nodeType));
