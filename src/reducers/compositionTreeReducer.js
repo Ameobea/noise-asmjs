@@ -10,7 +10,7 @@ import { normalizeTree } from 'src/helpers/compositionTree/normalization';
 import { NULL_UUID } from 'src/data/misc';
 import {
   ADD_NODE, DELETE_NODE, REPLACE_NODE, SELECT_NODE, SET_SETTING, CREATE_SETTING,
-  ADD_UNCOMMITED_CHANGES, CLEAR_UNCOMMITED_CHANGES, UPDATE_NODE,
+  ADD_UNCOMMITED_CHANGES, COMMIT_CHANGES, UPDATE_NODE,
 } from 'src/actions/compositionTree';
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import { createSetting, initialUncommitedChanges, mapIdsToEntites } from 'src/helpers/compositionTree/util';
@@ -212,8 +212,9 @@ export default (state=initialState, action={}) => {
     return set(state, 'uncommitedChanges', mergedChanges);
   }
 
-  case CLEAR_UNCOMMITED_CHANGES: {
+  case COMMIT_CHANGES: {
     console.log('COMMITING CHANGES: ', state.uncommitedChanges);
+    // TODO: Actually commit the changes
     return {...state, uncommitedChanges: initialUncommitedChanges()};
   }
 

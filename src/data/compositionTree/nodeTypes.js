@@ -126,7 +126,7 @@ const getInputTransformationNewChildren = (settings, children) => {
     // If changing from a HONF to any other input transformation, clear all children.
     return {
       newChildren: [],
-      deleted: ['noiseModule', 'compositionScheme', 'inputTransformations'],
+      deletedChildrenTypes: ['noiseModule', 'compositionScheme', 'inputTransformations'],
     };
   }
 };

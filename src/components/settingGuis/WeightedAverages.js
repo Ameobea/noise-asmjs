@@ -10,13 +10,11 @@ import { Input } from 'semantic-ui-react';
 
 import { getLeafAttrById } from 'src/selectors/compositionTree';
 
-const AverageWeights = () => {
-  const { value, onChange: handleParentChange, nodes: allNodes, settings: allSettings } = this.props;
-
+const AverageWeights = ({ value, onChange: handleParentChange, nodes: allNodes, settings: allSettings }) => {
   // Create input fields mapped to each of the children of the composed noise module
   const inputs = R.keys(value)
     // Necessary because deleted nodes aren't actually removed from `value` until next render.
-    .filter(key => !!this.props.nodes[key])
+    .filter(key => !!allNodes[key])
     .map(key => {
       const title = getLeafAttrById(allNodes, allSettings, key, 'title');
 
