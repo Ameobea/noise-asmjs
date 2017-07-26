@@ -7,16 +7,24 @@
 import R from 'ramda';
 import diff from 'deep-diff';
 import listen from 'listate';
-import { set } from 'zaphod/compat';
+import { getIn } from 'zaphod/compat';
 
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import {
-  addUncommitedChanges, commitChanges, updateNode
+  addUncommitedChanges, clearPostCommit, commitChanges, updateNode
 } from 'src/actions/compositionTree';
 import { getNodeParent, getSettingParent } from 'src/selectors/compositionTree';
 import { initialUncommitedChanges } from 'src/helpers/compositionTree/util';
 
 const handleChanges = ({ current, prev, data: { store } }, recursionDepth) => {
+  const { compositionTree: { postCommit } } = store.getState();
+  if(postCommit) {
+    // This is the first diff after a commit+garbage collect, so the tree is already reconciled with the backend
+    // and this diff should be ignored.
+    store.dispatch(clearPostCommit());
+    return;
+  }
+
   const calculatedDiff = diff(prev, current);
 
   if(!calculatedDiff) { return; }
@@ -37,7 +45,21 @@ const handleChanges = ({ current, prev, data: { store } }, recursionDepth) => {
 
     case 'A':
     case 'E': {
-      if(path[0] === 'nodes') {
+      // console.log(kind, path);
+      if(R.last(path) === 'children') {
+        const prevChildren = getIn(prev, path);
+        const curChildren = getIn(current, path);
+
+        if(curChildren.length < prevChildren.length) {
+          // This *may* cause issues if children are being re-ordered, but that shouldn't be an issue right now.
+          return {...acc,
+            updated: R.union([path[1]], acc.updated),
+            deleted: R.union(R.symmetricDifference(prevChildren, curChildren), acc.deleted),
+          };
+        } else {
+          return {...acc, updated: R.union([path[1]], acc.updated)};
+        }
+      } else if(path[0] === 'nodes') {
         // mark the parent of the node as updated
         const parentNode = getNodeParent(current.nodes, path[1]);
         if(parentNode) {
@@ -84,16 +106,10 @@ const handleChanges = ({ current, prev, data: { store } }, recursionDepth) => {
     }
   }, initialUncommitedChanges());
 
-  // remove any node ids that are in `new` from `updated`
-  const dedupedUncommitedChanges = set(
-    newUncommitedChanges,
-    'updated',
-    R.without(R.union(newUncommitedChanges.new, newUncommitedChanges.deleted), newUncommitedChanges.updated)
-  );
-  store.dispatch(addUncommitedChanges(dedupedUncommitedChanges));
+  store.dispatch(addUncommitedChanges(newUncommitedChanges));
 
   // process any pending subscriptions of the changed nodes
-  dedupedUncommitedChanges.updated.forEach(id => {
+  newUncommitedChanges.updated.forEach(id => {
     R.values(current.nodes[id].children)
       .filter(childId => !!current.nodes[childId])
       .forEach(childId => {
@@ -102,8 +118,6 @@ const handleChanges = ({ current, prev, data: { store } }, recursionDepth) => {
         }
       });
   });
-
-  const { pendingSideEffects: upToDatePendingSideEffects } = store.getState();
 
   if(recursionDepth === 1) {
     store.dispatch(commitChanges());

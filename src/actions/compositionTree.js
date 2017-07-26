@@ -20,6 +20,8 @@ export const ADD_UNCOMMITED_CHANGES = 'ADD_UNCOMMITED_CHANGES';
 export const COMMIT_CHANGES = 'COMMIT_CHANGES';
 // Args: {id: UUID}
 export const UPDATE_NODE = 'UPDATE_NODE';
+// Args: {}
+export const CLEAR_POST_COMMIT = 'CLEAR_POST_COMMIT';
 
 export const addNode = (parentId, childIndex, nodeDef) => ({
   type: ADD_NODE,
@@ -63,4 +65,8 @@ export const commitChanges = () => ({
 export const updateNode = id => ({
   type: UPDATE_NODE,
   id,
+});
+
+export const clearPostCommit = () => ({
+  type: CLEAR_POST_COMMIT,
 });

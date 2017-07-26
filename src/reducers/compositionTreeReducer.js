@@ -10,7 +10,7 @@ import { normalizeTree } from 'src/helpers/compositionTree/normalization';
 import { NULL_UUID } from 'src/data/misc';
 import {
   ADD_NODE, DELETE_NODE, REPLACE_NODE, SELECT_NODE, SET_SETTING, CREATE_SETTING,
-  ADD_UNCOMMITED_CHANGES, COMMIT_CHANGES, UPDATE_NODE,
+  ADD_UNCOMMITED_CHANGES, COMMIT_CHANGES, UPDATE_NODE, CLEAR_POST_COMMIT,
 } from 'src/actions/compositionTree';
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import { createSetting, initialUncommitedChanges, mapIdsToEntites } from 'src/helpers/compositionTree/util';
@@ -21,6 +21,7 @@ const initialState = R.merge(normalizeTree(initialTree), {
   selectedNode: NULL_UUID,
   uncommitedChanges: initialUncommitedChanges(),
   pendingSideEffects: 0,
+  postCommit: false,
 });
 
 const calcChildrenModifications = (schema, mappedSettings, mappedChildren) => {
@@ -101,8 +102,9 @@ const updateTree = (state, updatedSettings, ownerNodeId) => {
         ...newSettings.reduce((acc, setting) => ({...acc, [setting.id]: setting}), {}),
         ...normalizedNewChildren.settings,
       }, changedSettings),
-      // Remove nodes from the deleted subtree to avoid "memory leak"
-      nodes: {...R.omit(deletedNodeIds, state.entities.nodes),
+      // Deleted nodes are not actually removed from the store, but their ids are removed from the children list of their parent.
+      // Nodes are actually deleted from the store to avoid "memory leak" after being commited to the backend.
+      nodes: {...state.entities.nodes,
         [ownerNodeId]: {...state.entities.nodes[ownerNodeId],
           settings: R.union([
             ...R.without(deletedSettingIds, state.entities.nodes[ownerNodeId].settings),
@@ -159,17 +161,9 @@ export default (state=initialState, action={}) => {
    */
   case DELETE_NODE: {
     const { id: parentId, children: parentChildren } = getNodeParent(state.entities.nodes, action.nodeId);
-    const { nodes: deletedNodes, settings: deletedSettings } = traverseNodes(state.entities.nodes, action.nodeId);
 
-    return {...state,
-      entities: {...state.entities,
-        nodes: {...R.omit(deletedNodes, state.entities.nodes),
-          [parentId]: {...state.entities.nodes[parentId],
-            children: R.without([action.nodeId], parentChildren),
-          },
-        },
-        settings: R.omit(deletedSettings, state.entities.settings),
-      },
+    return {
+      ...setIn(state, ['entities', 'nodes', parentId, 'children'], R.without([action.nodeId], parentChildren)),
       selectedNode: parentId,
     };
   }
@@ -207,15 +201,50 @@ export default (state=initialState, action={}) => {
   }
 
   case ADD_UNCOMMITED_CHANGES: {
-    // TODO: It may be necessary to trim children of new nodes from the `new` list and only retain the root of new subtrees
     const mergedChanges = R.mergeWith(R.union, state.uncommitedChanges, action.changes);
-    return set(state, 'uncommitedChanges', mergedChanges);
+
+    const dedupedChanges = {...mergedChanges,
+      // remove any node ids that are in `new` from `updated`
+      updated: R.without(R.union(mergedChanges.new, mergedChanges.deleted), mergedChanges.updated),
+      // remove any node IDs from the list that have parents that are also in the list of deleted nodes, retaining
+      // only those that are at the root of their respective deleted subtree.
+      deleted: (function() {
+        const mappedDeletedNodes = mapIdsToEntites(state.entities.nodes, mergedChanges.deleted);
+        return mergedChanges.deleted.filter(id => {
+          // if any other deleted node has this node as a child, it's not the root of its deleted sutree.
+          return !mappedDeletedNodes.find(({ children }) => children.includes(id));
+        });
+      })(),
+    };
+
+    return set(state, 'uncommitedChanges', dedupedChanges);
   }
 
   case COMMIT_CHANGES: {
     console.log('COMMITING CHANGES: ', state.uncommitedChanges);
+
     // TODO: Actually commit the changes
-    return {...state, uncommitedChanges: initialUncommitedChanges()};
+    return {...state,
+      // Now that we've commited the changes, we can "garbage collect" the deleted nodes (and all their children/settings).
+      entities: (function() {
+        const { nodes: deletedNodeIds, settings: deletedSettingIds } = state.uncommitedChanges.deleted
+          .reduce((acc, deletedSubtreeRootNodeId) => {
+            return R.mergeWith(R.union, acc, traverseNodes(state.entities.nodes, deletedSubtreeRootNodeId));
+          }, { nodes: [], settings: [] });
+
+        return {...state.entities,
+          nodes: R.omit(deletedNodeIds, state.entities.nodes),
+          settings: R.omit(deletedSettingIds, state.entities.settings),
+        };
+      })(),
+      uncommitedChanges: initialUncommitedChanges(),
+      // let the diff listener know that we've just commited+garbage collected and to ignore the next diff
+      postCommit: true,
+    };
+  }
+
+  case CLEAR_POST_COMMIT: {
+    return set(state, 'postCommit', false);
   }
 
   /**
