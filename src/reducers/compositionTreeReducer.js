@@ -6,7 +6,7 @@ import R from 'ramda';
 import { set, setIn } from 'zaphod/compat';
 
 import initialTree from 'src/data/compositionTree/initialTree';
-import { normalizeTree } from 'src/helpers/compositionTree/normalization';
+import { denormalizeTree, normalizeTree } from 'src/helpers/compositionTree/normalization';
 import { NULL_UUID } from 'src/data/misc';
 import {
   ADD_NODE, DELETE_NODE, REPLACE_NODE, SELECT_NODE, SET_SETTING, CREATE_SETTING,
@@ -222,6 +222,7 @@ export default (state=initialState, action={}) => {
 
   case COMMIT_CHANGES: {
     console.log('COMMITING CHANGES: ', state.uncommitedChanges);
+    console.log('denormalized tree: ', JSON.stringify(denormalizeTree(state.entities)));
 
     // TODO: Actually commit the changes
     return {...state,

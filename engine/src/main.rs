@@ -7,7 +7,7 @@
 // TODO: Deprecate the entire cell mutator functionality in favor of entirely middleware-driven approaches
 
 // #![allow(unused_variables, dead_code)]
-#![feature(conservative_impl_trait)]
+#![feature(conservative_impl_trait, try_from)]
 
 extern crate minutiae;
 extern crate noise;
@@ -54,6 +54,7 @@ pub mod composition_tree;
 use self::composition_tree::CompositionTree;
 pub mod interop;
 use interop::*;
+pub mod ir;
 pub mod transformations;
 pub mod util;
 
