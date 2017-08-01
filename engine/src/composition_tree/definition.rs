@@ -1,5 +1,7 @@
 //! Defines a meta-format that can be used to represent composition trees in a serialize-able/dematerialize-able manner.
 
+use std::convert::TryFrom;
+
 use noise::*;
 
 use transformations::InputTransformation;
@@ -17,8 +19,9 @@ pub struct CompositionTreeDefinition {
 }
 
 /// Includes every possible type of noise module available through the tool.
-#[derive(Serialize, Deserialize)]
+#[derive(PartialEq, Serialize, Deserialize)]
 pub enum NoiseModuleType {
+    Composed,
     Fbm,
     Worley,
     OpenSimplex,
@@ -29,6 +32,28 @@ pub enum NoiseModuleType {
     RidgedMulti,
     BasicMulti,
     Constant,
+}
+
+// wanted to do this with macros, but deriving `Serialize` and `Deserialize` seems to break that.
+impl TryFrom<String> for NoiseModuleType {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        match s.as_str() {
+            "Composed" => Ok(NoiseModuleType::Composed),
+            "Fbm" => Ok(NoiseModuleType::Fbm),
+            "Worley" => Ok(NoiseModuleType::Worley),
+            "OpenSimplex" => Ok(NoiseModuleType::OpenSimplex),
+            "Billow" => Ok(NoiseModuleType::Billow),
+            "HybridMulti" => Ok(NoiseModuleType::HybridMulti),
+            "SuperSimplex" => Ok(NoiseModuleType::SuperSimplex),
+            "Value" => Ok(NoiseModuleType::Value),
+            "RidgedMulti" => Ok(NoiseModuleType::RidgedMulti),
+            "BasicMulti" => Ok(NoiseModuleType::BasicMulti),
+            "Constant" => Ok(NoiseModuleType::Constant),
+            _ => Err(format!("Unable to convert `moduleType` setting attribute into `NoiseModuleType`: {}", s))
+        }
+    }
 }
 
 pub struct TransformedNoiseModule {
@@ -209,6 +234,7 @@ impl NoiseModuleType {
                 });
                 Box::new(configured_module)
             },
+            &NoiseModuleType::Composed => panic!("Attempted to build leaf module with type Composed!  That's only a placeholder."),
         }
     }
 }

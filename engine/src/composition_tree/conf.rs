@@ -1,6 +1,10 @@
 //! Defines the data types used to create noise modules.
 
+use std::convert::TryFrom;
+
 use noise::{Constant, MultiFractal, RangeFunction, Seedable, Worley};
+
+use ir::IrSetting;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum InteropRangeFunction {

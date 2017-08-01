@@ -1,9 +1,11 @@
 //! Defines a `NoiseModuleComposer` struct that combines the inputs of multiple noise modules into one single output.
 
+use std::convert::TryFrom;
+
 use noise::{NoiseFn, Point3};
 
 use super::CompositionTreeNode;
-use super::super::error;
+use ir::IrNode;
 
 /// Defines a way to combine the outputs of multiple noise modules into one.
 #[derive(Serialize, Deserialize)]
@@ -23,9 +25,16 @@ impl CompositionScheme {
                 sum / children.len() as f64
             },
             &CompositionScheme::WeightedAverage(ref weights) => {
-                error("WeighedAverage called...");
-                0.0
+                unimplemented!(); // TODO
             }
         }
+    }
+}
+
+impl TryFrom<IrNode> for CompositionScheme {
+    type Error = String;
+
+    fn try_from(node: IrNode) -> Result<Self, Self::Error> {
+        unimplemented!(); // TODO
     }
 }
