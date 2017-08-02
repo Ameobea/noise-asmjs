@@ -1,10 +1,10 @@
 //! Defines the data types used to create noise modules.
 
-use std::convert::TryFrom;
+use std::str::FromStr;
 
 use noise::{Constant, MultiFractal, RangeFunction, Seedable, Worley};
 
-use ir::IrSetting;
+use super::super::debug;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum InteropRangeFunction {
@@ -27,6 +27,21 @@ impl Into<RangeFunction> for InteropRangeFunction {
     }
 }
 
+impl FromStr for InteropRangeFunction {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Euclidean" => Ok(InteropRangeFunction::Euclidean),
+            "EuclideanSquared" => Ok(InteropRangeFunction::EuclideanSquared),
+            "Manhattan" => Ok(InteropRangeFunction::Manhattan),
+            "Chebyshev" => Ok(InteropRangeFunction::Chebyshev),
+            "Quadratic" => Ok(InteropRangeFunction::Quadratic),
+            _ => Err(format!("Unable to convert \"{}\" into `InteropRangeFunction`!", s)),
+        }
+    }
+}
+
 /// Holds all possible configuration options for a noise module.  Since each module supports one or more of
 /// these enum variants, each `GenNoiseModule` will have an array of these that describe the configuration
 /// of that particular `GenNoiseModule`.
@@ -42,13 +57,35 @@ pub enum NoiseModuleConf {
         seed: u32,
     },
     Worley {
-        range_function: Option<InteropRangeFunction>,
-        frequency: f64,
+        range_function: InteropRangeFunction,
+        range_function_enabled: bool,
+        worley_frequency: f64,
         displacement: f64,
     },
     Constant {
         constant: f64,
     },
+}
+
+/// List of all the settings for use in mapping keys to their corresponding setting types.
+#[derive(PartialEq, Eq, Hash)]
+pub enum SettingType {
+    MultiFractal,
+    Seedable,
+    Worley,
+    Constant,
+}
+
+/// Matches a key of a setting from the frontend to its corresponding setting type that will eventually be
+/// used to make it into a `NoiseModuleConf`.
+pub fn map_setting_to_type(key: &str) -> Result<SettingType, String> {
+    match key {
+        "octaves" | "frequency" | "lacunarity" | "persistence" => Ok(SettingType::MultiFractal),
+        "seed" => Ok(SettingType::Seedable),
+        "rangeFunction" | "worleyFrequency" | "displacement" => Ok(SettingType::Worley),
+        "constant" => Ok(SettingType::Constant),
+        _ => Err(format!("Unable to match setting with key {} to `SettingType`!", key)),
+    }
 }
 
 /// Configuration that applies to the entire composition tree.
@@ -65,7 +102,7 @@ pub fn apply_multifractal_conf<T: MultiFractal>(conf: &NoiseModuleConf, module: 
             .set_lacunarity(lacunarity)
             .set_persistence(persistence)
     } else {
-        println!("ERROR: Attempted to configure module with multifractal settings but the settings aren't multifractal: {:?}", conf);
+        debug(&format!("ERROR: Attempted to configure module with multifractal settings but the settings aren't multifractal: {:?}", conf));
         module
     }
 }
@@ -74,20 +111,19 @@ pub fn apply_seedable_conf<T: Seedable>(conf: &NoiseModuleConf, module: T) -> T 
     if let &NoiseModuleConf::Seedable { seed } = conf {
         module.set_seed(seed)
     } else {
-        println!("ERROR: Attempted to configure module with seedable settings but the settings aren't seedable: {:?}", conf);
+        debug(&format!("ERROR: Attempted to configure module with seedable settings but the settings aren't seedable: {:?}", conf));
         module
     }
 }
 
 pub fn apply_worley_conf(conf: &NoiseModuleConf, module: Worley) -> Worley {
-    if let &NoiseModuleConf::Worley { range_function, frequency, displacement } = conf {
-        match range_function {
-            Some(range_fn) => module.enable_range(true).set_range_function(range_fn.into()),
-            None => module.enable_range(false),
-        }.set_frequency(frequency)
+    if let &NoiseModuleConf::Worley { range_function, range_function_enabled, worley_frequency, displacement } = conf {
+        if range_function_enabled { module.enable_range(true) } else { module.enable_range(false) }
+            .set_range_function(range_function.into())
             .set_displacement(displacement)
+            .set_frequency(worley_frequency)
     } else {
-        println!("ERROR: Attempted to configure module with worley settings but the settings aren't worley: {:?}", conf);
+        debug(&format!("ERROR: Attempted to configure module with worley settings but the settings aren't worley: {:?}", conf));
         module
     }
 }
@@ -96,7 +132,7 @@ pub fn apply_constant_conf(conf: &NoiseModuleConf, module: Constant) -> Constant
     if let &NoiseModuleConf::Constant { constant } = conf {
         Constant::new(constant)
     } else {
-        println!("ERROR: Attempted to configure module with constant settings but the settings aren't constant: {:?}", conf);
+        debug(&format!("ERROR: Attempted to configure module with constant settings but the settings aren't constant: {:?}", conf));
         module
     }
 }

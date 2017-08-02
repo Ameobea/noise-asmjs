@@ -3,9 +3,11 @@
 use std::convert::TryFrom;
 
 use noise::{NoiseFn, Point3};
+use serde_json;
 
 use super::CompositionTreeNode;
 use ir::IrNode;
+use util::find_setting_by_name;
 
 /// Defines a way to combine the outputs of multiple noise modules into one.
 #[derive(Serialize, Deserialize)]
@@ -35,6 +37,16 @@ impl TryFrom<IrNode> for CompositionScheme {
     type Error = String;
 
     fn try_from(node: IrNode) -> Result<Self, Self::Error> {
-        unimplemented!(); // TODO
+        let composition_scheme = find_setting_by_name("compositionScheme", &node.settings)?;
+
+        match composition_scheme.as_str() {
+            "Average" => Ok(CompositionScheme::Average),
+            "WeightedAverage" => Ok(CompositionScheme::WeightedAverage({
+                let raw_val = find_setting_by_name("weights", &node.settings)?;
+                serde_json::from_str(&raw_val)
+                    .map_err(|_| format!("Unable to parse `weights` vector from string: {}", raw_val))?
+            })),
+            _ => Err(format!("Unknown composition scheme \"{}\" provided!", composition_scheme)),
+        }
     }
 }

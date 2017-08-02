@@ -13,7 +13,7 @@ const uniteSets = sets => sets.reduce((acc, value, key) => acc.union(value), Set
 
 export default {
   Fbm: uniteSets([NoiseModule, MultiFractal, Seedable]),
-  Worley: uniteSets([NoiseModule, Seedable, Set(['rangeFunction', 'enableRange', 'frequency', 'displacement'])]),
+  Worley: uniteSets([NoiseModule, Seedable, Set(['rangeFunction', 'enableRange', 'worleyFrequency', 'displacement'])]),
   OpenSimplex: uniteSets([NoiseModule, Seedable]),
   Billow: uniteSets([NoiseModule, MultiFractal, Seedable]),
   HybridMulti: uniteSets([NoiseModule, MultiFractal, Seedable]),

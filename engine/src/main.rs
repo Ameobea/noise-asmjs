@@ -9,6 +9,7 @@
 // #![allow(unused_variables, dead_code)]
 #![feature(conservative_impl_trait, try_from)]
 
+extern crate itertools;
 extern crate minutiae;
 extern crate noise;
 extern crate palette;
@@ -53,7 +54,6 @@ pub fn error(msg: &str) {
 pub mod composition_tree;
 use self::composition_tree::CompositionTree;
 pub mod interop;
-use interop::*;
 pub mod ir;
 pub mod transformations;
 pub mod util;

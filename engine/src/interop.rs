@@ -117,7 +117,6 @@ pub unsafe extern "C" fn add_node(
 pub unsafe extern "C" fn replace_node(
     tree_pointer: *mut CompositionTree, depth: i32, coords: *const i32, index: i32, node_definition: *const c_char
 ) -> i32 {
-    let coords_slice = slice::from_raw_parts(coords, depth as usize);
     if let 1 = delete_node(tree_pointer, depth, coords, index) {
         return 1;
     }

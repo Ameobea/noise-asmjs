@@ -3,8 +3,9 @@
 
 use std::convert::{TryFrom, TryInto};
 
+use itertools::Itertools;
+
 use composition_tree::composition::CompositionScheme;
-use composition_tree::conf::NoiseModuleConf;
 use composition_tree::definition::{CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleType};
 use util::{build_child, build_noise_module_settings, find_setting_by_name};
 
@@ -23,21 +24,14 @@ pub struct IrNode {
 }
 
 /// Attempts to convert a `Vec` of `IrNode`s to a `Vec` or something else, returning `Err` if any of the conversions failed.
-pub fn map_ir_nodes<T>(nodes: Vec<IrNode>) -> Result<Vec<T>, T::Error> where T: TryFrom<IrNode>, T::Error: From<String>{
-    nodes.into_iter().fold(Ok(Vec::new()), |acc, item| {
-        match acc {
-            Ok(mut acc_inner) => {
-                match item.try_into() {
-                    Ok(converted) => {
-                        acc_inner.push(converted);
-                        Ok(acc_inner)
-                    }
-                    Err(err) => Err(err),
-                }
-            },
-            Err(err) => Err(err),
-        }
-    })
+pub fn map_ir_nodes<T>(nodes: Vec<IrNode>) -> Result<Vec<T>, T::Error> where T: TryFrom<IrNode>, T::Error: From<String> {
+    let node_count = nodes.len();
+    nodes.into_iter()
+        .map(|item| item.try_into())
+        .fold_results(Vec::with_capacity(node_count), |mut acc, item| {
+            acc.push(item);
+            acc
+        })
 }
 
 // TODO: Create functions for converting settings from the IR format into inner representations.

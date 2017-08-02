@@ -132,6 +132,15 @@ export const settingDefinitions = {
     }],
     hint: 'Set of distance functions that can be used in the Worley noise module.  Sets the method used to determine how far apart two points are.',
   },
+  worleyFrequency: {
+    title: 'Frequency',
+    description: 'Frequency of the seed points.',
+    default: '1.0',
+    min: 0.0,
+    trueMin: 0.0,
+    max: 200,
+    trueMax: 100000,
+  },
   enableRange: {
     title: 'Enable Range',
     bool: true, // indicates that this value is a boolean and should be represented by a checkbox
