@@ -32,7 +32,7 @@ impl CompositionTree {
                 return Err(format!(
                     "Attempted to remove child node from module at depth {} index {}, but it is a leaf node!",
                     depth,
-                    coords.last().unwrap()
+                    coords.last().unwrap_or(&-1)
                 ));
             },
         };
@@ -49,7 +49,7 @@ impl CompositionTree {
                 return Err(format!(
                     "Attempted to add child node to module at depth {} index {}, but it is a leaf node!",
                     depth,
-                    coords.last().unwrap()
+                    coords.last().unwrap_or(&-1)
                 ));
             },
         };
@@ -66,7 +66,7 @@ impl CompositionTree {
                 return Err(format!(
                     "Attempted to set composition scheme of node at depth {} index {} but it's a leaf node!",
                     depth,
-                    coords.last().unwrap()
+                    coords.last().unwrap_or(&-1)
                 ));
 
             },
@@ -110,6 +110,10 @@ impl CompositionTreeNode {
 
     /// Traverses the composition tree, returning a mutable reference to the node at the provided coordinates.
     pub fn traverse_mut(&mut self, coords: &[i32]) -> Result<&mut CompositionTreeNode, String> {
+        if coords.len() == 0 {
+            return Ok(self);
+        }
+
         let index = *coords.first().unwrap() as usize;
 
         let child = match self {

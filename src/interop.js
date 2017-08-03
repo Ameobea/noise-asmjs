@@ -62,7 +62,6 @@ const add_node_inner = Module.cwrap('add_node', 'number', ['number', 'number', '
  * writes it into Emscripten memory, and `free()`s it after the node is built.
  */
 export const addNode = (nodeCoords, index, def_string) => {
-  debugger;
   const bufferSize = Module.lengthBytesUTF8(def_string) + 1;
   // allocate space on the heap for both the definition string as well as the coordinates array
   const defBufPtr = Module._malloc(bufferSize);

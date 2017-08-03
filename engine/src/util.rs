@@ -71,7 +71,11 @@ pub fn build_noise_module_settings(settings: Vec<IrSetting>) -> Result<Vec<Noise
 
     // loop through the settings and group together those that are of the same type
     for setting in settings {
-        let setting_type: SettingType = map_setting_to_type(&setting.key)?;
+        let setting_type: SettingType = match map_setting_to_type(&setting.key) {
+            Err(Some(err)) => return Err(err),
+            Err(None) => { continue; },
+            Ok(setting_type) => setting_type,
+        };
         // create a new entry if no entry exists or add to existing list if one does
         matched_settings.entry(setting_type)
             .or_insert(Vec::with_capacity(1))

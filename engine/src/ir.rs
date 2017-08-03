@@ -55,7 +55,7 @@ impl TryFrom<IrNode> for CompositionTreeNodeDefinition {
                 let module_type: NoiseModuleType = find_setting_by_name("moduleType", &node.settings)?
                     .try_into()?;
 
-                let built_def = if module_type == NoiseModuleType::Composed {
+                let built_def = if module_type != NoiseModuleType::Composed {
                     CompositionTreeNodeDefinition::Leaf {
                         module_conf: build_noise_module_settings(node.settings)?,
                         module_type,

@@ -1,5 +1,6 @@
 //! Defines functions that are exported to the JavaScript frontend, allowing access to the engine during runtime from the JS side.
 
+use std::convert::TryInto;
 use std::ffi::CStr;
 use std::slice;
 
@@ -10,6 +11,7 @@ use composition_tree::{CompositionTree, CompositionTreeNode};
 use composition_tree::composition::CompositionScheme;
 use composition_tree::definition::CompositionTreeNodeDefinition;
 use composition_tree::initial_tree::create_initial_tree;
+use ir::IrNode;
 
 extern {
     fn emscripten_pause_main_loop();
@@ -92,11 +94,17 @@ pub unsafe extern "C" fn add_node(
         },
     };
 
-    // Try to parse the JSON-encoded node definition into a `CompositionTreeNodeDefinition`
-    let node_def = match serde_json::from_str::<CompositionTreeNodeDefinition>(json_str) {
-        Ok(node_def) => node_def,
+    // Try to parse the JSON-encoded node definition into a `IrNode`
+    let node_def: CompositionTreeNodeDefinition = match serde_json::from_str::<IrNode>(json_str) {
+        Ok(node_def) => match node_def.try_into() {
+            Ok(node) => node,
+            Err(err) => {
+                error(&format!("Error while attempting to convert `IrNode` into `CompositionTreeNodeDefinition`: {:?}", err));
+                return 1;
+            }
+        },
         Err(err) => {
-            error(&format!("Error while attempting to parse node definition JSON into `CompositionTreeNodeDefinition`: {:?}", err));
+            error(&format!("Error while attempting to parse node definition JSON into `IrNode`: {:?}", err));
             return 1;
         }
     };

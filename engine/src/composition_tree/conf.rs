@@ -78,13 +78,16 @@ pub enum SettingType {
 
 /// Matches a key of a setting from the frontend to its corresponding setting type that will eventually be
 /// used to make it into a `NoiseModuleConf`.
-pub fn map_setting_to_type(key: &str) -> Result<SettingType, String> {
+///
+/// For known settings that aren't for noise modules, returns `Err(None)`
+pub fn map_setting_to_type(key: &str) -> Result<SettingType, Option<String>> {
     match key {
         "octaves" | "frequency" | "lacunarity" | "persistence" => Ok(SettingType::MultiFractal),
         "seed" => Ok(SettingType::Seedable),
         "rangeFunction" | "worleyFrequency" | "displacement" => Ok(SettingType::Worley),
         "constant" => Ok(SettingType::Constant),
-        _ => Err(format!("Unable to match setting with key {} to `SettingType`!", key)),
+        "moduleType" => Err(None),
+        _ => Err(Some(format!("Unable to match setting with key {} to `SettingType`!", key))),
     }
 }
 

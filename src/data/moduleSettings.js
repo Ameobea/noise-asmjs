@@ -36,7 +36,7 @@ export const multifractalSettings = ['octaves', 'frequency', 'lacunarity', 'pers
 export const settingDefinitions = {
   octaves: {
     title: 'Octaves',
-    default: 6,
+    default: '6',
     min: 0.0,
     trueMin: 0.0,
     max: 80.0, // the limit that the user is capped at for sliders
@@ -53,7 +53,7 @@ export const settingDefinitions = {
   },
   frequency: {
     title: 'Frequency',
-    default: 1.0,
+    default: '1.0',
     min: 0.0,
     trueMin: 0.0,
     max: 20.0,
@@ -62,7 +62,7 @@ export const settingDefinitions = {
   },
   lacunarity: {
     title: 'Lacunarity',
-    default: 2.0,
+    default: '2.0',
     min: 1.0,
     trueMin: 0.0,
     max: 4.0,
@@ -79,7 +79,7 @@ export const settingDefinitions = {
   },
   persistence: {
     title: 'Persistence',
-    default: 0.5,
+    default: '0.5',
     min: 1.0,
     trueMin: 0.0,
     max: 4.0,
@@ -178,7 +178,7 @@ export const settingDefinitions = {
   },
   zoom: {
     title: 'Zoom',
-    default: 1,
+    default: '1',
     min: 0.0,
     trueMin: 0.0,
     max: 10e6,
@@ -187,7 +187,7 @@ export const settingDefinitions = {
   },
   speed: {
     title: 'Speed',
-    default: 1,
+    default: '1',
     min: 0.00000001,
     trueMin: 0.0,
     max: 10e4,
@@ -231,7 +231,7 @@ export const settingDefinitions = {
   },
   scaleFactor: {
     title: 'Scale Factor',
-    default: 1,
+    default: '1',
     hint: 'All input coordinates are multipled by this number before being passed to the inner noise function.',
   },
 };

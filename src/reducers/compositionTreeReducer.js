@@ -204,7 +204,14 @@ export default (state=initialState, action={}) => {
   case ADD_UNCOMMITED_CHANGES: {
     const mergedChanges = R.mergeWith(R.union, state.uncommitedChanges, action.changes);
 
-    const dedupedChanges = {...mergedChanges,
+    const dedupedChanges = {
+      new: (function() {
+        const mappedCreatedNodes = mapIdsToEntites(state.entities.nodes, action.changes.new);
+        return action.changes.new.filter(id => {
+          // if any other created node has this node as a child, it's not the root of its created sutree.
+          return !mappedCreatedNodes.find(({ children }) => children.includes(id));
+        });
+      })(),
       // remove any node ids that are in `new` from `updated`
       updated: R.without(R.union(mergedChanges.new, mergedChanges.deleted), mergedChanges.updated),
       // remove any node IDs from the list that have parents that are also in the list of deleted nodes, retaining
