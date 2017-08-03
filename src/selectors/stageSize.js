@@ -10,7 +10,7 @@ export const getStageSize = () => store.getState().stageSize;
  */
 export const getTrueCanvasSize = (chosenCanvasSize, maxStageContainerSize) => {
   if(process.env.NODE_ENV === 'development') {
-    return maxStageContainerSize === 0 ? 0 : 300;
+    return maxStageContainerSize === 0 ? 0 : 223;
   } else {
     return chosenCanvasSize > maxStageContainerSize ? maxStageContainerSize : _.max([chosenCanvasSize, 20]);
   }

@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 import R from 'ramda';
 
 import { getTrueCanvasSize } from 'src/selectors/stageSize';
-import { init, setCanvasSize } from 'src/interop';
+import { init, setCanvasSize, pause } from 'src/interop';
 
 class VizCanvas extends React.Component {
   constructor(props) {
@@ -45,17 +45,11 @@ class VizCanvas extends React.Component {
     // so do all kinds of anti-pattern horrors and dispatch that setting from within the render
     const trueCanvasSize = getTrueCanvasSize(props.chosenCanvasSize, props.maxStageContainerSize);
 
-    if(trueCanvasSize !== this.state.trueCanvasSize) {
-      if(props.enginePointer) {
-        if(trueCanvasSize !== 0) {
-          setCanvasSize(props.enginePointer, trueCanvasSize);
-        }
-      } else {
-        // init(trueCanvasSize);
-      }
+    if(trueCanvasSize !== this.state.trueCanvasSize && trueCanvasSize !== 0 && props.enginePointer) {
+      console.log('setting canvas size to ', trueCanvasSize);
+      setCanvasSize(props.enginePointer, trueCanvasSize);
+      this.setState({ trueCanvasSize });
     }
-
-    this.setState({ trueCanvasSize });
   };
 
   render() {

@@ -6,7 +6,8 @@ import R from 'ramda';
 import { set, setIn } from 'zaphod/compat';
 
 import initialTree from 'src/data/compositionTree/initialTree';
-import { denormalizeTree, normalizeTree } from 'src/helpers/compositionTree/normalization';
+import { normalizeTree } from 'src/helpers/compositionTree/normalization';
+import { commitChanges } from 'src/helpers/compositionTree/commit';
 import { NULL_UUID } from 'src/data/misc';
 import {
   ADD_NODE, DELETE_NODE, REPLACE_NODE, SELECT_NODE, SET_SETTING, CREATE_SETTING,
@@ -221,10 +222,9 @@ export default (state=initialState, action={}) => {
   }
 
   case COMMIT_CHANGES: {
-    console.log('COMMITING CHANGES: ', state.uncommitedChanges);
-    console.log('denormalized tree: ', JSON.stringify(denormalizeTree(state.entities)));
+    // Commit these changes to the backend, mutating the interior composition tree
+    commitChanges(state.entities, state.uncommitedChanges);
 
-    // TODO: Actually commit the changes
     return {...state,
       // Now that we've commited the changes, we can "garbage collect" the deleted nodes (and all their children/settings).
       entities: (function() {

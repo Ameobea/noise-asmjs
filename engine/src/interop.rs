@@ -11,6 +11,11 @@ use composition_tree::composition::CompositionScheme;
 use composition_tree::definition::CompositionTreeNodeDefinition;
 use composition_tree::initial_tree::create_initial_tree;
 
+extern {
+    fn emscripten_pause_main_loop();
+    fn emscripten_resume_main_loop();
+}
+
 /// Initializes the minutiae engine and the internal noise generator engine with the default initial composition tree.
 #[no_mangle]
 pub unsafe extern "C" fn init(canvas_size: usize) {
@@ -82,7 +87,7 @@ pub unsafe extern "C" fn add_node(
     let json_str: &str = match CStr::from_ptr(node_definition).to_str() {
         Ok(s) => s,
         Err(_) => {
-            error("Invalid UTF8 string provided to `create_composer()`");
+            error("Invalid UTF8 string provided to `add_node()`");
             return 1;
         },
     };
@@ -170,8 +175,16 @@ pub unsafe extern "C" fn set_canvas_size(engine_pointer: *mut NoiseStepper, size
 
 /// Pauses the simulation by halting the Emscripten browser event loop.
 #[no_mangle]
-pub unsafe extern "C" fn pause_engine() { unimplemented!(); /* TODO */ }
+pub unsafe extern "C" fn pause_engine() { emscripten_pause_main_loop() }
 
 /// Resumes the simulation by initializing the Emscripten browser event loop.
 #[no_mangle]
-pub unsafe extern "C" fn resume_engine() { unimplemented!(); /* TODO */ }
+pub unsafe extern "C" fn resume_engine() { emscripten_resume_main_loop() }
+
+/// Renders a single frame, setting the canvas to a static image.
+#[no_mangle]
+pub unsafe extern "C" fn render_single_frame() {
+    pause_engine();
+    resume_engine();
+    pause_engine();
+}

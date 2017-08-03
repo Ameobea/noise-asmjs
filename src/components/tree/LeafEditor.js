@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
+import { Button } from 'semantic-ui-react';
 
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import { SettingGui } from 'src/data/moduleSettings';
@@ -11,6 +12,7 @@ import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
 import { HelpPopup } from 'src/data/moduleSettings';
 import { getLeafAttr } from 'src/selectors/compositionTree';
 import NodeActionButtons from 'src/components/tree/NodeActionButtons';
+import { pause, resume } from 'src/interop';
 
 const LeafEditor = ({ selectedNodeId, allNodes, allSettings }) => {
   if(!selectedNodeId) {
@@ -59,6 +61,12 @@ const LeafEditor = ({ selectedNodeId, allNodes, allSettings }) => {
           />
         ))
       }
+
+      <h1>Simulation Controls</h1>
+      <center>
+        <Button inverted color='yellow' onClick={pause}> Pause </Button>
+        <Button inverted color='pink' onClick={resume}> Resume </Button>
+      </center>
     </div>
   );
 };

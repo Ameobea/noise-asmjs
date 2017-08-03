@@ -6,6 +6,7 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 
 import store from './reducers';
 import App from './App';
+import { init } from 'src/interop';
 
 injectTapEventPlugin();
 
@@ -18,3 +19,10 @@ const Root = () => (
 );
 
 ReactDOM.render(<Root />, document.getElementById('root'));
+
+// Initialize the Emscripten backend
+var canvas;
+while(!canvas) { // wait until React has loaded it in
+  canvas = document.getElementById('mainCanvas');
+}
+init(10);

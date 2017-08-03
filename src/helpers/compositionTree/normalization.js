@@ -23,4 +23,4 @@ export const normalizeTree = R.partialRight(normalize, [node]);
 /**
  * Converts the full composition tree back to its tree form from the normalized form.
  */
-export const denormalizeTree = entities => denormalize(entities.nodes[NULL_UUID], node, entities);
+export const denormalizeNode = (entities, nodeId) => denormalize(entities.nodes[nodeId], node, entities);

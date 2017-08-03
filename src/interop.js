@@ -5,7 +5,7 @@
 /* global Module */
 
 import store from 'src/reducers';
-import { getEnginePointer } from 'src/selectors/enginePointer';
+import { getEnginePointer, getTreePointer } from 'src/selectors/enginePointer';
 import { setEnginePointer, setTreePointer } from 'src/reducers/enginePointerReducer';
 
 export const RANGE_FUNCTIONS = {
@@ -50,3 +50,38 @@ export const init = canvasSize => {
  * After the canvas size changes, sends a message to the backend to resize the buffer where pixel data is written.
  */
 export const setCanvasSize = Module.cwrap('set_canvas_size', null, ['number', 'number']);
+
+export const pause = Module.cwrap('pause_engine', null, []);
+export const resume = Module.cwrap('resume_engine', null, []);
+
+// tree_pointer, depth, coords, index, node_definition
+const add_node_inner = Module.cwrap('add_node', 'number', ['number', 'number', 'number', 'number', 'number']);
+
+/**
+ * Adds a node to the composition tree at the specified coordinates and index.  Allocates space for the definition string,
+ * writes it into Emscripten memory, and `free()`s it after the node is built.
+ */
+export const addNode = (nodeCoords, index, def_string) => {
+  debugger;
+  const bufferSize = Module.lengthBytesUTF8(def_string) + 1;
+  // allocate space on the heap for both the definition string as well as the coordinates array
+  const defBufPtr = Module._malloc(bufferSize);
+  const coordBufPtr = Module._malloc(nodeCoords.length * 4); // &[i32]
+  Module.stringToUTF8(def_string, defBufPtr, 100000);
+  // convert the coordinate array to a typed array and write it into the buffer we allocated for it
+  Module.HEAP32.set(new Int32Array(nodeCoords), coordBufPtr / 4);
+
+  // actually call the backend's node add function and record the result
+  const status = add_node_inner(getTreePointer(), nodeCoords.length, coordBufPtr, index, defBufPtr);
+
+  Module._free(defBufPtr);
+  Module._free(coordBufPtr);
+
+  return status;
+};
+
+export const deleteNode = () => { console.error('UNIMPLEMENTED!'); }; // TODO
+
+export const replaceNode = () => { console.error('UNIMPLEMENTED!'); }; // TODO
+
+// export const render_single_frame = Module.cwrap('render_single_frame', null, []);
