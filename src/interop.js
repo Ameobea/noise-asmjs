@@ -93,6 +93,24 @@ export const deleteNode = (nodeCoords, index) => {
   return status;
 };
 
-export const replaceNode = () => { console.error('UNIMPLEMENTED!'); }; // TODO
+const replaceNodeInner = Module.cwrap('replace_node', 'number', ['number', 'number', 'number', 'number', 'number']);
+
+export const replaceNode = (nodeCoords, index, def_string) => {
+  const bufferSize = Module.lengthBytesUTF8(def_string) + 1;
+  // allocate space on the heap for both the definition string as well as the coordinates array
+  const defBufPtr = Module._malloc(bufferSize);
+  const coordBufPtr = Module._malloc(nodeCoords.length * 4); // &[i32]
+  Module.stringToUTF8(def_string, defBufPtr, 100000);
+  // convert the coordinate array to a typed array and write it into the buffer we allocated for it
+  Module.HEAP32.set(new Int32Array(nodeCoords), coordBufPtr / 4);
+
+  // actually call the backend's node add function and record the result
+  const status = replaceNodeInner(getTreePointer(), nodeCoords.length, coordBufPtr, index, defBufPtr);
+
+  Module._free(defBufPtr);
+  Module._free(coordBufPtr);
+
+  return status;
+};
 
 // export const render_single_frame = Module.cwrap('render_single_frame', null, []);

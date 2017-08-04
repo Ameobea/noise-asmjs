@@ -12,6 +12,7 @@ use self::conf::{GlobalTreeConf, NoiseModuleConf};
 pub mod definition;
 use self::definition::{CompositionTreeDefinition, CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleType};
 pub mod initial_tree;
+use super::error;
 
 /// The core of the noise module composition framework.  This struct is the parent of the entire composition tree
 /// And can be used to retrieve a value from the entire composition tree for a single coordinate.
@@ -164,6 +165,11 @@ pub struct ComposedNoiseModule {
 
 impl ComposedNoiseModule {
     pub fn add_child(&mut self, index: usize, child: CompositionTreeNode) {
+        let child_count = self.children.len();
+        if child_count < index {
+            return error(&format!("Attempted to add noise module at index {} but our children length is {}.", index, child_count));
+        }
+
         self.children.insert(index, child)
     }
 

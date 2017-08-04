@@ -209,7 +209,7 @@ export default (state=initialState, action={}) => {
         const mappedCreatedNodes = mapIdsToEntites(state.entities.nodes, action.changes.new);
         return action.changes.new.filter(id => {
           // if any other created node has this node as a child, it's not the root of its created sutree.
-          return !mappedCreatedNodes.find(({ children }) => children.includes(id));
+          return !mappedCreatedNodes.find( ({ children }) => children.includes(id) );
         });
       })(),
       // remove any node ids that are in `new` from `updated`
@@ -218,10 +218,10 @@ export default (state=initialState, action={}) => {
       // only those that are at the root of their respective deleted subtree.
       deleted: (function() {
         const mappedDeletedNodes = mapIdsToEntites(state.entities.nodes, mergedChanges.deleted.map(R.prop('id')));
-        console.log('mergedChanges', mergedChanges);
+
         return mergedChanges.deleted.filter( ({ id }) => {
           // if any other deleted node has this node as a child, it's not the root of its deleted sutree.
-          return !mappedDeletedNodes.find(({ children }) => children.includes(id));
+          return !mappedDeletedNodes.find( ({ children }) => children.includes(id) );
         } );
       })(),
     };

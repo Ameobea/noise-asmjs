@@ -15,7 +15,7 @@ import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
 /**
  * Finds the path to a node in the composition tree and returns it as an array of integers.
  */
-const getNodeCoords = (allNodes, nodeId) => {
+const getNodeCoords = (entities, nodeId) => {
   let coordBuf = [];
   let curId = nodeId;
 
@@ -24,10 +24,9 @@ const getNodeCoords = (allNodes, nodeId) => {
       break;
     }
 
-    console.log(curId);
-    const { id, type, settings, children } = getNodeParent(allNodes, curId);
+    const { id, type, settings, children } = getNodeParent(entities.nodes, curId);
 
-    const indexOffset = getLeafAttr('indexOffset', getNodeData(type), settings);
+    const indexOffset = getLeafAttr('indexOffset', getNodeData(type), mapIdsToEntites(entities.settings, settings));
     coordBuf = [children.indexOf(curId) - indexOffset, ...coordBuf];
 
     curId = id;
@@ -41,8 +40,7 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
 
   // first handle all deleted nodes
   deletedNodes.forEach( ({ id, parentId, index }) => {
-    console.log('parentId', parentId);
-    const coords = getNodeCoords(entities.nodes, parentId);
+    const coords = getNodeCoords(entities, parentId);
     const { type: parentType, settings: parentSettingIds } = entities.nodes[parentId];
     const parentSettings = mapIdsToEntites(entities.settings, parentSettingIds);
     const indexOffset = getLeafAttr('indexOffset', getNodeData(parentType), parentSettings);
@@ -53,9 +51,17 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
   // then handle all new nodes, parsing them into their denormalized form and creating them on the backend
   newNodes.forEach(nodeId => {
     const def = JSON.stringify(denormalizeNode(entities, nodeId));
-    const coords = getNodeCoords(entities.nodes, nodeId);
+    const coords = getNodeCoords(entities, nodeId);
 
     // Allocate memory in the Emscripten heap and call the backend function
     addNode(R.init(coords), R.last(coords), def);
+  });
+
+  // finally, replace all modified nodes with newly-built versions.
+  updatedNodes.forEach(nodeId => {
+    const def = JSON.stringify(denormalizeNode(entities, nodeId));
+    const coords = getNodeCoords(entities, nodeId);
+
+    replaceNode(R.init(coords), R.last(coords), def);
   });
 };
