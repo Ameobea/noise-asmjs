@@ -51,15 +51,18 @@ const handleChanges = ({ current, prev, data: { store } }, recursionDepth) => {
         const curChildren = getIn(current, path);
 
         if(curChildren.length < prevChildren.length) {
+          const parentNode = prev.nodes[path[1]];
+          const deletedNodeData = R.symmetricDifference(curChildren, prevChildren)
+            .map(id => ({ id, parentId: parentNode.id, index: parentNode.children.indexOf(id) }));
           // This *may* cause issues if children are being re-ordered, but that shouldn't be an issue right now.
           return {...acc,
             updated: R.union([path[1]], acc.updated),
-            deleted: R.union(R.symmetricDifference(prevChildren, curChildren), acc.deleted),
+            deleted: R.union(deletedNodeData, acc.deleted),
           };
         } else {
           return {...acc, updated: R.union([path[1]], acc.updated)};
         }
-      } else if(path[0] === 'nodes') {
+      } /*else if(path[0] === 'nodes') {
         // mark the parent of the node as updated
         const parentNode = getNodeParent(current.nodes, path[1]);
         if(parentNode) {
@@ -67,7 +70,7 @@ const handleChanges = ({ current, prev, data: { store } }, recursionDepth) => {
         } else {
           return acc;
         }
-      } else {
+      }*/ else {
         // mark the parent of the setting as updated
         const { id: updatedNodeId } = getSettingParent(current.nodes, path[1]);
         return {...acc, updated: R.union([updatedNodeId], acc.updated)};
@@ -80,12 +83,19 @@ const handleChanges = ({ current, prev, data: { store } }, recursionDepth) => {
         const parentNode = getNodeParent(prev.nodes, path[1]);
         if(parentNode) {
           return {...acc,
-            updated: R.union([parentNode.id], acc.updated),
-            deleted: R.union([path[1]], acc.deleted)
+            // updated: R.union([parentNode.id], acc.updated),
+            deleted: R.union([{
+              id: path[1],
+              parentId: parentNode.id,
+              index: parentNode.children.indexOf(path[1])
+            }], acc.deleted),
           };
-        } else {
-          return {...acc, deleted: R.union([path[1]], acc.deleted)};
         }
+        console.error(`No parent node found for node with id ${path[1]}.`);
+        break;
+        /*else {
+          return {...acc, deleted: R.union([ { id: path[1], parentId: parentNode.id, index: parentNode.children.indexOf(path[1]) } ], acc.deleted)};
+        }*/
       } else {
         // mark the parent of the setting as updated
         const updatedNode = getSettingParent(current.nodes, path[1]);

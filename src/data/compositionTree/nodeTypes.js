@@ -167,6 +167,8 @@ export const getNodeData = nodeType => ({
     newChildDefinition: composedNoiseModuleChildDefinition,
     canBeDeleted: false,
     dependentOnParent: false,
+    // determines what number to subtract from the index when commiting to the backend
+    indexOffset: settings => 2 + ((getSettingByName(settings, 'moduleType') === 'Composed') ? 1 : 0),
   },
   globalConf: {
     name: 'Global Configuration',
@@ -179,6 +181,7 @@ export const getNodeData = nodeType => ({
     newChildDefinition: false,
     canBeDeleted: false,
     dependentOnParent: false,
+    indexOffset: 0,
   },
   noiseModule: {
     name: 'Noise Module',
@@ -191,6 +194,7 @@ export const getNodeData = nodeType => ({
     newChildDefinition: composedNoiseModuleChildDefinition,
     canBeDeleted: true, // TODO: Only allow them to be deleted if they're not the only child of their parent.
     dependentOnParent: false,
+    indexOffset: settings => 1 + (getSettingByName(settings, 'moduleType') === 'composed') ? 1 : 0,
   },
   compositionScheme: {
     name: 'Composition Scheme',
@@ -203,6 +207,7 @@ export const getNodeData = nodeType => ({
     newChildDefinition: false,
     canBeDeleted: false,
     dependentOnParent: settings => getSettingByName(settings, 'compositionScheme') === 'weightedAverage',
+    indexOffset: 0,
   },
   inputTransformations: {
     name: 'Input Transformation',
@@ -215,6 +220,7 @@ export const getNodeData = nodeType => ({
     newChildDefinition: defaultInputTransformation(),
     canBeDeleted: false,
     dependentOnParent: false,
+    indexOffset: 0,
   },
   inputTransformation: {
     name: 'Input Transformation',
@@ -230,5 +236,6 @@ export const getNodeData = nodeType => ({
     newChildDefinition: R.compose(honf => honf ? defaultNoiseModule() : false, isHONF),
     canBeDeleted: true,
     dependentOnParent: false,
+    indexOffset: 0,
   },
 }[nodeType] || unknownNode(nodeType));

@@ -6,7 +6,6 @@
     "deep-diff": "^0.3.8",
     "immutable": "^3.8.1",
     "listate": "^1.0.1",
-    "lodash": "^4.17.4",
     "material-ui": "^0.18.3",
     "normalizr": "^3.2.3",
     "ramda": "^0.24.1",
@@ -45,7 +44,7 @@
   "bugs": {
     "url": "https://github.com/ameobea/noise-asmjs/issues"
   },
-  "homepage": "localhost:5000/",
+  "homepage": "https://ameo.design/noise-composition-proto/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ameobea/noise-asmjs.git"

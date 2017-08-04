@@ -5,8 +5,6 @@
 import R from 'ramda';
 import { denormalize, normalize, schema } from 'normalizr';
 
-import { NULL_UUID } from 'src/data/misc';
-
 const node = new schema.Entity('nodes');
 
 const setting = new schema.Entity('settings', {

@@ -217,11 +217,12 @@ export default (state=initialState, action={}) => {
       // remove any node IDs from the list that have parents that are also in the list of deleted nodes, retaining
       // only those that are at the root of their respective deleted subtree.
       deleted: (function() {
-        const mappedDeletedNodes = mapIdsToEntites(state.entities.nodes, mergedChanges.deleted);
-        return mergedChanges.deleted.filter(id => {
+        const mappedDeletedNodes = mapIdsToEntites(state.entities.nodes, mergedChanges.deleted.map(R.prop('id')));
+        console.log('mergedChanges', mergedChanges);
+        return mergedChanges.deleted.filter( ({ id }) => {
           // if any other deleted node has this node as a child, it's not the root of its deleted sutree.
           return !mappedDeletedNodes.find(({ children }) => children.includes(id));
-        });
+        } );
       })(),
     };
 
@@ -235,13 +236,13 @@ export default (state=initialState, action={}) => {
     return {...state,
       // Now that we've commited the changes, we can "garbage collect" the deleted nodes (and all their children/settings).
       entities: (function() {
-        const { nodes: deletedNodeIds, settings: deletedSettingIds } = state.uncommitedChanges.deleted
-          .reduce((acc, deletedSubtreeRootNodeId) => {
+        const { nodes: deletedNodesData, settings: deletedSettingIds } = state.uncommitedChanges.deleted
+          .reduce( (acc, { id: deletedSubtreeRootNodeId }) => {
             return R.mergeWith(R.union, acc, traverseNodes(state.entities.nodes, deletedSubtreeRootNodeId));
           }, { nodes: [], settings: [] });
 
         return {...state.entities,
-          nodes: R.omit(deletedNodeIds, state.entities.nodes),
+          nodes: R.omit(deletedNodesData.map(R.prop('id')), state.entities.nodes),
           settings: R.omit(deletedSettingIds, state.entities.settings),
         };
       })(),

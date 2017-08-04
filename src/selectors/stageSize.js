@@ -1,5 +1,3 @@
-import _ from 'lodash';
-
 import store from 'src/reducers';
 
 export const getStageSize = () => store.getState().stageSize;
@@ -9,9 +7,9 @@ export const getStageSize = () => store.getState().stageSize;
  * If the entered value is smaller than the wrapper, we use that; if not, we use the size of the wrapper.
  */
 export const getTrueCanvasSize = (chosenCanvasSize, maxStageContainerSize) => {
-  if(process.env.NODE_ENV === 'development') {
+  // if(process.env.NODE_ENV === 'development') {
     return maxStageContainerSize === 0 ? 0 : 223;
-  } else {
-    return chosenCanvasSize > maxStageContainerSize ? maxStageContainerSize : _.max([chosenCanvasSize, 20]);
-  }
+  // } else {
+  //   return chosenCanvasSize > maxStageContainerSize ? maxStageContainerSize : R.max(chosenCanvasSize, 20);
+  // }
 };

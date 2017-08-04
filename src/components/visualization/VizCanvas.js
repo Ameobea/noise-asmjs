@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 import R from 'ramda';
 
 import { getTrueCanvasSize } from 'src/selectors/stageSize';
-import { init, setCanvasSize, pause } from 'src/interop';
+import { setCanvasSize } from 'src/interop';
 
 class VizCanvas extends React.Component {
   constructor(props) {

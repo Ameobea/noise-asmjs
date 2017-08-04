@@ -55,7 +55,7 @@ export const pause = Module.cwrap('pause_engine', null, []);
 export const resume = Module.cwrap('resume_engine', null, []);
 
 // tree_pointer, depth, coords, index, node_definition
-const add_node_inner = Module.cwrap('add_node', 'number', ['number', 'number', 'number', 'number', 'number']);
+const addNodeInner = Module.cwrap('add_node', 'number', ['number', 'number', 'number', 'number', 'number']);
 
 /**
  * Adds a node to the composition tree at the specified coordinates and index.  Allocates space for the definition string,
@@ -71,7 +71,7 @@ export const addNode = (nodeCoords, index, def_string) => {
   Module.HEAP32.set(new Int32Array(nodeCoords), coordBufPtr / 4);
 
   // actually call the backend's node add function and record the result
-  const status = add_node_inner(getTreePointer(), nodeCoords.length, coordBufPtr, index, defBufPtr);
+  const status = addNodeInner(getTreePointer(), nodeCoords.length, coordBufPtr, index, defBufPtr);
 
   Module._free(defBufPtr);
   Module._free(coordBufPtr);
@@ -79,7 +79,19 @@ export const addNode = (nodeCoords, index, def_string) => {
   return status;
 };
 
-export const deleteNode = () => { console.error('UNIMPLEMENTED!'); }; // TODO
+// tree_pointer, depth, coords, index
+const deleteNodeInner = Module.cwrap('delete_node', 'number', ['number', 'number', 'number', 'number']);
+
+export const deleteNode = (nodeCoords, index) => {
+  const coordBufPtr = Module._malloc(nodeCoords.length * 4);
+  Module.HEAP32.set(new Int32Array(nodeCoords), coordBufPtr / 4);
+
+  const status = deleteNodeInner(getTreePointer(), nodeCoords.length, coordBufPtr, index);
+
+  Module._free(coordBufPtr);
+
+  return status;
+};
 
 export const replaceNode = () => { console.error('UNIMPLEMENTED!'); }; // TODO
 
