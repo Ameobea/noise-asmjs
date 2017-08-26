@@ -44,7 +44,6 @@ const handleChanges = ({ current, prev, data: { store } }, recursionDepth) => {
 
     case 'A':
     case 'E': {
-      // console.log(kind, path);
       if(path[0] === 'nodes' && R.nth(-1, path) === 'children') {
         const prevChildren = getIn(prev, path);
         const curChildren = getIn(current, path);
@@ -55,7 +54,6 @@ const handleChanges = ({ current, prev, data: { store } }, recursionDepth) => {
         // TODO: handle when children are added/removed from non-noise modules
         if(curChildren.length < prevChildren.length) {
           return {...acc,
-            // updated: R.union([path[1]], acc.updated),
             deleted: R.union(
               changedNodeData.map( id => ({ id, parentId: parentNode.id, index: parentNode.children.indexOf(id) }) ),
               acc.deleted
@@ -63,7 +61,6 @@ const handleChanges = ({ current, prev, data: { store } }, recursionDepth) => {
           };
         } else {
           return {...acc,
-            // updated: R.union([path[1]], acc.updated),
             new: R.union(changedNodeData, acc.new),
           };
         }
@@ -81,7 +78,6 @@ const handleChanges = ({ current, prev, data: { store } }, recursionDepth) => {
 
         if(parentNode) {
           return {...acc,
-            // updated: R.union([parentNode.id], acc.updated),
             deleted: R.union([{
               id: path[1],
               parentId: parentNode.id,

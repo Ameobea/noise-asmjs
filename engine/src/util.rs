@@ -9,7 +9,7 @@ use itertools::Itertools;
 use composition_tree::conf::{map_setting_to_type, NoiseModuleConf, SettingType};
 use ir::{IrNode, IrSetting};
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum Dim { X, Y, Z}
 
 /// Attempts to locate a child node among the children of a node and convert it into an internal definition.

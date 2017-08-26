@@ -74,6 +74,14 @@ pub unsafe extern "C" fn delete_node(tree_pointer: *mut CompositionTree, depth: 
     }
 }
 
+fn build_node(def: &str) -> Result<CompositionTreeNodeDefinition, String> {
+    // Try to parse the JSON-encoded node definition into a `IrNode`
+    match serde_json::from_str::<IrNode>(def) {
+        Ok(node_def) => node_def.try_into(),
+        Err(err) => Err(format!("Error while attempting to parse node definition JSON into `IrNode`: {:?}", err)),
+    }
+}
+
 /// Adds a child node to the composed module located at (depth, index) in the composition tree.  Returns 0 if successful
 /// and 1 if there was an error (Parsing the supplied JSON into a module, locaing the node, the node was a leaf, etc.)
 /// If the node at the supplied coordinates is a composed module, the entire subtree that it defines will be deleted.
@@ -94,23 +102,13 @@ pub unsafe extern "C" fn add_node(
         },
     };
 
-    // Try to parse the JSON-encoded node definition into a `IrNode`
-    let node_def: CompositionTreeNodeDefinition = match serde_json::from_str::<IrNode>(json_str) {
-        Ok(node_def) => match node_def.try_into() {
-            Ok(node) => node,
-            Err(err) => {
-                error(&format!("Error while attempting to convert `IrNode` into `CompositionTreeNodeDefinition`: {:?}", err));
-                return 1;
-            }
-        },
-        Err(err) => {
-            error(&format!("Error while attempting to parse node definition JSON into `IrNode`: {:?}", err));
+    let node: CompositionTreeNode = match build_node(json_str) {
+        Ok(node_def) => node_def,
+        Err(err_str) => {
+            error(&format!("{}", err_str));
             return 1;
         }
-    };
-
-    // Convert the node definition into an actual `CompositionTreeNode`
-    let node: CompositionTreeNode = node_def.into();
+    }.into();
 
     // attempt to add the created node as a child of the node at the supplied coordinates in the tree
     let coords_slice = slice::from_raw_parts(coords, depth as usize);
@@ -130,10 +128,39 @@ pub unsafe extern "C" fn add_node(
 pub unsafe extern "C" fn replace_node(
     tree_pointer: *mut CompositionTree, depth: i32, coords: *const i32, index: i32, node_definition: *const c_char
 ) -> i32 {
+    let mut tree = &mut *(tree_pointer);
+
+    // Convert the c-str into a &str
+    let json_str: &str = match CStr::from_ptr(node_definition).to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            error("Invalid UTF8 string provided to `add_node()`");
+            return 1;
+        },
+    };
+
+    // first try to create the node, avoiding removing the old one in case of failure.
+    let node: CompositionTreeNode = match build_node(json_str) {
+        Ok(node_def) => node_def,
+        Err(err_str) => {
+            error(&format!("{}", err_str));
+            return 1;
+        }
+    }.into();
+
     if let 1 = delete_node(tree_pointer, depth, coords, index) {
         return 1;
     }
-    add_node(tree_pointer, depth, coords, index, node_definition)
+
+    // attempt to add the created node as a child of the node at the supplied coordinates in the tree
+    let coords_slice = slice::from_raw_parts(coords, depth as usize);
+    match tree.add_node(depth as usize, coords_slice, node, index as usize) {
+        Ok(_) => 0,
+        Err(err) => {
+            error(&err);
+            1
+        }
+    }
 }
 
 /// Replaces the `CompositionScheme` of the composed tree node at (depth, index) with the supplied one.

@@ -10,7 +10,7 @@ use ir::IrNode;
 use util::find_setting_by_name;
 
 /// Defines a way to combine the outputs of multiple noise modules into one.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum CompositionScheme {
     Average,
     WeightedAverage(Vec<f64>),
@@ -40,8 +40,8 @@ impl TryFrom<IrNode> for CompositionScheme {
         let composition_scheme = find_setting_by_name("compositionScheme", &node.settings)?;
 
         match composition_scheme.as_str() {
-            "Average" => Ok(CompositionScheme::Average),
-            "WeightedAverage" => Ok(CompositionScheme::WeightedAverage({
+            "average" => Ok(CompositionScheme::Average),
+            "weightedAverage" => Ok(CompositionScheme::WeightedAverage({
                 let raw_val = find_setting_by_name("weights", &node.settings)?;
                 serde_json::from_str(&raw_val)
                     .map_err(|_| format!("Unable to parse `weights` vector from string: {}", raw_val))?

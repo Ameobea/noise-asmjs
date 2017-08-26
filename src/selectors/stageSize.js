@@ -1,3 +1,5 @@
+import R from 'ramda';
+
 import store from 'src/reducers';
 
 export const getStageSize = () => store.getState().stageSize;
@@ -8,8 +10,8 @@ export const getStageSize = () => store.getState().stageSize;
  */
 export const getTrueCanvasSize = (chosenCanvasSize, maxStageContainerSize) => {
   // if(process.env.NODE_ENV === 'development') {
-    return maxStageContainerSize === 0 ? 0 : 223;
+    return maxStageContainerSize === 0 ? 0 : 222;
   // } else {
-  //   return chosenCanvasSize > maxStageContainerSize ? maxStageContainerSize : R.max(chosenCanvasSize, 20);
+    // return chosenCanvasSize > maxStageContainerSize ? maxStageContainerSize : R.max(chosenCanvasSize, 20);
   // }
 };

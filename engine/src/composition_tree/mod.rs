@@ -150,6 +150,7 @@ impl NoiseFn<Point3<f64>> for CompositionTreeNode {
     fn get(&self, coord: Point3<f64>) -> f64 {
         match self {
             &CompositionTreeNode::Leaf(ref module) => module.get(coord),
+            // TODO: apply input transformations unless I'm missing where they're actually applied.
             &CompositionTreeNode::Combined{ ref composed_module, .. } => composed_module.get(coord),
         }
     }

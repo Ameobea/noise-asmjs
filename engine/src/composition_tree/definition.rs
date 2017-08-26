@@ -19,7 +19,7 @@ pub struct CompositionTreeDefinition {
 }
 
 /// Includes every possible type of noise module available through the tool.
-#[derive(PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum NoiseModuleType {
     Composed,
     Fbm,
@@ -240,7 +240,7 @@ impl NoiseModuleType {
 }
 
 /// This is the primary unit of the composition tree.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum CompositionTreeNodeDefinition {
     Leaf {
         module_type: NoiseModuleType,
@@ -290,7 +290,7 @@ impl Into<CompositionTree> for CompositionTreeDefinition {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum InputTransformationDefinition {
     ZoomScale {
         speed: f64,

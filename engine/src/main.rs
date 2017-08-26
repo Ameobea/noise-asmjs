@@ -24,7 +24,7 @@ use std::os::raw::{c_char, c_void};
 use minutiae::prelude::*;
 use minutiae::emscripten::{EmscriptenDriver, CanvasRenderer};
 use noise::*;
-use palette::{FromColor, Hsv, Rgb};
+use palette::{FromColor, Hsv, Mix, Rgb};
 
 extern {
     /// Given a pointer to our pixel data buffer, draws its contents to the canvas.

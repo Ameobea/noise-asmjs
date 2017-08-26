@@ -36,7 +36,7 @@ const getNodeCoords = (entities, nodeId) => {
 };
 
 export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, deleted: deletedNodes }) => {
-  console.log('COMMITING CHANGES: ', newNodes, updatedNodes, deletedNodes);
+  // console.log('COMMITING CHANGES: ', newNodes, updatedNodes, deletedNodes);
 
   // first handle all deleted nodes
   deletedNodes.forEach( ({ id, parentId, index }) => {
@@ -48,20 +48,25 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
     deleteNode(coords, index - indexOffset);
   });
 
-  // then handle all new nodes, parsing them into their denormalized form and creating them on the backend
-  newNodes.forEach(nodeId => {
-    const def = JSON.stringify(denormalizeNode(entities, nodeId));
-    const coords = getNodeCoords(entities, nodeId);
-
-    // Allocate memory in the Emscripten heap and call the backend function
-    addNode(R.init(coords), R.last(coords), def);
-  });
-
-  // finally, replace all modified nodes with newly-built versions.
+  // then, replace all modified nodes with newly-built versions.
   updatedNodes.forEach(nodeId => {
     const def = JSON.stringify(denormalizeNode(entities, nodeId));
     const coords = getNodeCoords(entities, nodeId);
 
+    // console.log("Replacing node: ", def);
     replaceNode(R.init(coords), R.last(coords), def);
+  });
+
+  // finally, handle all new nodes, parsing them into their denormalized form and creating them on the backend
+  newNodes.forEach(nodeId => {
+    // only add it if it's of type `'noiseModule'`
+    if(entities.nodes[nodeId].type === 'noiseModule') {
+      const def = JSON.stringify(denormalizeNode(entities, nodeId));
+      const coords = getNodeCoords(entities, nodeId);
+
+      // Allocate memory in the Emscripten heap and call the backend function
+      // console.log("Adding node: ", def);
+      addNode(R.init(coords), R.last(coords), def);
+    }
   });
 };

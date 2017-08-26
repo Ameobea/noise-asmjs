@@ -194,7 +194,7 @@ export const getNodeData = nodeType => ({
     newChildDefinition: composedNoiseModuleChildDefinition,
     canBeDeleted: true, // TODO: Only allow them to be deleted if they're not the only child of their parent.
     dependentOnParent: false,
-    indexOffset: settings => 1 + (getSettingByName(settings, 'moduleType') === 'composed') ? 1 : 0,
+    indexOffset: settings => 1 + ((getSettingByName(settings, 'moduleType') === 'Composed') ? 1 : 0),
   },
   compositionScheme: {
     name: 'Composition Scheme',

@@ -206,10 +206,13 @@ export default (state=initialState, action={}) => {
 
     const dedupedChanges = {
       new: (function() {
+        // remove the node if its parent has been created or updated during this change
         const mappedCreatedNodes = mapIdsToEntites(state.entities.nodes, action.changes.new);
+        const mappedChangedNodes = mapIdsToEntites(state.entities.nodes, action.changes.updated);
+        const mappedMergedNodes = R.union(mappedCreatedNodes, mappedChangedNodes);
         return action.changes.new.filter(id => {
           // if any other created node has this node as a child, it's not the root of its created sutree.
-          return !mappedCreatedNodes.find( ({ children }) => children.includes(id) );
+          return !mappedMergedNodes.find( ({ children }) => children.includes(id) );
         });
       })(),
       // remove any node ids that are in `new` from `updated`

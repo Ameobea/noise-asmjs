@@ -8,6 +8,7 @@ use itertools::Itertools;
 use composition_tree::composition::CompositionScheme;
 use composition_tree::definition::{CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleType};
 use util::{build_child, build_noise_module_settings, find_setting_by_name};
+use super::debug;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct IrSetting {
@@ -64,6 +65,7 @@ impl TryFrom<IrNode> for CompositionTreeNodeDefinition {
                 } else {
                     let scheme: CompositionScheme = build_child(&node.children, "compositionScheme")?;
                     let children: Vec<CompositionTreeNodeDefinition> = build_children(node.children, "noiseModule")?;
+                    // debug(&format!("Built composed node children: {:?}", children));
 
                     CompositionTreeNodeDefinition::Composed {
                         children,
@@ -74,7 +76,7 @@ impl TryFrom<IrNode> for CompositionTreeNodeDefinition {
 
                 Ok(built_def)
             },
-            _ => Err(format!("Failed to convert IrNode into `Vec<InputTransformation>` because it's of type {}.", node._type)),
+            _ => Err(format!("Failed to convert IrNode into `CompositionTreeNodeDefinition` because it's of type {}.", node._type)),
         }
     }
 }
