@@ -8,7 +8,7 @@ import R from 'ramda';
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import { addNode, deleteNode, replaceNode } from 'src/interop';
 import { denormalizeNode } from 'src/helpers/compositionTree/normalization';
-import { getLeafAttr, getNodeParent } from 'src/selectors/compositionTree';
+import { getLeafAttr, getNodeParent, getSettingByName } from 'src/selectors/compositionTree';
 import { NULL_UUID } from 'src/data/misc';
 import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
 
@@ -24,7 +24,11 @@ const getNodeCoords = (entities, nodeId) => {
       break;
     }
 
-    const { id, type, settings, children } = getNodeParent(entities.nodes, curId);
+    const parentNode = getNodeParent(entities.nodes, curId);
+    if(!parentNode) {
+      return false;
+    }
+    const { id, type, settings, children } = parentNode;
 
     const indexOffset = getLeafAttr('indexOffset', getNodeData(type), mapIdsToEntites(entities.settings, settings));
     coordBuf = [children.indexOf(curId) - indexOffset, ...coordBuf];
@@ -41,7 +45,20 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
   // first handle all deleted nodes
   deletedNodes.forEach( ({ id, parentId, index }) => {
     const coords = getNodeCoords(entities, parentId);
+    if(coords === false) {
+      // node's parent has been deleted already so we don't have to do anything
+      return;
+    }
+
     const { type: parentType, settings: parentSettingIds } = entities.nodes[parentId];
+    const mappedParentSettings = mapIdsToEntites(entities.settings, parentSettingIds);
+
+    // don't try to delete this if the parent node isn't composed (switching from composed node to leaf node)
+    const parentModuleType = getSettingByName(mappedParentSettings, 'moduleType');
+    if(parentModuleType !== 'Composed' && parentType !== 'root') {
+      return;
+    }
+
     const parentSettings = mapIdsToEntites(entities.settings, parentSettingIds);
     const indexOffset = getLeafAttr('indexOffset', getNodeData(parentType), parentSettings);
 
