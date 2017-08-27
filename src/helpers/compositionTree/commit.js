@@ -40,7 +40,6 @@ const getNodeCoords = (entities, nodeId) => {
 };
 
 export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, deleted: deletedNodes }) => {
-  // console.log('COMMITING CHANGES: ', newNodes, updatedNodes, deletedNodes);
 
   // first handle all deleted nodes
   deletedNodes.forEach( ({ id, parentId, index }) => {
@@ -70,7 +69,6 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
     const def = JSON.stringify(denormalizeNode(entities, nodeId));
     const coords = getNodeCoords(entities, nodeId);
 
-    // console.log("Replacing node: ", def);
     replaceNode(R.init(coords), R.last(coords), def);
   });
 
@@ -82,7 +80,6 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
       const coords = getNodeCoords(entities, nodeId);
 
       // Allocate memory in the Emscripten heap and call the backend function
-      // console.log("Adding node: ", def);
       addNode(R.init(coords), R.last(coords), def);
     }
   });

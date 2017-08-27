@@ -5,9 +5,14 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import R from 'ramda';
+import Rnd from 'react-rnd';
 
 import { getTrueCanvasSize } from 'src/selectors/stageSize';
 import { setCanvasSize } from 'src/interop';
+
+const handleResize = (e, direction, ref, delta) => {
+  console.log('resizing: ', ref);
+};
 
 class VizCanvas extends React.Component {
   constructor(props) {
@@ -55,13 +60,40 @@ class VizCanvas extends React.Component {
   render() {
     return (
       <center>
-        <canvas
-          id='mainCanvas'
-          width={this.state.trueCanvasSize}
-          height={this.state.trueCanvasSize}
-          style={{backgroundColor: '#000'}}
-          ref={this.connectModule}
-        />
+        <Rnd
+          disableDragging={true}
+          enableResizing={{
+            top: true,
+            right: true,
+            bottom: true,
+            left: true,
+            topRight: true,
+            bottomRight: true,
+            bottomLeft: true,
+            topLeft: true,
+          }}
+          lockAspectRatio
+          default={{
+            x: 0,
+            y: 0,
+            width: 200,
+            height: 200,
+          }}
+          onResize={handleResize}
+        >
+          <canvas
+            id='mainCanvas'
+            style={{
+              backgroundColor: '#000',
+              height: '100%',
+              width: '100%',
+              margin: 0,
+            }}
+            ref={this.connectModule}
+            height={this.state.trueCanvasSize}
+            width={this.state.trueCanvasSize}
+          />
+        </Rnd>
       </center>
     );
   }
