@@ -7,11 +7,12 @@ use std::slice;
 use serde_json;
 
 use super::*;
-use composition_tree::{CompositionTree, CompositionTreeNode};
+use composition_tree::{CompositionTree, CompositionTreeNode, CompositionTreeNodeType};
 use composition_tree::composition::CompositionScheme;
-use composition_tree::definition::CompositionTreeNodeDefinition;
+use composition_tree::definition::{CompositionTreeNodeDefinition, InputTransformationDefinition};
 use composition_tree::initial_tree::create_initial_tree;
 use ir::IrNode;
+use transformations::InputTransformation;
 
 extern {
     fn emscripten_pause_main_loop();
@@ -173,7 +174,7 @@ pub unsafe extern "C" fn replace_node(
     let json_str: &str = match CStr::from_ptr(node_definition).to_str() {
         Ok(s) => s,
         Err(_) => {
-            error("Invalid UTF8 string provided to `add_node()`");
+            error("Invalid UTF8 string provided to `replace_node()`");
             return 1;
         },
     };
@@ -200,6 +201,190 @@ pub unsafe extern "C" fn replace_node(
             1
         }
     }
+}
+
+fn get_transformation_parent<'a>(
+    tree: &'a mut CompositionTree, coords_slice: &[i32], tree_depth: i32, node_index: i32
+) -> Result<&'a mut CompositionTreeNode, String> {
+    let grandparent_node: &mut CompositionTreeNode = tree.root_node.traverse_mut(coords_slice)
+        .map_err(|err| format!("Unable to traverse the tree at the supplied coordinates: {}", err))?;
+
+    let parent_node: &mut CompositionTreeNode = match grandparent_node.function {
+        CompositionTreeNodeType::Leaf(_) => {
+            return Err(format!(
+                "Attempted to traverse tree to child of leaf node! Supplied coords: {:?} ; Supplied index: {}",
+                coords_slice,
+                tree_depth
+            ));
+        },
+        CompositionTreeNodeType::Combined(ref mut composed_module) => {
+            let child_count = composed_module.children.len();
+
+            match composed_module.children.get_mut(node_index as usize) {
+                Some(child) => child,
+                None => {
+                    return Err(format!(
+                        "Tried to get child of composed module at index {} but it only has {} children!",
+                        node_index,
+                        child_count
+                    ));
+                },
+            }
+        },
+    };
+
+    Ok(parent_node)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn add_input_transformation(
+    tree_pointer: *mut CompositionTree, tree_depth: i32, coords: *const i32, node_index: i32,
+    transformation_definition: *const c_char
+) -> i32 {
+    let mut tree: &mut CompositionTree = &mut *tree_pointer;
+    // Convert the c-str into a &str
+    let json_str: &str = match CStr::from_ptr(transformation_definition).to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            error("Invalid UTF8 string provided to `replace_node()`");
+            return 1;
+        },
+    };
+
+    // Try to build the `IrNode`
+    let ir: IrNode = match serde_json::from_str::<IrNode>(json_str) {
+        Ok(ir) => ir,
+        Err(err) => {
+            error(&format!("Unable to convert string into `IrNode`: {:?}", err));
+            return 1;
+        }
+    };
+
+    // try to convert the `IrNode` into an `InputTransformation`
+    let transformation_def: InputTransformationDefinition = match ir.try_into() {
+        Ok(t) => t,
+        Err(err) => {
+            error(&format!("Unable to convert `IrNode` into `InputTransformation`: {:?}", err));
+            return 1;
+        }
+    };
+
+    // convert the definition into a proper `InputTransformation`
+    let transformation: InputTransformation = transformation_def.into();
+
+    // traverse the tree to find the node that we're targeting
+    let coords_slice = slice::from_raw_parts(coords, tree_depth as usize);
+    let parent_node = match get_transformation_parent(tree, coords_slice, tree_depth, node_index) {
+        Ok(parent_node) => parent_node,
+        Err(err) => {
+            error(&format!("Error while traversing composition tree: {}", err));
+            return 1;
+        },
+    };
+
+    // insert the created input transformation into the list of input transformations for
+    // the node at the supplied coordinates
+    parent_node.transformations.push(transformation);
+
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn delete_input_transformation(
+    tree_pointer: *mut CompositionTree, tree_depth: i32, coords: *const i32, node_index: i32,
+    transformation_index: i32
+) -> i32 {
+    let mut tree: &mut CompositionTree = &mut *tree_pointer;
+
+    // traverse the tree to find the node that we're targeting
+    let coords_slice = slice::from_raw_parts(coords, tree_depth as usize);
+    let parent_node = match get_transformation_parent(tree, coords_slice, tree_depth, node_index) {
+        Ok(parent_node) => parent_node,
+        Err(err) => {
+            error(&format!("Error while traversing composition tree: {}", err));
+            return 1;
+        },
+    };
+
+    // make sure that there are as many transformations in the list as we expect there to be
+    let transformation_count = parent_node.transformations.len() as i32;
+    if transformation_count <= transformation_index {
+        error(&format!(
+            "Attempted to remove input transformation at index {} but there are only {} transformations!",
+            transformation_index,
+            transformation_count
+        ));
+        return 1;
+    }
+
+    // actually delete the transformation from the list
+    parent_node.transformations.remove(transformation_index as usize);
+
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn replace_input_transformation(
+    tree_pointer: *mut CompositionTree, tree_depth: i32, coords: *const i32, node_index: i32,
+    transformation_index: i32, transformation_definition: *const c_char
+) -> i32 {
+    let mut tree: &mut CompositionTree = &mut *tree_pointer;
+
+    // Convert the c-str into a &str
+    let json_str: &str = match CStr::from_ptr(transformation_definition).to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            error("Invalid UTF8 string provided to `replace_node()`");
+            return 1;
+        },
+    };
+
+    // Try to build the `IrNode`
+    let ir: IrNode = match serde_json::from_str::<IrNode>(json_str) {
+        Ok(ir) => ir,
+        Err(err) => {
+            error(&format!("Unable to convert string into `IrNode`: {:?}", err));
+            return 1;
+        }
+    };
+
+    // try to convert the `IrNode` into an `InputTransformation`
+    let transformation_def: InputTransformationDefinition = match ir.try_into() {
+        Ok(t) => t,
+        Err(err) => {
+            error(&format!("Unable to convert `IrNode` into `InputTransformation`: {:?}", err));
+            return 1;
+        }
+    };
+
+    // convert the definition into a proper `InputTransformation`
+    let transformation: InputTransformation = transformation_def.into();
+
+    // traverse the tree to find the node that we're targeting
+    let coords_slice = slice::from_raw_parts(coords, tree_depth as usize);
+    let parent_node = match get_transformation_parent(tree, coords_slice, tree_depth, node_index) {
+        Ok(parent_node) => parent_node,
+        Err(err) => {
+            error(&format!("Error while traversing composition tree: {}", err));
+            return 1;
+        },
+    };
+
+    // make sure that there are as many transformations in the list as we expect there to be
+    let transformation_count = parent_node.transformations.len() as i32;
+    if transformation_count <= transformation_index {
+        error(&format!(
+            "Attempted to remove input transformation at index {} but there are only {} transformations!",
+            transformation_index,
+            transformation_count
+        ));
+        return 1;
+    }
+
+    // actually replace the transformation
+    parent_node.transformations[transformation_index as usize] = transformation;
+
+    0
 }
 
 /// Replaces the `CompositionScheme` of the composed tree node at (depth, index) with the supplied one.

@@ -90,16 +90,3 @@ impl TryFrom<IrNode> for Vec<InputTransformationDefinition> {
         }
     }
 }
-
-impl TryFrom<IrNode> for InputTransformationDefinition {
-    type Error = String;
-
-    fn try_from(node: IrNode) -> Result<Self, Self::Error> {
-        match node._type.as_str() {
-            "InputTransformation" => {
-                unimplemented!(); // TODO
-            },
-            _ => Err(format!("Failed to convert IrNode into `InputTransformation` because it's of type {}.", node._type)),
-        }
-    }
-}

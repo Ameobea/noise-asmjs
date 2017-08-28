@@ -6,7 +6,10 @@
 import R from 'ramda';
 
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
-import { addNode, deleteNode, replaceNode, setGlobalConf } from 'src/interop';
+import {
+  addNode, deleteNode, replaceNode, setGlobalConf,
+  addInputTransformation, deleteInputTransformation, replaceInputTransformation,
+} from 'src/interop';
 import { denormalizeNode } from 'src/helpers/compositionTree/normalization';
 import { getLeafAttr, getNodeParent, getSettingByName } from 'src/selectors/compositionTree';
 import { getTreePointer } from 'src/selectors/enginePointer';
@@ -44,6 +47,7 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
 
   // first handle all deleted nodes
   deletedNodes.forEach( ({ id, parentId, index }) => {
+    const parentNodeType = entities.nodes[parentId].type;
     const coords = getNodeCoords(entities, parentId);
     if(coords === false) {
       // node's parent has been deleted already so we don't have to do anything
@@ -51,12 +55,12 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
     }
 
     const { type: parentType, settings: parentSettingIds } = entities.nodes[parentId];
-    const mappedParentSettings = mapIdsToEntites(entities.settings, parentSettingIds);
 
     // don't try to delete this if the parent node isn't composed (switching from composed node to leaf node)
-    const parentModuleType = getSettingByName(mappedParentSettings, 'moduleType');
-    if(parentModuleType !== 'Composed' && parentType !== 'root') {
-      return;
+    if(parentNodeType !== 'Composed' && parentType !== 'root') {
+      if(parentNodeType === 'inputTransformations') {
+        // TODO
+      }
     }
 
     const parentSettings = mapIdsToEntites(entities.settings, parentSettingIds);
@@ -69,13 +73,16 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
   updatedNodes.forEach(nodeId => {
     const nodeType = entities.nodes[nodeId].type;
     const def = JSON.stringify(denormalizeNode(entities, nodeId));
+    const coords = getNodeCoords(entities, nodeId);
 
     if(nodeType === 'noiseModule') {
-      const coords = getNodeCoords(entities, nodeId);
-
       replaceNode(R.init(coords), R.last(coords), def);
     } else if(nodeType === 'globalConf') {
       setGlobalConf(getTreePointer(), def);
+    } else if(nodeType === 'inputTransformation') {
+      console.log(def);
+      // TODO
+      // replaceInputTransformation(R.init(coords), R.last(coords), def);
     } else {
       console.log(`Updated node with unhandled type: ${nodeType}`);
     }

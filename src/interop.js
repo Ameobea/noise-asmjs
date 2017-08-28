@@ -117,17 +117,79 @@ export const deleteNode = (nodeCoords, index) => {
 
 const replaceNodeInner = Module.cwrap('replace_node', 'number', ['number', 'number', 'number', 'number', 'number']);
 
-export const replaceNode = (nodeCoords, index, def_string) => {
-  const bufferSize = Module.lengthBytesUTF8(def_string) + 1;
+export const replaceNode = (nodeCoords, index, defString) => {
+  const bufferSize = Module.lengthBytesUTF8(defString) + 1;
   // allocate space on the heap for both the definition string as well as the coordinates array
   const defBufPtr = Module._malloc(bufferSize);
   const coordBufPtr = Module._malloc(nodeCoords.length * 4); // &[i32]
-  Module.stringToUTF8(def_string, defBufPtr, 100000);
+  Module.stringToUTF8(defString, defBufPtr, 100000);
   // convert the coordinate array to a typed array and write it into the buffer we allocated for it
   Module.HEAP32.set(new Int32Array(nodeCoords), coordBufPtr / 4);
 
   // actually call the backend's node add function and record the result
   const status = replaceNodeInner(getTreePointer(), nodeCoords.length, coordBufPtr, index, defBufPtr);
+
+  Module._free(defBufPtr);
+  Module._free(coordBufPtr);
+
+  return status;
+};
+
+// (tree_pointer, tree_depth, coords, node_index, transformation_definition)
+const addInputTransformationInner = Module.cwrap('add_input_transformation', 'number', ['number', 'number', 'number', 'number']);
+
+export const addInputTransformation = (parentNodeCoords, index, defString) => {
+  const bufferSize = Module.lengthBytesUTF8(defString) + 1;
+  // allocate space on the heap for both the definition string as well as the coordinates array
+  const defBufPtr = Module._malloc(bufferSize);
+  const coordBufPtr = Module._malloc(parentNodeCoords.length * 4); // &[i32]
+  Module.stringToUTF8(defString, defBufPtr, 100000);
+  // convert the coordinate array to a typed array and write it into the buffer we allocated for it
+  Module.HEAP32.set(new Int32Array(parentNodeCoords), coordBufPtr / 4);
+
+  // call the backend function and try to add the input transformation
+  const status = addInputTransformationInner(getTreePointer(), parentNodeCoords.length, coordBufPtr, index, defBufPtr);
+
+  Module._free(defBufPtr);
+  Module._free(coordBufPtr);
+
+  return status;
+};
+
+// tree_pointer, depth, coords, node_index, transformation_index
+export const deleteInputTransformationInner = Module.cwrap(
+  'delete_input_transformation', 'number', ['number', 'number', 'number', 'number', 'number']
+);
+
+export const deleteInputTransformation = (parentNodeCoords, treeIndex, transformationIndex) => {
+  const coordBufPtr = Module._malloc(parentNodeCoords.length * 4);
+  Module.HEAP32.set(new Int32Array(parentNodeCoords), coordBufPtr / 4);
+
+  const status = deleteNodeInner(getTreePointer(), parentNodeCoords.length, coordBufPtr, treeIndex, transformationIndex);
+
+  Module._free(coordBufPtr);
+
+  return status;
+};
+
+// (tree_pointer, tree_depth, coords, node_index, transformation_index, transformation_definition)
+const replaceInputTransformationInner = Module.cwrap(
+  'replace_input_transformation', 'number', ['number', 'number', 'number', 'number', 'number', 'number', 'number']
+);
+
+export const replaceInputTransformation = (parentNodeCoords, treeIndex, transformationIndex, defString) => {
+  const bufferSize = Module.lengthBytesUTF8(defString) + 1;
+  // allocate space on the heap for both the definition string as well as the coordinates array
+  const defBufPtr = Module._malloc(bufferSize);
+  const coordBufPtr = Module._malloc(parentNodeCoords.length * 4); // &[i32]
+  Module.stringToUTF8(defString, defBufPtr, 100000);
+  // convert the coordinate array to a typed array and write it into the buffer we allocated for it
+  Module.HEAP32.set(new Int32Array(parentNodeCoords), coordBufPtr / 4);
+
+  // actually call the backend's node add function and record the result
+  const status = replaceInputTransformationInner(
+    getTreePointer(), parentNodeCoords.length, coordBufPtr, treeIndex, transformationIndex, defBufPtr
+  );
 
   Module._free(defBufPtr);
   Module._free(coordBufPtr);

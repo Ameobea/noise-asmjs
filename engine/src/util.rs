@@ -12,6 +12,19 @@ use ir::{IrNode, IrSetting};
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum Dim { X, Y, Z}
 
+impl FromStr for Dim {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "X" | "x" => Ok(Dim::X),
+            "Y" | "y" => Ok(Dim::Y),
+            "Z" | "z" => Ok(Dim::Z),
+            _ => Err(format!("Can't convert supplied string to `Dim`: {}", s)),
+        }
+    }
+}
+
 /// Attempts to locate a child node among the children of a node and convert it into an internal definition.
 pub fn build_child<T>(children: &[IrNode], child_type: &str) -> Result<T, T::Error> where T: TryFrom<IrNode>, T::Error: From<String> {
     children.iter()

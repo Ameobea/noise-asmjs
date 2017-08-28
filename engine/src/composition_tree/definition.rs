@@ -3,12 +3,14 @@
 use std::convert::TryFrom;
 
 use noise::*;
+use serde_json;
 
+use ir::IrNode;
 use transformations::InputTransformation;
-use util::Dim;
+use util::{Dim, convert_setting, find_setting_by_name};
 use super::composition::CompositionScheme;
 use super::conf::{apply_multifractal_conf, apply_seedable_conf, apply_worley_conf, apply_constant_conf, NoiseModuleConf};
-use super::{ComposedNoiseModule, CompositionTree, CompositionTreeNode, MasterConf};
+use super::{ComposedNoiseModule, CompositionTree, CompositionTreeNode, CompositionTreeNodeType, MasterConf};
 
 /// Defines a meta-representation of a `CompositionTree` designed to be passed into the backend from the JS frontend.  It
 /// contains all information necessary to construct a fully functional composition tree from scratch.
@@ -56,22 +58,6 @@ impl TryFrom<String> for NoiseModuleType {
     }
 }
 
-pub struct TransformedNoiseModule {
-    inner: Box<NoiseFn<Point3<f64>>>,
-    transformations: Vec<InputTransformation>,
-}
-
-impl NoiseFn<Point3<f64>> for TransformedNoiseModule {
-    fn get(&self, coord: Point3<f64>) -> f64 {
-        // apply all transformations to the input in order, passing the final value to the inner noise function
-        let final_coord: Point3<f64> = self.transformations
-            .iter()
-            .fold(coord, |acc, transformation| transformation.transform(acc));
-
-        self.inner.get(final_coord)
-    }
-}
-
 fn build_transformations(transformation_definitions: Vec<InputTransformationDefinition>) -> Vec<InputTransformation> {
     transformation_definitions
         .into_iter()
@@ -79,33 +65,7 @@ fn build_transformations(transformation_definitions: Vec<InputTransformationDefi
         .collect()
 }
 
-fn transform_noise_module(
-    module: Box<NoiseFn<Point3<f64>>>, transformation_definitions: Vec<InputTransformationDefinition>
-) -> Box<NoiseFn<Point3<f64>>> {
-    // If we have transformations to apply, create a `TransformedNoiseModule`; otherwise just return the inner module.
-    if transformation_definitions.len() != 0 {
-        let built_transformations: Vec<InputTransformation> = build_transformations(transformation_definitions);
-
-        let transformed_module = TransformedNoiseModule {
-            inner: module,
-            transformations: built_transformations
-        };
-
-        Box::new(transformed_module)
-    } else {
-        module
-    }
-}
-
 impl NoiseModuleType {
-    /// Given a module type and an array of configuration, builds the noise module.
-    pub fn build(
-        &self, confs: &[NoiseModuleConf], transformation_definitions: Vec<InputTransformationDefinition>
-    ) -> Box<NoiseFn<Point3<f64>>> {
-        let inner = Self::construct_noise_fn(self, confs);
-        transform_noise_module(inner, transformation_definitions)
-    }
-
     pub fn construct_noise_fn(&self, confs: &[NoiseModuleConf]) -> Box<NoiseFn<Point3<f64>>> {
         match self {
             &NoiseModuleType::Fbm => {
@@ -256,11 +216,13 @@ pub enum CompositionTreeNodeDefinition {
 
 impl Into<CompositionTreeNode> for CompositionTreeNodeDefinition {
     fn into(self) -> CompositionTreeNode {
-        match self {
+        let (transformations, function) = match self {
             CompositionTreeNodeDefinition::Leaf { module_type, module_conf, transformations } => {
                 // Build a noise module out of the type and configurations
-                let built_module = module_type.build(&module_conf, transformations);
-                CompositionTreeNode::Leaf(built_module)
+                let built_module = module_type.construct_noise_fn(&module_conf);
+                let built_transformations = build_transformations(transformations);
+
+                (built_transformations, CompositionTreeNodeType::Leaf(built_module))
             },
             CompositionTreeNodeDefinition::Composed { scheme, children, transformations } => {
                 // Build modules out of each of the children definitions, and combine them into a `CombinedModule`
@@ -270,13 +232,13 @@ impl Into<CompositionTreeNode> for CompositionTreeNodeDefinition {
                     .collect();
 
                 let built_transformations = build_transformations(transformations);
+                let composed_module = ComposedNoiseModule { composer: scheme, children: built_children };
 
-                CompositionTreeNode::Combined {
-                    composed_module: ComposedNoiseModule { composer: scheme, children: built_children },
-                    transformations: built_transformations,
-                }
+                (built_transformations, CompositionTreeNodeType::Combined(composed_module))
             }
-        }
+        };
+
+        CompositionTreeNode { function, transformations }
     }
 }
 
@@ -316,5 +278,44 @@ impl Into<InputTransformation> for InputTransformationDefinition {
             },
             InputTransformationDefinition::ScaleAll(scale) => InputTransformation::ScaleAll(scale),
         }
+    }
+}
+
+impl TryFrom<IrNode> for InputTransformationDefinition {
+    type Error = String;
+
+    fn try_from(node: IrNode) -> Result<Self, Self::Error> {
+        let transformation_type = find_setting_by_name("inputTransformationType", &node.settings)?;
+
+        let def: InputTransformationDefinition = match transformation_type.as_str() {
+            "zoomScale" => {
+                InputTransformationDefinition::ZoomScale {
+                    speed: convert_setting("speed", &node.settings)?,
+                    zoom: convert_setting("zoom", &node.settings)?
+                }
+            },
+            "honf" => {
+                let def_string = find_setting_by_name("inputTransformationType", &node.settings)?;
+                let node_def: CompositionTreeNodeDefinition = match serde_json::from_str(&def_string) {
+                    Ok(d) => d,
+                    Err(err) => {
+                        return Err(format!("Unable to build `CompositionTreeNodeDefinition` from supplied string: {:?}", err));
+                    },
+                };
+
+                InputTransformationDefinition::HigherOrderNoiseModule {
+                    node_def,
+                    replaced_dim: convert_setting("replacedDim", &node.settings)?,
+                }
+            },
+            "scaleAll" => {
+                InputTransformationDefinition::ScaleAll(convert_setting("scaleFactor", &node.settings)?)
+            },
+            _ => {
+                return Err(format!("Invalid input transformation type provided: {}", transformation_type));
+            },
+        };
+
+        Ok(def)
     }
 }
