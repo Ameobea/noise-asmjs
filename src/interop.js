@@ -47,6 +47,28 @@ export const init = canvasSize => {
 };
 
 /**
+ * Replaces the currently active global configuration for the composition tree with the provided configuration in
+ * IR format.
+ */
+export const setGlobalConf = (enginePointer, confString) => {
+  const bufferSize = Module.lengthBytesUTF8(confString) + 1;
+  // allocate space on the heap for the definition string
+  const defBufPtr = Module._malloc(bufferSize);
+  // copy the string into the allocated buffer
+  Module.stringToUTF8(confString, defBufPtr, 100000);
+
+  // call the backend function and replace the active master configuration
+  const status = setGlobalConfInner(enginePointer, defBufPtr);
+
+  // free the definition's buffer
+  Module._free(defBufPtr);
+
+  return status;
+};
+
+const setGlobalConfInner = Module.cwrap('set_global_conf', 'number', ['number', 'number']);
+
+/**
  * After the canvas size changes, sends a message to the backend to resize the buffer where pixel data is written.
  */
 export const setCanvasSize = Module.cwrap('set_canvas_size', null, ['number', 'number']);
@@ -61,12 +83,12 @@ const addNodeInner = Module.cwrap('add_node', 'number', ['number', 'number', 'nu
  * Adds a node to the composition tree at the specified coordinates and index.  Allocates space for the definition string,
  * writes it into Emscripten memory, and `free()`s it after the node is built.
  */
-export const addNode = (nodeCoords, index, def_string) => {
-  const bufferSize = Module.lengthBytesUTF8(def_string) + 1;
+export const addNode = (nodeCoords, index, defString) => {
+  const bufferSize = Module.lengthBytesUTF8(defString) + 1;
   // allocate space on the heap for both the definition string as well as the coordinates array
   const defBufPtr = Module._malloc(bufferSize);
   const coordBufPtr = Module._malloc(nodeCoords.length * 4); // &[i32]
-  Module.stringToUTF8(def_string, defBufPtr, 100000);
+  Module.stringToUTF8(defString, defBufPtr, 100000);
   // convert the coordinate array to a typed array and write it into the buffer we allocated for it
   Module.HEAP32.set(new Int32Array(nodeCoords), coordBufPtr / 4);
 

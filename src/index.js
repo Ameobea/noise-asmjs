@@ -7,6 +7,7 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import store from './reducers';
 import App from './App';
 import { init, pause } from 'src/interop';
+import { INITIAL_CANVAS_SIZE } from 'src/data/misc';
 
 injectTapEventPlugin();
 
@@ -31,4 +32,4 @@ setTimeout(() => {
   pause();
 }, 2000);
 
-init(10);
+init(INITIAL_CANVAS_SIZE);

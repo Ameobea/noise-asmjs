@@ -8,7 +8,6 @@ use itertools::Itertools;
 use composition_tree::composition::CompositionScheme;
 use composition_tree::definition::{CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleType};
 use util::{build_child, build_noise_module_settings, find_setting_by_name};
-use super::debug;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct IrSetting {

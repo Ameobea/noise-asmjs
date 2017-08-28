@@ -8,17 +8,17 @@ use transformations::InputTransformation;
 pub mod composition;
 use self::composition::CompositionScheme;
 pub mod conf;
-use self::conf::{GlobalTreeConf, NoiseModuleConf};
+use self::conf::NoiseModuleConf;
 pub mod definition;
 use self::definition::{CompositionTreeDefinition, CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleType};
 pub mod initial_tree;
-use super::error;
+use super::{error, MasterConf};
 
 /// The core of the noise module composition framework.  This struct is the parent of the entire composition tree
 /// And can be used to retrieve a value from the entire composition tree for a single coordinate.
 pub struct CompositionTree {
     pub root_node: CompositionTreeNode,
-    pub global_conf: GlobalTreeConf,
+    pub global_conf: MasterConf,
 }
 
 impl CompositionTree {
@@ -78,7 +78,13 @@ impl CompositionTree {
 }
 
 impl NoiseFn<Point3<f64>> for CompositionTree {
-    fn get(&self, coord: Point3<f64>) -> f64 { self.root_node.get(coord) }
+    fn get(&self, coord: Point3<f64>) -> f64 {
+        self.root_node.get([
+            (coord[0] * self.global_conf.zoom) + self.global_conf.x_offset,
+            (coord[1] * self.global_conf.zoom) + self.global_conf.y_offset,
+            (coord[2] * self.global_conf.speed) + self.global_conf.z_offset,
+        ])
+    }
 }
 
 pub enum CompositionTreeNode {

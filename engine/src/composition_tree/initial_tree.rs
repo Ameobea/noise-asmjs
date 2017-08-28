@@ -1,14 +1,14 @@
 //! Defines the structure of the initial composition tree that is loaded at application initialization.
 
-use composition_tree::{CompositionTree, GlobalTreeConf, NoiseModuleType};
-use super::{CompositionScheme, CompositionTreeDefinition, CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleConf};
+use composition_tree::{CompositionTree, NoiseModuleType};
+use super::{
+    CompositionScheme, CompositionTreeDefinition, CompositionTreeNodeDefinition,
+    InputTransformationDefinition, MasterConf, NoiseModuleConf
+};
 
 fn create_initial_tree_definition() -> CompositionTreeDefinition {
     CompositionTreeDefinition {
-        global_conf: GlobalTreeConf {
-            speed: 1.,
-            zoom: 1.,
-        },
+        global_conf: MasterConf::default(),
         root_node: CompositionTreeNodeDefinition::Composed {
             scheme: CompositionScheme::Average,
             children: vec![
@@ -16,7 +16,7 @@ fn create_initial_tree_definition() -> CompositionTreeDefinition {
                     module_type: NoiseModuleType::Fbm,
                     module_conf: vec![
                         NoiseModuleConf::Seedable {
-                            seed: 1658355505 // "cXEL5v9dTsCgCnkgdd43XWZS6Q9c44AD"
+                            seed: "cXEL5v9dTsCgCnkgdd43XWZS6Q9c44AD".into(),
                         },
                         NoiseModuleConf::MultiFractal {
                             octaves: 6,
@@ -31,7 +31,7 @@ fn create_initial_tree_definition() -> CompositionTreeDefinition {
                     module_type: NoiseModuleType::Billow,
                     module_conf: vec![
                         NoiseModuleConf::Seedable {
-                            seed: 1658355505 // "cXEL5v9dTsCgCnkgdd43XWZS6Q9c44AD"
+                            seed: "cXEL5v9dTsCgCnkgdd43XWZS6Q9c44AD".into(),
                         },
                         NoiseModuleConf::MultiFractal {
                             octaves: 6,

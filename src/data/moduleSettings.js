@@ -109,6 +109,7 @@ export const settingDefinitions = {
   rangeFunction: {
     title: 'Range Function',
     enum: true, // indicates that this is an enum of strings that a user can choose between with a dropdown
+    default: 'euclidean',
     enumValues: [{
       key: 'euclidean',
       title: 'Euclidean',
@@ -144,6 +145,7 @@ export const settingDefinitions = {
   enableRange: {
     title: 'Enable Range',
     bool: true, // indicates that this value is a boolean and should be represented by a checkbox
+    default: 'true',
     hint: 'Determines if the distance from the nearest seed point is applied to the output value.',
   },
   attenuation: {
@@ -156,6 +158,7 @@ export const settingDefinitions = {
   },
   displacement: {
     title: 'Displacement',
+    default: '1.0',
     min: 0.0,
     trueMin: 0.0,
     max: 5.0,
@@ -170,6 +173,7 @@ export const settingDefinitions = {
   },
   constant: {
     title: 'Constant Value',
+    default: '0.5',
     min: -1.0,
     trueMin: -Infinity,
     max: 1.0,
@@ -178,7 +182,7 @@ export const settingDefinitions = {
   },
   zoom: {
     title: 'Zoom',
-    default: '1',
+    default: '0.015',
     min: 0.0,
     trueMin: 0.0,
     max: 10e6,
@@ -187,7 +191,7 @@ export const settingDefinitions = {
   },
   speed: {
     title: 'Speed',
-    default: '1',
+    default: '0.008',
     min: 0.00000001,
     trueMin: 0.0,
     max: 10e4,
@@ -307,7 +311,7 @@ const buildEnumField = (name, id, {title, hint, enumValues}) => (
 const CheckboxWrapper = props => {
   const mappedProps = {
     ...props,
-    checked: props.value,
+    checked: Boolean(props.value),
     value: undefined,
   };
 

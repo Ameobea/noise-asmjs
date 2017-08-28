@@ -9,15 +9,13 @@ import Rnd from 'react-rnd';
 
 import { getTrueCanvasSize } from 'src/selectors/stageSize';
 import { setCanvasSize } from 'src/interop';
-
-const handleResize = (e, direction, ref, delta) => {
-  console.log('resizing: ', ref);
-};
+import { getEnginePointer } from 'src/selectors/enginePointer';
+import { INITIAL_CANVAS_SIZE } from 'src/data/misc';
 
 class VizCanvas extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { trueCanvasSize: 25 };
+    this.state = { trueCanvasSize: INITIAL_CANVAS_SIZE };
   }
 
   // Add a reference to the canvas to the `Module` every time we render
@@ -41,27 +39,17 @@ class VizCanvas extends React.Component {
     })();
   };
 
-  componentWillReceiveProps(nextProps) {
-    this.calcCanvasSize(nextProps);
-  }
-
-  calcCanvasSize = props => {
-    // This is the real source of truth for the universe size that should be passed down into the backend
-    // so do all kinds of anti-pattern horrors and dispatch that setting from within the render
-    const trueCanvasSize = getTrueCanvasSize(props.chosenCanvasSize, props.maxStageContainerSize);
-
-    if(trueCanvasSize !== this.state.trueCanvasSize && trueCanvasSize !== 0 && props.enginePointer) {
-      console.log('setting canvas size to ', trueCanvasSize);
-      setCanvasSize(props.enginePointer, trueCanvasSize);
-      this.setState({ trueCanvasSize });
-    }
+  handleResize = (e, direction, ref, delta) => {
+    const size = ref.clientWidth;
+    setCanvasSize(getEnginePointer(), size);
+    this.setState({ trueCanvasSize: size });
   };
 
   render() {
     return (
       <center>
         <Rnd
-          disableDragging={true}
+          disableDragging={false}
           enableResizing={{
             top: true,
             right: true,
@@ -76,10 +64,10 @@ class VizCanvas extends React.Component {
           default={{
             x: 0,
             y: 0,
-            width: 200,
-            height: 200,
+            width: INITIAL_CANVAS_SIZE,
+            height: INITIAL_CANVAS_SIZE,
           }}
-          onResize={handleResize}
+          onResize={this.handleResize}
         >
           <canvas
             id='mainCanvas'

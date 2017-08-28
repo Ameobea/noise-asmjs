@@ -15,6 +15,7 @@ import moduleTypes from 'src/data/noiseModules';
 import { getSettingByName, getSettingDataByName } from 'src/selectors/compositionTree';
 import compositionSchemes from 'src/data/compositionSchemes';
 import { multifractalSettings } from 'src/data/moduleSettings';
+import moduleCapabilities from 'src/data/moduleCapabilities';
 import { inputTransformationTypes } from 'src/data/inputTransformations';
 import {
   createSetting,
@@ -35,15 +36,15 @@ const multifractalModules = moduleTypes
   .filter( R.prop('multifractal') )
   .map( R.prop('key') );
 
+const log = (...args) => {
+  console.log(...args);
+  return args[args.length - 1];
+};
+
 const getNoiseModuleSettings = settings => {
   const moduleType = getSettingByName(settings, 'moduleType');
-
-  // TODO: Make use of the `src/data/moduleCapabilities` to generate settings for the other modules type
-  if(multifractalModules.includes(moduleType)){
-    return ['moduleType', ...multifractalSettings];
-  } else {
-    return ['moduleType'];
-  }
+  console.log('moduleType: ', moduleType);
+  return log('capabilities', moduleCapabilities[moduleType].toArray());
 };
 
 const getNoiseModuleNewChildren = (settings, children) => {

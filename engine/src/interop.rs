@@ -41,7 +41,11 @@ pub unsafe extern "C" fn init(canvas_size: usize) {
 
     // create the middleware that manages the image buffer and populates it each tick
     let noise_stepper = Box::new(NoiseStepper {
-        conf: MasterConf::default(),
+        conf: (|| {
+            let mut conf = MasterConf::default();
+            conf.canvas_size = canvas_size;
+            conf
+        })(),
         composition_tree: boxed_composition_tree,
     });
     let boxed_engine_ptr = Box::into_raw(noise_stepper);
@@ -72,6 +76,41 @@ pub unsafe extern "C" fn delete_node(tree_pointer: *mut CompositionTree, depth: 
             1
         },
     }
+}
+
+/// Sets a new global configuration for the composition tree given the IR format.
+#[no_mangle]
+pub unsafe extern "C" fn set_global_conf(tree_pointer: *mut CompositionTree, conf_str: *const c_char) -> i32 {
+    // Convert the c-str into a &str
+    let json_str: &str = match CStr::from_ptr(conf_str).to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            error("Invalid UTF8 string provided to `add_node()`");
+            return 1;
+        },
+    };
+
+    let conf: MasterConf = match serde_json::from_str::<IrNode>(json_str) {
+        Ok(ir_node) => {
+            let conf: MasterConf = match ir_node.try_into() {
+                Ok(c) => c,
+                Err(err_str) => {
+                    error(&format!("{}", err_str));
+                    return 1;
+                }
+            };
+            conf
+        },
+        Err(err_str) => {
+            error(&format!("{}", err_str));
+            return 1;
+        }
+    };
+
+    let mut tree: &mut CompositionTree = &mut *tree_pointer;
+    tree.global_conf = conf;
+
+    0i32
 }
 
 fn build_node(def: &str) -> Result<CompositionTreeNodeDefinition, String> {

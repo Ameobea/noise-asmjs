@@ -55,11 +55,17 @@ fn build_noise_module_conf(setting_type: SettingType, settings: &[IrSetting]) ->
             NoiseModuleConf::Worley {
                 displacement: convert_setting("displacement", settings)?,
                 range_function: convert_setting("rangeFunction", settings)?,
-                range_function_enabled: convert_setting("rangeFunctionEnabled", settings)?,
+                range_function_enabled: convert_setting("enableRange", settings)?,
                 worley_frequency: convert_setting("worleyFrequency", settings)?,
             }
         },
         SettingType::Constant => { NoiseModuleConf::Constant { constant: convert_setting("constant", settings)? } },
+        SettingType::MasterConf => {
+            NoiseModuleConf::MasterConf {
+                speed: convert_setting("speed", settings)?,
+                zoom: convert_setting("zoom", settings)?,
+            }
+        },
     })
 }
 

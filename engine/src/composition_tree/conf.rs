@@ -1,10 +1,19 @@
 //! Defines the data types used to create noise modules.
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
 use noise::{Constant, MultiFractal, RangeFunction, Seedable, Worley};
 
 use super::super::debug;
+
+/// Copied from https://doc.rust-lang.org/std/hash/
+fn calculate_hash<T: Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
+}
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum InteropRangeFunction {
@@ -32,11 +41,11 @@ impl FromStr for InteropRangeFunction {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Euclidean" => Ok(InteropRangeFunction::Euclidean),
-            "EuclideanSquared" => Ok(InteropRangeFunction::EuclideanSquared),
-            "Manhattan" => Ok(InteropRangeFunction::Manhattan),
-            "Chebyshev" => Ok(InteropRangeFunction::Chebyshev),
-            "Quadratic" => Ok(InteropRangeFunction::Quadratic),
+            "euclidean" => Ok(InteropRangeFunction::Euclidean),
+            "euclideanSquared" => Ok(InteropRangeFunction::EuclideanSquared),
+            "manhattan" => Ok(InteropRangeFunction::Manhattan),
+            "chebyshev" => Ok(InteropRangeFunction::Chebyshev),
+            "quadratic" => Ok(InteropRangeFunction::Quadratic),
             _ => Err(format!("Unable to convert \"{}\" into `InteropRangeFunction`!", s)),
         }
     }
@@ -54,7 +63,7 @@ pub enum NoiseModuleConf {
         persistence: f64,
     },
     Seedable {
-        seed: u32,
+        seed: String,
     },
     Worley {
         range_function: InteropRangeFunction,
@@ -65,6 +74,10 @@ pub enum NoiseModuleConf {
     Constant {
         constant: f64,
     },
+    MasterConf {
+        zoom: f64,
+        speed: f32,
+    }
 }
 
 /// List of all the settings for use in mapping keys to their corresponding setting types.
@@ -74,6 +87,7 @@ pub enum SettingType {
     Seedable,
     Worley,
     Constant,
+    MasterConf,
 }
 
 /// Matches a key of a setting from the frontend to its corresponding setting type that will eventually be
@@ -84,18 +98,11 @@ pub fn map_setting_to_type(key: &str) -> Result<SettingType, Option<String>> {
     match key {
         "octaves" | "frequency" | "lacunarity" | "persistence" => Ok(SettingType::MultiFractal),
         "seed" => Ok(SettingType::Seedable),
-        "rangeFunction" | "worleyFrequency" | "displacement" => Ok(SettingType::Worley),
+        "rangeFunction" | "enableRange" | "worleyFrequency" | "displacement" => Ok(SettingType::Worley),
         "constant" => Ok(SettingType::Constant),
         "moduleType" => Err(None),
         _ => Err(Some(format!("Unable to match setting with key {} to `SettingType`!", key))),
     }
-}
-
-/// Configuration that applies to the entire composition tree.
-#[derive(Serialize, Deserialize)]
-pub struct GlobalTreeConf {
-    pub speed: f64,
-    pub zoom: f64,
 }
 
 pub fn apply_multifractal_conf<T: MultiFractal>(conf: &NoiseModuleConf, module: T) -> T {
@@ -111,8 +118,8 @@ pub fn apply_multifractal_conf<T: MultiFractal>(conf: &NoiseModuleConf, module: 
 }
 
 pub fn apply_seedable_conf<T: Seedable>(conf: &NoiseModuleConf, module: T) -> T {
-    if let &NoiseModuleConf::Seedable { seed } = conf {
-        module.set_seed(seed)
+    if let &NoiseModuleConf::Seedable { ref seed } = conf {
+        module.set_seed(calculate_hash(seed) as u32)
     } else {
         debug(&format!("ERROR: Attempted to configure module with seedable settings but the settings aren't seedable: {:?}", conf));
         module

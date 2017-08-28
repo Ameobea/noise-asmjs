@@ -19,8 +19,8 @@ export default {
       id: uuidv4(),
       type: 'globalConf',
       settings: [
-        createSetting('speed', '1'),
-        createSetting('zoom', '1'),
+        createSetting('speed', '0.008'),
+        createSetting('zoom', '0.015'),
       ],
       children: [],
     }, {

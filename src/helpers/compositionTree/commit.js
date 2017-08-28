@@ -6,9 +6,10 @@
 import R from 'ramda';
 
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
-import { addNode, deleteNode, replaceNode } from 'src/interop';
+import { addNode, deleteNode, replaceNode, setGlobalConf } from 'src/interop';
 import { denormalizeNode } from 'src/helpers/compositionTree/normalization';
 import { getLeafAttr, getNodeParent, getSettingByName } from 'src/selectors/compositionTree';
+import { getTreePointer } from 'src/selectors/enginePointer';
 import { NULL_UUID } from 'src/data/misc';
 import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
 
@@ -66,10 +67,18 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
 
   // then, replace all modified nodes with newly-built versions.
   updatedNodes.forEach(nodeId => {
+    const nodeType = entities.nodes[nodeId].type;
     const def = JSON.stringify(denormalizeNode(entities, nodeId));
-    const coords = getNodeCoords(entities, nodeId);
 
-    replaceNode(R.init(coords), R.last(coords), def);
+    if(nodeType === 'noiseModule') {
+      const coords = getNodeCoords(entities, nodeId);
+
+      replaceNode(R.init(coords), R.last(coords), def);
+    } else if(nodeType === 'globalConf') {
+      setGlobalConf(getTreePointer(), def);
+    } else {
+      console.log(`Updated node with unhandled type: ${nodeType}`);
+    }
   });
 
   // finally, handle all new nodes, parsing them into their denormalized form and creating them on the backend

@@ -8,13 +8,13 @@ use transformations::InputTransformation;
 use util::Dim;
 use super::composition::CompositionScheme;
 use super::conf::{apply_multifractal_conf, apply_seedable_conf, apply_worley_conf, apply_constant_conf, NoiseModuleConf};
-use super::{ComposedNoiseModule, CompositionTree, CompositionTreeNode, GlobalTreeConf};
+use super::{ComposedNoiseModule, CompositionTree, CompositionTreeNode, MasterConf};
 
 /// Defines a meta-representation of a `CompositionTree` designed to be passed into the backend from the JS frontend.  It
 /// contains all information necessary to construct a fully functional composition tree from scratch.
 #[derive(Serialize, Deserialize)]
 pub struct CompositionTreeDefinition {
-    pub global_conf: GlobalTreeConf,
+    pub global_conf: MasterConf,
     pub root_node: CompositionTreeNodeDefinition,
 }
 

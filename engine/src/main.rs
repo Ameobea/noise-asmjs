@@ -18,8 +18,11 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
+use std::convert::TryFrom;
 use std::ffi::CString;
+use std::fmt::Debug;
 use std::os::raw::{c_char, c_void};
+use std::str::FromStr;
 
 use minutiae::prelude::*;
 use minutiae::emscripten::{EmscriptenDriver, CanvasRenderer};
@@ -55,6 +58,7 @@ pub mod composition_tree;
 use self::composition_tree::CompositionTree;
 pub mod interop;
 pub mod ir;
+use ir::IrNode;
 pub mod transformations;
 pub mod util;
 
@@ -122,21 +126,55 @@ fn resize_universe(universe: &mut Universe<CS, ES, MES, CA, EA>, new_size: usize
 }
 
 /// Configuration status and state for the entire backend.
+#[derive(Serialize, Deserialize)]
 pub struct MasterConf {
     needs_resize: bool,
     canvas_size: usize,
     zoom: f64,
     speed: f64,
+    x_offset: f64,
+    y_offset: f64,
+    z_offset: f64,
 }
 
 impl Default for MasterConf {
     fn default() -> Self {
-            MasterConf {
+        MasterConf {
             needs_resize: false,
             canvas_size: 0,
-            speed: 0.00758,
-            zoom: 0.0132312,
+            speed: 0.008,
+            zoom: 0.015,
+            x_offset: 0.0,
+            y_offset: 0.0,
+            z_offset: 0.0,
         }
+    }
+}
+
+fn parse_setting<T, D: Debug>(val: &str) -> Result<T, String> where T:FromStr<Err=D> {
+    let res: Result<T, _> = val.parse();
+    res.map_err(|err| format!("Unable to parse supplied value: {:?}", err))
+}
+
+impl TryFrom<IrNode> for MasterConf {
+    type Error = String;
+
+    fn try_from(node: IrNode) -> Result<Self, Self::Error> {
+        let mut conf = MasterConf::default();
+        // the actual settings are stored as `IrSetting`s, so iterate through those and construct a
+        // new `MasterConf` struct using their values
+        for setting in node.settings {
+            let key = setting.key.as_str();
+            match key {
+                "speed" => conf.speed = parse_setting(&setting.value)?,
+                "zoom" => conf.zoom = parse_setting(&setting.value)?,
+                _ => {
+                    return Err(format!("Unhandled setting provided to master conf: {}", key))
+                },
+            }
+        }
+
+        Ok(conf)
     }
 }
 
@@ -156,7 +194,7 @@ impl Middleware<CS, ES, MES, CA, EA, OurEngine> for NoiseStepper {
             self.conf.needs_resize = false;
         }
 
-        drive_noise(&mut universe.cells, universe.seq, &*self.composition_tree, self.conf.canvas_size, self.conf.zoom, self.conf.speed);
+        drive_noise(&mut universe.cells, universe.seq, &*self.composition_tree, self.conf.canvas_size, 1.0, 1.0);
     }
 }
 
