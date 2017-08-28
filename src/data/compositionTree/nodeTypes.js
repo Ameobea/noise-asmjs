@@ -14,7 +14,6 @@ import { set } from 'zaphod/compat';
 import moduleTypes from 'src/data/noiseModules';
 import { getSettingByName, getSettingDataByName } from 'src/selectors/compositionTree';
 import compositionSchemes from 'src/data/compositionSchemes';
-import { multifractalSettings } from 'src/data/moduleSettings';
 import moduleCapabilities from 'src/data/moduleCapabilities';
 import { inputTransformationTypes } from 'src/data/inputTransformations';
 import {
@@ -31,20 +30,9 @@ const unknownNode = type => ({
   isLeaf: true,
 });
 
-// A list of the names of all noise modules that are multifractal
-const multifractalModules = moduleTypes
-  .filter( R.prop('multifractal') )
-  .map( R.prop('key') );
-
-const log = (...args) => {
-  console.log(...args);
-  return args[args.length - 1];
-};
-
 const getNoiseModuleSettings = settings => {
   const moduleType = getSettingByName(settings, 'moduleType');
-  console.log('moduleType: ', moduleType);
-  return log('capabilities', moduleCapabilities[moduleType].toArray());
+  return moduleCapabilities[moduleType].toArray();
 };
 
 const getNoiseModuleNewChildren = (settings, children) => {
@@ -73,7 +61,7 @@ const getCompositionSchemeSettings = settings => [
 const getCompositionSchemeChangedSettings = (settings, parentNode, allNodes, allSettings) => {
   if(getSettingByName(settings, 'compositionScheme') === 'weightedAverage') {
     if(!parentNode) {
-      console.log('No parent node for node with settings ', settings);
+      console.error('No parent node for node with settings ', settings);
       return [];
     }
 

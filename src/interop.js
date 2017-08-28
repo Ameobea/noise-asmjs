@@ -42,7 +42,6 @@ export const init = canvasSize => {
   }
 
   // Call the internal engine code, initializing the engine and returning a pointer to its settings.
-  console.log(`Calling the noise engine initialization function with canvas size of ${canvasSize}...`);
   Module.ccall('init', null, ['number'], [canvasSize]);
 };
 
@@ -165,7 +164,9 @@ export const deleteInputTransformation = (parentNodeCoords, treeIndex, transform
   const coordBufPtr = Module._malloc(parentNodeCoords.length * 4);
   Module.HEAP32.set(new Int32Array(parentNodeCoords), coordBufPtr / 4);
 
-  const status = deleteNodeInner(getTreePointer(), parentNodeCoords.length, coordBufPtr, treeIndex, transformationIndex);
+  const status = deleteInputTransformationInner(
+    getTreePointer(), parentNodeCoords.length, coordBufPtr, treeIndex, transformationIndex
+  );
 
   Module._free(coordBufPtr);
 

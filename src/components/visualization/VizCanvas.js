@@ -7,7 +7,6 @@ import { connect } from 'react-redux';
 import R from 'ramda';
 import Rnd from 'react-rnd';
 
-import { getTrueCanvasSize } from 'src/selectors/stageSize';
 import { setCanvasSize } from 'src/interop';
 import { getEnginePointer } from 'src/selectors/enginePointer';
 import { INITIAL_CANVAS_SIZE } from 'src/data/misc';

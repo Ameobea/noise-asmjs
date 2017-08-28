@@ -11,7 +11,7 @@ import {
   addInputTransformation, deleteInputTransformation, replaceInputTransformation,
 } from 'src/interop';
 import { denormalizeNode } from 'src/helpers/compositionTree/normalization';
-import { getLeafAttr, getNodeParent, getSettingByName } from 'src/selectors/compositionTree';
+import { getLeafAttr, getNodeParent } from 'src/selectors/compositionTree';
 import { getTreePointer } from 'src/selectors/enginePointer';
 import { NULL_UUID } from 'src/data/misc';
 import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
@@ -23,6 +23,7 @@ const getNodeCoords = (entities, nodeId) => {
   let coordBuf = [];
   let curId = nodeId;
 
+  // eslint-disable-next-line
   while(true) {
     if(curId === NULL_UUID) {
       break;
@@ -47,7 +48,7 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
 
   // first handle all deleted nodes
   deletedNodes.forEach( ({ id, parentId, index }) => {
-    const parentNodeType = entities.nodes[parentId].type;
+    const { type: parentNodeType } = entities.nodes[parentId];
     const coords = getNodeCoords(entities, parentId);
     if(coords === false) {
       // node's parent has been deleted already so we don't have to do anything
@@ -59,8 +60,17 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
     // don't try to delete this if the parent node isn't composed (switching from composed node to leaf node)
     if(parentNodeType !== 'Composed' && parentType !== 'root') {
       if(parentNodeType === 'inputTransformations') {
-        // TODO
+        const spl = R.splitAt(-1, coords);
+        const head = spl[0];
+        const parentCoords = R.init(head);
+        const treeIndex = head.length === 0 ? -1 : R.last(head);
+
+        deleteInputTransformation(parentCoords, treeIndex, index);
+      } else {
+        console.warn(`Unhandled deletion of node with parent of type ${parentNodeType}`);
       }
+
+      return;
     }
 
     const parentSettings = mapIdsToEntites(entities.settings, parentSettingIds);
@@ -80,23 +90,37 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
     } else if(nodeType === 'globalConf') {
       setGlobalConf(getTreePointer(), def);
     } else if(nodeType === 'inputTransformation') {
-      console.log(def);
-      // TODO
-      // replaceInputTransformation(R.init(coords), R.last(coords), def);
+      // coords are [..., parentNode, inputTransformations, inputTransformation]
+      const spl = R.splitAt(-3, coords);
+      const head = spl[0];
+      // `treeIndex` is -1 if it is the root node
+      const treeIndex = spl[1].length === 3 ? spl[1][0] : -1;
+      const transformationIndex = R.last(spl[1]);
+
+      replaceInputTransformation(head, treeIndex, transformationIndex, def);
     } else {
-      console.log(`Updated node with unhandled type: ${nodeType}`);
+      console.warn(`Updated node with unhandled type: ${nodeType}`);
     }
   });
 
   // finally, handle all new nodes, parsing them into their denormalized form and creating them on the backend
   newNodes.forEach(nodeId => {
-    // only add it if it's of type `'noiseModule'`
-    if(entities.nodes[nodeId].type === 'noiseModule') {
-      const def = JSON.stringify(denormalizeNode(entities, nodeId));
-      const coords = getNodeCoords(entities, nodeId);
+    const nodeType = entities.nodes[nodeId].type;
+    const coords = getNodeCoords(entities, nodeId);
+    const def = JSON.stringify(denormalizeNode(entities, nodeId));
 
+    if(nodeType === 'noiseModule') {
       // Allocate memory in the Emscripten heap and call the backend function
       addNode(R.init(coords), R.last(coords), def);
+    } else if(nodeType === 'inputTransformation') {
+      const spl = R.splitAt(-3, coords);
+      const head = spl[0];
+      // `treeIndex` is -1 if it is the root node
+      const treeIndex = spl[1].length === 3 ? spl[1][0] : -1;
+
+      addInputTransformation(head, treeIndex, def);
+    } else {
+      console.warn(`Unhandled node type created: ${nodeType}`);
     }
   });
 };

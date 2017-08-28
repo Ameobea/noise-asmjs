@@ -209,6 +209,10 @@ fn get_transformation_parent<'a>(
     let grandparent_node: &mut CompositionTreeNode = tree.root_node.traverse_mut(coords_slice)
         .map_err(|err| format!("Unable to traverse the tree at the supplied coordinates: {}", err))?;
 
+    if node_index == -1 {
+        return Ok(grandparent_node);
+    }
+
     let parent_node: &mut CompositionTreeNode = match grandparent_node.function {
         CompositionTreeNodeType::Leaf(_) => {
             return Err(format!(

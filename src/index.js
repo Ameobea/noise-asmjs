@@ -6,7 +6,7 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 
 import store from './reducers';
 import App from './App';
-import { init, pause } from 'src/interop';
+import { init } from 'src/interop';
 import { INITIAL_CANVAS_SIZE } from 'src/data/misc';
 
 injectTapEventPlugin();
@@ -27,9 +27,9 @@ while(!canvas) { // wait until React has loaded it in
   canvas = document.getElementById('mainCanvas');
 }
 
-setTimeout(() => {
-  console.log('pausing...');
-  pause();
-}, 2000);
+// setTimeout(() => {
+//   console.log('pausing...');
+//   pause();
+// }, 2000);
 
 init(INITIAL_CANVAS_SIZE);

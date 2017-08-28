@@ -311,9 +311,11 @@ const buildEnumField = (name, id, {title, hint, enumValues}) => (
 const CheckboxWrapper = props => {
   const mappedProps = {
     ...props,
-    checked: Boolean(props.value),
+    checked: props.value === 'true' || props.value === true,
     value: undefined,
   };
+
+  console.log('mappedProps: ', mappedProps);
 
   return <Checkbox {...mappedProps} />;
 };
@@ -325,6 +327,7 @@ const buildBoolField = (name, id, {title, hint}) => (
     as={CheckboxWrapper}
     label={title}
     helpContent={hint}
+    changeHandlerGenerator={ setSetting => (e, { checked }) => setSetting(id, checked.toString()) }
   />
 );
 
