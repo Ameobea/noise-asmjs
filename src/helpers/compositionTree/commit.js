@@ -123,4 +123,7 @@ export const commitChanges = (entities, { new: newNodes, updated: updatedNodes, 
       console.warn(`Unhandled node type created: ${nodeType}`);
     }
   });
+
+  const rootDef = JSON.stringify(denormalizeNode(entities, NULL_UUID));
+  console.log(rootDef);
 };

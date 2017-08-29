@@ -21,6 +21,7 @@ export default {
       settings: [
         createSetting('speed', '0.008'),
         createSetting('zoom', '0.015'),
+        createSetting('colorFunction', 'tieDye'),
       ],
       children: [],
     }, {

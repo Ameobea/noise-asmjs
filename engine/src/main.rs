@@ -7,9 +7,11 @@
 // TODO: Deprecate the entire cell mutator functionality in favor of entirely middleware-driven approaches
 
 // #![allow(unused_variables, dead_code)]
-#![feature(conservative_impl_trait, try_from)]
+#![feature(conservative_impl_trait, const_fn, try_from)]
 
 extern crate itertools;
+#[macro_use]
+extern crate lazy_static;
 extern crate minutiae;
 extern crate noise;
 extern crate palette;
@@ -27,7 +29,6 @@ use std::str::FromStr;
 use minutiae::prelude::*;
 use minutiae::emscripten::{EmscriptenDriver, CanvasRenderer};
 use noise::*;
-use palette::{FromColor, Hsv, Rgb};
 
 extern {
     /// Given a pointer to our pixel data buffer, draws its contents to the canvas.
@@ -54,6 +55,8 @@ pub fn error(msg: &str) {
     unsafe { js_error(c_str.as_ptr()) };
 }
 
+pub mod color_schemes;
+use self::color_schemes::ColorFunction;
 pub mod composition_tree;
 use self::composition_tree::CompositionTree;
 pub mod interop;
@@ -64,6 +67,8 @@ pub mod util;
 
 #[cfg(test)]
 pub mod tests;
+
+static mut ACTIVE_COLOR_FUNCTION: ColorFunction = ColorFunction::TieDye;
 
 // Minutiae custom type declarations.
 // Since we're only using a very small subset of Minutiae's capabilities, these are mostly unused.
@@ -168,6 +173,14 @@ impl TryFrom<IrNode> for MasterConf {
             match key {
                 "speed" => conf.speed = parse_setting(&setting.value)?,
                 "zoom" => conf.zoom = parse_setting(&setting.value)?,
+                "colorFunction" => {
+                    let color_function: ColorFunction = match ColorFunction::from_str(setting.value.as_str()) {
+                        Ok(cf) => cf,
+                        Err(err) => { return Err(err); },
+                    };
+
+                    unsafe { ACTIVE_COLOR_FUNCTION = color_function; }
+                },
                 _ => {
                     return Err(format!("Unhandled setting provided to master conf: {}", key))
                 },
@@ -198,14 +211,8 @@ impl Middleware<CS, ES, MES, CA, EA, OurEngine> for NoiseStepper {
     }
 }
 
-// TODO: Migrate to external color function
 fn calc_color(cell: &Cell<CS>, _: &[usize], _: &EntityContainer<CS, ES, MES>) -> [u8; 4] {
-    // normalize into range from -180 to 180
-    let hue = (cell.state.0 * 360.0) + 180.0;
-    let hsv_color = Hsv::new(hue.into(), 1.0, 1.0);
-    let rgb_color = Rgb::from_hsv(hsv_color);
-    [(rgb_color.red * 255.) as u8, (rgb_color.green * 255.) as u8, (rgb_color.blue * 255.) as u8, 255]
-    // [(cell.state.0 * 255.0) as u8, (cell.state.0 * 255.0) as u8, (cell.state.0 * 255.0) as u8, 255]
+    unsafe { ACTIVE_COLOR_FUNCTION.colorize(cell.state.0) }
 }
 
 struct WorldGenerator;

@@ -4,9 +4,9 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
-use noise::{Constant, MultiFractal, RangeFunction, Seedable, Worley};
+use noise::{Constant, MultiFractal, RangeFunction, RidgedMulti, Seedable, Worley};
 
-use super::super::debug;
+use super::super::error;
 
 /// Copied from https://doc.rust-lang.org/std/hash/
 fn calculate_hash<T: Hash>(t: &T) -> u64 {
@@ -74,10 +74,13 @@ pub enum NoiseModuleConf {
     Constant {
         constant: f64,
     },
+    RidgedMulti {
+        attenuation: f64,
+    },
     MasterConf {
         zoom: f64,
         speed: f32,
-    }
+    },
 }
 
 /// List of all the settings for use in mapping keys to their corresponding setting types.
@@ -88,6 +91,7 @@ pub enum SettingType {
     Worley,
     Constant,
     MasterConf,
+    RidgedMulti,
 }
 
 /// Matches a key of a setting from the frontend to its corresponding setting type that will eventually be
@@ -100,6 +104,7 @@ pub fn map_setting_to_type(key: &str) -> Result<SettingType, Option<String>> {
         "seed" => Ok(SettingType::Seedable),
         "rangeFunction" | "enableRange" | "worleyFrequency" | "displacement" => Ok(SettingType::Worley),
         "constant" => Ok(SettingType::Constant),
+        "attenuation" => Ok(SettingType::RidgedMulti),
         "moduleType" => Err(None),
         _ => Err(Some(format!("Unable to match setting with key {} to `SettingType`!", key))),
     }
@@ -112,7 +117,7 @@ pub fn apply_multifractal_conf<T: MultiFractal>(conf: &NoiseModuleConf, module: 
             .set_lacunarity(lacunarity)
             .set_persistence(persistence)
     } else {
-        debug(&format!("ERROR: Attempted to configure module with multifractal settings but the settings aren't multifractal: {:?}", conf));
+        error(&format!("Attempted to configure module with multifractal settings but the settings aren't multifractal: {:?}", conf));
         module
     }
 }
@@ -121,7 +126,7 @@ pub fn apply_seedable_conf<T: Seedable>(conf: &NoiseModuleConf, module: T) -> T 
     if let &NoiseModuleConf::Seedable { ref seed } = conf {
         module.set_seed(calculate_hash(seed) as u32)
     } else {
-        debug(&format!("ERROR: Attempted to configure module with seedable settings but the settings aren't seedable: {:?}", conf));
+        error(&format!("Attempted to configure module with seedable settings but the settings aren't seedable: {:?}", conf));
         module
     }
 }
@@ -133,7 +138,7 @@ pub fn apply_worley_conf(conf: &NoiseModuleConf, module: Worley) -> Worley {
             .set_displacement(displacement)
             .set_frequency(worley_frequency)
     } else {
-        debug(&format!("ERROR: Attempted to configure module with worley settings but the settings aren't worley: {:?}", conf));
+        error(&format!("Attempted to configure module with worley settings but the settings aren't worley: {:?}", conf));
         module
     }
 }
@@ -142,7 +147,16 @@ pub fn apply_constant_conf(conf: &NoiseModuleConf, module: Constant) -> Constant
     if let &NoiseModuleConf::Constant { constant } = conf {
         Constant::new(constant)
     } else {
-        debug(&format!("ERROR: Attempted to configure module with constant settings but the settings aren't constant: {:?}", conf));
+        error(&format!("Attempted to configure module with constant settings but the settings aren't constant: {:?}", conf));
+        module
+    }
+}
+
+pub fn apply_ridged_multi_conf(conf: &NoiseModuleConf, module: RidgedMulti) -> RidgedMulti {
+    if let &NoiseModuleConf::RidgedMulti { attenuation } = conf {
+        module.set_attenuation(attenuation)
+    } else {
+        error(&format!("Attempted to configure module with `RidgedMulti` settings but the settings aren't `RidgedMulti`: {:?}", conf));
         module
     }
 }

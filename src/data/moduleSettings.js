@@ -150,6 +150,7 @@ export const settingDefinitions = {
   },
   attenuation: {
     title: 'Attenuation',
+    default: '2.0',
     min: 0.0,
     trueMin: 0.0,
     max: 5.0,
@@ -238,6 +239,23 @@ export const settingDefinitions = {
     default: '1',
     hint: 'All input coordinates are multipled by this number before being passed to the inner noise function.',
   },
+  colorFunction: {
+    title: 'Color Map Function',
+    description: 'The function that is used to map the output from the noise functions to the color displayed for that pixel on the canvas.',
+    default: 'tieDye',
+    enum: true,
+    enumValues: [
+      { key: 'tieDye', title: 'Tie-Dye' },
+      { key: 'blackAndWhite', title: 'Black + White' },
+      { key: 'lavaFlow', title: 'Lava Flow' },
+      { key: 'oceanic', title: 'Oceanic' },
+      { key: 'sunset', title: 'Sunset' },
+      { key: 'cosmos', title: 'Cosmos' },
+      { key: 'pastelSea', title: 'Pastel Sea' },
+      { key: 'vaporwave', title: 'Vaporwave' },
+      { key: 'algaeFloat', title: 'Algae Float' },
+    ],
+  }
 };
 
 const mapSettingState = ({ compositionTree: { entities: { settings } } }) => ({ settings });
@@ -314,8 +332,6 @@ const CheckboxWrapper = props => {
     checked: props.value === 'true' || props.value === true,
     value: undefined,
   };
-
-  console.log('mappedProps: ', mappedProps);
 
   return <Checkbox {...mappedProps} />;
 };

@@ -163,7 +163,7 @@ export const getNodeData = nodeType => ({
     name: 'Global Configuration',
     title: <span style={{color: 'green'}}>Global Configuration</span>,
     description: 'Configuration options for the composition tree that affect the entire tree.',
-    settings: ['zoom', 'speed'],
+    settings: ['zoom', 'speed', 'colorFunction'],
     changedSettings: null,
     isLeaf: true,
     newChildren: null,

@@ -73,6 +73,7 @@ fn build_noise_module_conf(setting_type: SettingType, settings: &[IrSetting]) ->
             }
         },
         SettingType::Constant => { NoiseModuleConf::Constant { constant: convert_setting("constant", settings)? } },
+        SettingType::RidgedMulti => { NoiseModuleConf::RidgedMulti { attenuation: convert_setting("attenuation", settings)? } },
         SettingType::MasterConf => {
             NoiseModuleConf::MasterConf {
                 speed: convert_setting("speed", settings)?,
