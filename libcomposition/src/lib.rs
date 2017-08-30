@@ -1,20 +1,131 @@
-//! Defines the primary structure used to nest noise modules and build up a composition tree that sets up
-//! how the modules are related.
+//! Defines the noise function composition tree which is used in both the WebAssembly version as well as the
+//! headless server backend.
+
+#![feature(conservative_impl_trait, const_fn, try_from)]
+
+extern crate itertools;
+#[macro_use]
+extern crate lazy_static;
+extern crate noise;
+extern crate palette;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
+
+use std::convert::TryFrom;
+#[cfg(target_os = "emscripten")]
+use std::ffi::CString;
+use std::fmt::Debug;
+use std::str::FromStr;
+#[cfg(target_os = "emscripten")]
+use std::os::raw::c_char;
 
 use noise::*;
 
-use transformations::InputTransformation;
-
+pub mod color_schemes;
+use color_schemes::ColorFunction;
 pub mod composition;
 use self::composition::CompositionScheme;
 pub mod conf;
 use self::conf::NoiseModuleConf;
 pub mod definition;
-use self::definition::{CompositionTreeDefinition, CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleType};
+use self::definition::{CompositionTreeDefinition, CompositionTreeNodeDefinition, InputTransformationDefinition};
 pub mod initial_tree;
+pub mod ir;
+use ir::IrNode;
+pub mod transformations;
+use self::transformations::{InputTransformation, apply_transformations};
+pub mod util;
 
-use transformations::apply_transformations;
-use super::{error, MasterConf};
+#[cfg(target_os = "emscripten")]
+extern {
+    /// Direct line to `console.log` from JS since the simulated `stdout` is dead after `main()` completes
+    pub fn js_debug(msg: *const c_char);
+    /// Direct line to `console.error` from JS since the simulated `stdout` is dead after `main()` completes
+    pub fn js_error(msg: *const c_char);
+}
+
+#[cfg(not(target_os = "emscripten"))]
+pub fn error(msg: &str) {
+    println!("{}", msg);
+}
+
+/// Wrapper around the JS debug function that accepts a Rust `&str`.
+#[cfg(target_os = "emscripten")]
+pub fn debug(msg: &str) {
+    let c_str = CString::new(msg).unwrap();
+    unsafe { js_debug(c_str.as_ptr()) };
+}
+
+/// Wrapper around the JS error function that accepts a Rust `&str`.
+#[cfg(target_os = "emscripten")]
+pub fn error(msg: &str) {
+    let c_str = CString::new(msg).unwrap();
+    unsafe { js_error(c_str.as_ptr()) };
+}
+
+pub static mut ACTIVE_COLOR_FUNCTION: ColorFunction = ColorFunction::TieDye;
+
+pub fn parse_setting<T, D: Debug>(val: &str) -> Result<T, String> where T:FromStr<Err=D> {
+    let res: Result<T, _> = val.parse();
+    res.map_err(|err| format!("Unable to parse supplied value: {:?}", err))
+}
+
+/// Configuration status and state for the entire backend.
+#[derive(Serialize, Deserialize)]
+pub struct MasterConf {
+    pub needs_resize: bool,
+    pub canvas_size: usize,
+    pub zoom: f64,
+    pub speed: f64,
+    pub x_offset: f64,
+    pub y_offset: f64,
+    pub z_offset: f64,
+}
+
+impl Default for MasterConf {
+    fn default() -> Self {
+        MasterConf {
+            needs_resize: false,
+            canvas_size: 0,
+            speed: 0.008,
+            zoom: 0.015,
+            x_offset: 0.0,
+            y_offset: 0.0,
+            z_offset: 0.0,
+        }
+    }
+}
+
+impl TryFrom<IrNode> for MasterConf {
+    type Error = String;
+
+    fn try_from(node: IrNode) -> Result<Self, Self::Error> {
+        let mut conf = MasterConf::default();
+        // the actual settings are stored as `IrSetting`s, so iterate through those and construct a
+        // new `MasterConf` struct using their values
+        for setting in node.settings {
+            let key = setting.key.as_str();
+            match key {
+                "speed" => conf.speed = parse_setting(&setting.value)?,
+                "zoom" => conf.zoom = parse_setting(&setting.value)?,
+                "colorFunction" => {
+                    let color_function: ColorFunction = match ColorFunction::from_str(setting.value.as_str()) {
+                        Ok(cf) => cf,
+                        Err(err) => { return Err(err); },
+                    };
+
+                    unsafe { ACTIVE_COLOR_FUNCTION = color_function; }
+                },
+                _ => {
+                    return Err(format!("Unhandled setting provided to master conf: {}", key))
+                },
+            }
+        }
+
+        Ok(conf)
+    }
+}
 
 /// The core of the noise module composition framework.  This struct is the parent of the entire composition tree
 /// And can be used to retrieve a value from the entire composition tree for a single coordinate.

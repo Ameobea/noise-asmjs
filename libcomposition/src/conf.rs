@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 use noise::{Constant, MultiFractal, RangeFunction, RidgedMulti, Seedable, Worley};
 
-use super::super::error;
+use super::error;
 
 /// Copied from https://doc.rust-lang.org/std/hash/
 fn calculate_hash<T: Hash>(t: &T) -> u64 {

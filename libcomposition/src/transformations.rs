@@ -2,7 +2,7 @@
 
 use noise::{NoiseFn, Point3};
 
-use composition_tree::CompositionTreeNode;
+use CompositionTreeNode;
 use util::Dim;
 
 pub enum InputTransformation {

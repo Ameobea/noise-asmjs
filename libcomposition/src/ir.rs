@@ -5,8 +5,8 @@ use std::convert::{TryFrom, TryInto};
 
 use itertools::Itertools;
 
-use composition_tree::composition::CompositionScheme;
-use composition_tree::definition::{CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleType};
+use composition::CompositionScheme;
+use definition::{CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleType};
 use util::{build_child, build_noise_module_settings, find_setting_by_name};
 
 #[derive(Clone, Serialize, Deserialize)]

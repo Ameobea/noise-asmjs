@@ -4,15 +4,10 @@ name = "noise-backend"
 version = "0.1.0"
 
 [dependencies]
-itertools = "0.6.1"
-lazy_static = "0.2.8"
-palette = "0.2"
+libcomposition = { path="../libcomposition" }
+minutiae = "0.5.0"
 serde = "1.*"
-serde_derive = "1.*"
 serde_json = "1.*"
-
-[dependencies.minutiae]
-path = "../../minutiae/minutiae"
 
 [dependencies.noise]
 path = "../../noise-rs"

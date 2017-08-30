@@ -1,8 +1,8 @@
 //! Defines the structure of the initial composition tree that is loaded at application initialization.
 
-use composition_tree::{CompositionTree, NoiseModuleType};
+use definition::{NoiseModuleType};
 use super::{
-    CompositionScheme, CompositionTreeDefinition, CompositionTreeNodeDefinition,
+    CompositionScheme, CompositionTree, CompositionTreeDefinition, CompositionTreeNodeDefinition,
     InputTransformationDefinition, MasterConf, NoiseModuleConf
 };
 

@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 use itertools::Itertools;
 
-use composition_tree::conf::{map_setting_to_type, NoiseModuleConf, SettingType};
+use conf::{map_setting_to_type, NoiseModuleConf, SettingType};
 use ir::{IrNode, IrSetting};
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]

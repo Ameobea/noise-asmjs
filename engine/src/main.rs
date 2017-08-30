@@ -6,26 +6,18 @@
 //       implementing CA/EA for `()`
 // TODO: Deprecate the entire cell mutator functionality in favor of entirely middleware-driven approaches
 
-// #![allow(unused_variables, dead_code)]
 #![feature(conservative_impl_trait, const_fn, try_from)]
 
-extern crate itertools;
-#[macro_use]
-extern crate lazy_static;
 extern crate minutiae;
 extern crate noise;
-extern crate palette;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
 extern crate serde_json;
 
-use std::convert::TryFrom;
-use std::ffi::CString;
-use std::fmt::Debug;
-use std::os::raw::{c_char, c_void};
-use std::str::FromStr;
+extern crate libcomposition;
 
+use std::ffi::CString;
+use std::os::raw::{c_char, c_void};
+
+use libcomposition::{CompositionTree, MasterConf};
 use minutiae::prelude::*;
 use minutiae::emscripten::{EmscriptenDriver, CanvasRenderer};
 use noise::*;
@@ -55,20 +47,10 @@ pub fn error(msg: &str) {
     unsafe { js_error(c_str.as_ptr()) };
 }
 
-pub mod color_schemes;
-use self::color_schemes::ColorFunction;
-pub mod composition_tree;
-use self::composition_tree::CompositionTree;
 pub mod interop;
-pub mod ir;
-use ir::IrNode;
-pub mod transformations;
-pub mod util;
 
 #[cfg(test)]
 pub mod tests;
-
-static mut ACTIVE_COLOR_FUNCTION: ColorFunction = ColorFunction::TieDye;
 
 // Minutiae custom type declarations.
 // Since we're only using a very small subset of Minutiae's capabilities, these are mostly unused.
@@ -130,67 +112,6 @@ fn resize_universe(universe: &mut Universe<CS, ES, MES, CA, EA>, new_size: usize
     universe.conf.size = new_size;
 }
 
-/// Configuration status and state for the entire backend.
-#[derive(Serialize, Deserialize)]
-pub struct MasterConf {
-    needs_resize: bool,
-    canvas_size: usize,
-    zoom: f64,
-    speed: f64,
-    x_offset: f64,
-    y_offset: f64,
-    z_offset: f64,
-}
-
-impl Default for MasterConf {
-    fn default() -> Self {
-        MasterConf {
-            needs_resize: false,
-            canvas_size: 0,
-            speed: 0.008,
-            zoom: 0.015,
-            x_offset: 0.0,
-            y_offset: 0.0,
-            z_offset: 0.0,
-        }
-    }
-}
-
-fn parse_setting<T, D: Debug>(val: &str) -> Result<T, String> where T:FromStr<Err=D> {
-    let res: Result<T, _> = val.parse();
-    res.map_err(|err| format!("Unable to parse supplied value: {:?}", err))
-}
-
-impl TryFrom<IrNode> for MasterConf {
-    type Error = String;
-
-    fn try_from(node: IrNode) -> Result<Self, Self::Error> {
-        let mut conf = MasterConf::default();
-        // the actual settings are stored as `IrSetting`s, so iterate through those and construct a
-        // new `MasterConf` struct using their values
-        for setting in node.settings {
-            let key = setting.key.as_str();
-            match key {
-                "speed" => conf.speed = parse_setting(&setting.value)?,
-                "zoom" => conf.zoom = parse_setting(&setting.value)?,
-                "colorFunction" => {
-                    let color_function: ColorFunction = match ColorFunction::from_str(setting.value.as_str()) {
-                        Ok(cf) => cf,
-                        Err(err) => { return Err(err); },
-                    };
-
-                    unsafe { ACTIVE_COLOR_FUNCTION = color_function; }
-                },
-                _ => {
-                    return Err(format!("Unhandled setting provided to master conf: {}", key))
-                },
-            }
-        }
-
-        Ok(conf)
-    }
-}
-
 /// Defines a middleware that sets the cell state of
 pub struct NoiseStepper {
     composition_tree: Box<CompositionTree>, // The root node of the module composition tree
@@ -212,7 +133,7 @@ impl Middleware<CS, ES, MES, CA, EA, OurEngine> for NoiseStepper {
 }
 
 fn calc_color(cell: &Cell<CS>, _: &[usize], _: &EntityContainer<CS, ES, MES>) -> [u8; 4] {
-    unsafe { ACTIVE_COLOR_FUNCTION.colorize(cell.state.0) }
+    unsafe { libcomposition::ACTIVE_COLOR_FUNCTION.colorize(cell.state.0) }
 }
 
 struct WorldGenerator;

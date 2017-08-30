@@ -7,12 +7,12 @@ use std::slice;
 use serde_json;
 
 use super::*;
-use composition_tree::{CompositionTree, CompositionTreeNode, CompositionTreeNodeType};
-use composition_tree::composition::CompositionScheme;
-use composition_tree::definition::{CompositionTreeNodeDefinition, InputTransformationDefinition};
-use composition_tree::initial_tree::create_initial_tree;
-use ir::IrNode;
-use transformations::InputTransformation;
+use libcomposition::{CompositionTree, CompositionTreeNode, CompositionTreeNodeType};
+use libcomposition::composition::CompositionScheme;
+use libcomposition::definition::{CompositionTreeNodeDefinition, InputTransformationDefinition};
+use libcomposition::initial_tree::create_initial_tree;
+use libcomposition::ir::IrNode;
+use libcomposition::transformations::InputTransformation;
 
 extern {
     fn emscripten_pause_main_loop();
@@ -67,7 +67,7 @@ pub unsafe extern "C" fn init(canvas_size: usize) {
 /// Deletes a node of the composition tree at the supplied depth and index.  Returns 0 if successful, 1 if there was an error.
 #[no_mangle]
 pub unsafe extern "C" fn delete_node(tree_pointer: *mut CompositionTree, depth: i32, coords: *const i32, index: i32) -> i32 {
-    let mut tree = &mut *(tree_pointer);
+    let tree = &mut *(tree_pointer);
     let coords_slice = slice::from_raw_parts(coords, depth as usize);
 
     match tree.delete_node(depth as usize, coords_slice, index as usize) {
@@ -108,7 +108,7 @@ pub unsafe extern "C" fn set_global_conf(tree_pointer: *mut CompositionTree, con
         }
     };
 
-    let mut tree: &mut CompositionTree = &mut *tree_pointer;
+    let tree: &mut CompositionTree = &mut *tree_pointer;
     tree.global_conf = conf;
 
     0i32
@@ -131,7 +131,7 @@ fn build_node(def: &str) -> Result<CompositionTreeNodeDefinition, String> {
 pub unsafe extern "C" fn add_node(
     tree_pointer: *mut CompositionTree, depth: i32, coords: *const i32, index: i32, node_definition: *const c_char
 ) -> i32 {
-    let mut tree = &mut *(tree_pointer);
+    let tree = &mut *(tree_pointer);
 
     // Convert the c-str into a &str
     let json_str: &str = match CStr::from_ptr(node_definition).to_str() {
@@ -168,7 +168,7 @@ pub unsafe extern "C" fn add_node(
 pub unsafe extern "C" fn replace_node(
     tree_pointer: *mut CompositionTree, depth: i32, coords: *const i32, index: i32, node_definition: *const c_char
 ) -> i32 {
-    let mut tree = &mut *(tree_pointer);
+    let tree = &mut *(tree_pointer);
 
     // Convert the c-str into a &str
     let json_str: &str = match CStr::from_ptr(node_definition).to_str() {
@@ -245,7 +245,7 @@ pub unsafe extern "C" fn add_input_transformation(
     tree_pointer: *mut CompositionTree, tree_depth: i32, coords: *const i32, node_index: i32,
     transformation_definition: *const c_char
 ) -> i32 {
-    let mut tree: &mut CompositionTree = &mut *tree_pointer;
+    let tree: &mut CompositionTree = &mut *tree_pointer;
     // Convert the c-str into a &str
     let json_str: &str = match CStr::from_ptr(transformation_definition).to_str() {
         Ok(s) => s,
@@ -298,7 +298,7 @@ pub unsafe extern "C" fn delete_input_transformation(
     tree_pointer: *mut CompositionTree, tree_depth: i32, coords: *const i32, node_index: i32,
     transformation_index: i32
 ) -> i32 {
-    let mut tree: &mut CompositionTree = &mut *tree_pointer;
+    let tree: &mut CompositionTree = &mut *tree_pointer;
 
     // traverse the tree to find the node that we're targeting
     let coords_slice = slice::from_raw_parts(coords, tree_depth as usize);
@@ -332,7 +332,7 @@ pub unsafe extern "C" fn replace_input_transformation(
     tree_pointer: *mut CompositionTree, tree_depth: i32, coords: *const i32, node_index: i32,
     transformation_index: i32, transformation_definition: *const c_char
 ) -> i32 {
-    let mut tree: &mut CompositionTree = &mut *tree_pointer;
+    let tree: &mut CompositionTree = &mut *tree_pointer;
 
     // Convert the c-str into a &str
     let json_str: &str = match CStr::from_ptr(transformation_definition).to_str() {
@@ -397,7 +397,7 @@ pub unsafe extern "C" fn replace_input_transformation(
 pub unsafe extern "C" fn set_composition_scheme(
     tree_pointer: *mut CompositionTree, depth: i32, coords: *const i32, scheme_json: *const c_char
 ) -> i32 {
-    let mut tree = &mut *(tree_pointer);
+    let tree = &mut *(tree_pointer);
 
     // Convert the c-str into a &str
     let json_str: &str = match CStr::from_ptr(scheme_json).to_str() {
