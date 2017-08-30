@@ -5,10 +5,3 @@ version = "0.1.0"
 
 [dependencies]
 libcomposition = { path="../libcomposition" }
-minutiae = "0.5.0"
-serde = "1.*"
-serde_json = "1.*"
-
-[dependencies.noise]
-path = "../../noise-rs"
-version = "0.4.1"
