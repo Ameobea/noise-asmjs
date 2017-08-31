@@ -7,6 +7,8 @@ import R from 'ramda';
 
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import { mapIdsToEntites } from 'src/helpers/compositionTree/util';
+import { denormalizeNode } from 'src/helpers/compositionTree/normalization';
+import { NULL_UUID } from 'src/data/misc';
 
 /**
  * Given the global Redux state and the ID of a node, selects it from the store and returns it.
@@ -77,3 +79,8 @@ export const getSettingIdByName = (settings, settingName) => {
   const setting = getSettingDataByName(settings, settingName);
   return setting && setting.id;
 };
+
+/**
+ * Returns a JSON string corresponding to the IR definition of the composition tree's root node.
+ */
+export const getRootNodeDefinition = entities => JSON.stringify(denormalizeNode(entities, NULL_UUID));

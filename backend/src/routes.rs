@@ -1,6 +1,6 @@
 //! Defines the API routes for the application
 
-use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use chrono::Utc;
 use diesel;
 use diesel::prelude::*;
 use rocket::State;
@@ -42,7 +42,10 @@ pub fn submit_composition(
 
     // build the noise function, create a tumbnail image, upload that to AmeoTrack,
     // and retrieve the URL.
-    let thumb_res: Result<String, String> = create_thumbnail(&user_composition.definition_string);
+    let thumb_res: String = match create_thumbnail(&user_composition.definition_string) {
+        Ok(url) => url,
+        Err(err) => { return Json(QueryResult::Error(err)) },
+    };
 
     // create the model used for insertion into the database
     let new_compo = NewSharedComposition {
@@ -50,11 +53,11 @@ pub fn submit_composition(
         username: user_composition.username.clone(),
         title: user_composition.title.clone(),
         description: user_composition.description.clone(),
-        thumbnail_url: "TODO".into(),
+        thumbnail_url: thumb_res,
         definition_string: user_composition.definition_string.clone(),
     };
 
-    let res: Result<usize, String> = diesel::insert(&new_compo)
+    let _ = diesel::insert(&new_compo)
         .into(shared_compositions_table)
         .execute(conn)
         .map_err(debug);

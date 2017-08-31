@@ -50,7 +50,7 @@ impl TryFrom<IrNode> for CompositionTreeNodeDefinition {
 
     fn try_from(node: IrNode) -> Result<Self, Self::Error> {
         match node._type.as_str() {
-            "noiseModule" => {
+            "noiseModule" | "root" => {
                 let transformations: Vec<InputTransformationDefinition> = build_child(&node.children, "inputTransformations")?;
                 let module_type: NoiseModuleType = find_setting_by_name("moduleType", &node.settings)?
                     .try_into()?;

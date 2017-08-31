@@ -10,7 +10,7 @@ use libcomposition::definition::CompositionTreeNodeDefinition;
 use libcomposition::ir::IrNode;
 use noise::NoiseFn;
 use serde_json;
-use tempfile::tempfile;
+use tempfile::NamedTempFile;
 
 use ameotrack::upload_image;
 
@@ -55,12 +55,12 @@ pub fn create_thumbnail(def: &str) -> Result<String, String> {
     });
 
     // create a temporary file and write the image to it
-    let mut tmpfile: File = tempfile()
+    let mut tmpfile = NamedTempFile::new()
         .map_err(|_| "Unable to create temporary file!".to_string())?;
 
     ImageRgb8(img_buf).save(&mut tmpfile, PNG)
         .map_err(|_| String::from("Unable to write image data to temp file!"))?;
 
     // attempt upload the image to AmeoTrack and store the result
-    upload_image(&tmpfile)
+    upload_image(tmpfile)
 }

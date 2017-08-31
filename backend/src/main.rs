@@ -14,7 +14,6 @@ extern crate hyper;
 extern crate hyper_native_tls;
 extern crate image;
 extern crate libcomposition;
-extern crate mime;
 extern crate multipart;
 extern crate noise;
 extern crate r2d2;
@@ -26,7 +25,6 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate tempfile;
-extern crate tokio_core;
 
 use rocket::request::Request;
 use rocket_contrib::Json;
