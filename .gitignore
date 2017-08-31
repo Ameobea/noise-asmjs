@@ -25,3 +25,4 @@ public/compiled.js
 *.xz
 *.gz
 *.tgz
+.sublime_project
