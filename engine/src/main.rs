@@ -132,10 +132,6 @@ impl Middleware<CS, ES, MES, CA, EA, OurEngine> for NoiseStepper {
     }
 }
 
-fn calc_color(cell: &Cell<CS>, _: &[usize], _: &EntityContainer<CS, ES, MES>) -> [u8; 4] {
-    unsafe { libcomposition::ACTIVE_COLOR_FUNCTION.colorize(cell.state.0) }
-}
-
 struct WorldGenerator;
 
 impl Generator<CS, ES, MES, CA, EA> for WorldGenerator {
@@ -143,6 +139,10 @@ impl Generator<CS, ES, MES, CA, EA> for WorldGenerator {
         // initialize blank universe
         (vec![Cell{state: CS(0.0)}; conf.size * conf.size], Vec::new())
     }
+}
+
+fn calc_color(cell: &Cell<CS>, _: &[usize], _: &EntityContainer<CS, ES, MES>) -> [u8; 4] {
+    unsafe { libcomposition::ACTIVE_COLOR_FUNCTION.colorize(cell.state.0) }
 }
 
 fn main() {

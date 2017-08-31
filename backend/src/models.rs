@@ -1,28 +1,53 @@
 //! Defines the database objects and their representations that are used to send data between
 //! the DB, this application, and the clients.
 
+use std::fs::File;
+
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use serde::Serialize;
 
 use schema::*;
 
 #[derive(Queryable, Serialize, Deserialize)]
 pub struct SharedComposition {
-    id: i32,
-    username: String,
-    thumbnail_url: String,
-    definition_string: String,
+    pub id: i32,
+    pub username: String,
+    pub creation_date: NaiveDateTime,
+    pub title: String,
+    pub thumbnail_url: String,
+    pub description: String,
+    pub definition_string: String,
 }
 
 #[derive(Insertable, Deserialize)]
 #[table_name="shared_compositions"]
 pub struct NewSharedComposition {
-    username: String,
-    thumbnail_url: String,
-    definition_string: String,
+    pub username: String,
+    pub creation_date: NaiveDateTime,
+    pub title: String,
+    pub thumbnail_url: String,
+    pub description: String,
+    pub definition_string: String,
+}
+
+/// Data supplied by the user to upload a composition scheme
+#[derive(Deserialize)]
+pub struct UserSharedComposition {
+    pub username: String,
+    pub title: String,
+    pub description: String,
+    pub definition_string: String,
+}
+
+#[derive(Serialize)]
+pub enum QueryResult<T: Serialize> {
+    Success(T),
+    Error(String),
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct CompositionSubmissionResult {
-    success: bool,
-    message: Option<String>,
+pub struct ErrorMessage {
+    pub status: u16,
+    pub message: String,
 }
