@@ -10,18 +10,18 @@ diesel = { version = "0.16.0", features=["mysql", "chrono"] }
 diesel_codegen = { version = "0.16.0", features=["mysql"] }
 dotenv = "0.9.0"
 image = "*"
-hyper = ">=0.9, <0.11"
-hyper-native-tls = "0.2.4"
-multipart = "0.13.1"
+pcg = { git = "https://github.com/codahale/pcg.git" }
 r2d2 = "0.7.3"
 r2d2-diesel = "0.16.0"
+rand = "0.3"
+reqwest = { git = "https://github.com/seanmonstar/reqwest.git" }
 rocket = { git = "https://github.com/SergioBenitez/Rocket.git" }
 rocket_codegen = { git = "https://github.com/SergioBenitez/Rocket.git" }
 rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git" }
 serde = "1.*"
 serde_derive = "1.*"
 serde_json = "1.*"
-tempfile = "2.1.6"
+uuid = { version = "0.5.1", features=["v4"] }
 
 libcomposition = { path = "../libcomposition" }
 

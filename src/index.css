@@ -10,3 +10,35 @@ body {
 canvas {
   border: 1px solid #aaa;
 }
+
+/**
+ * TAKEN FROM https://codepen.io/Manoz/pen/pydxK
+ */
+
+.square {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background-color: #4b9cdb;
+}
+
+@keyframes loadingG {
+  0% {transform: translate(0,0) rotate(0deg);}
+  50% {transform: translate(70px,0) rotate(360deg);}
+  100% {transform: translate(0,0) rotate(0deg);}
+}
+
+.load-7 .square {animation: loadingG 1.5s cubic-bezier(.17,.37,.43,.67) infinite;}
+
+/**
+ * END TAKEN CODE
+ */
+
+.browseControls {
+  margin: 20px
+}
+
+.ui.form .field>label {
+  color: #bbb !important;
+  font-size: larger;
+}

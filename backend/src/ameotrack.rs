@@ -1,50 +1,36 @@
 //! Interface to my personal image uploader, AmeoTrack, which is used to host thumbnails of uploaded images.
 
 use std::io::Read;
-use std::thread;
+use std::path::Path;
 
-use hyper::{Client, Url};
-use hyper::client::Request;
-use hyper::header::{Headers, ContentType};
-use hyper::method::Method;
-use hyper_native_tls::NativeTlsClient;
-use hyper::net::HttpsConnector;
-use multipart::client::Multipart;
-use tempfile::NamedTempFile;
+use reqwest::{Client, StatusCode};
+use reqwest::multipart::Form;
 
 use schema::AMEOTRACK_UPLOAD_PASSWORD;
 
 const AMEOTRACK_UPLOAD_URL: &'static str = "https://ameo.link/u/upload";
 
-pub fn upload_image(file: NamedTempFile) -> Result<String, String> {
-    // initialize the `hyper` client with the HTTPS connector
-    // then set some headers and serialize the payload into the body
-    let ssl = NativeTlsClient::new().unwrap();
-    let connector = HttpsConnector::new(ssl);
-    let client = Client::with_connector(connector);
+pub fn upload_image(path: &Path) -> Result<String, String> {
+    let client = Client::new().map_err(|err| format!("Error while creating `reqwest` client: {:?}", err))?;
+    let form = Form::new()
+        .text("source", "Noise Function Composition Backend")
+        .text("password", AMEOTRACK_UPLOAD_PASSWORD)
+        .text("expiry", "-1")
+        .file("file", path)
+        .map_err(|_| format!("Unable to add the file at path {:?} to the multipart request!", path))?;
 
-    let mut headers = Headers::new();
-    headers.set(ContentType::json());
-
-    let req = Request::new(Method::Post, Url::parse(AMEOTRACK_UPLOAD_URL).unwrap()).unwrap();
-    let mut res = Multipart::from_request(req)
-        .unwrap()
-        .write_text("source", "Noise Function Composition Backend")
-        .unwrap()
-        .write_text("password", AMEOTRACK_UPLOAD_PASSWORD)
-        .unwrap()
-        .write_text("expiry", "-1")
-        .unwrap()
-        .write_file("file", file.path())
-        .unwrap()
+    let mut res = client.post(AMEOTRACK_UPLOAD_URL)
+        .map_err(|_| String::from("Error while creating POST request!"))?
+        .multipart(form)
         .send()
-        .unwrap();
-        // .map_err(|err| format!("Unable to create `Multipart` request: {:?}", err))?;
+        .map_err(|err| format!("Error while sending POST request: {:?}", err))?;
+
+    if res.status() != StatusCode::Ok {
+        return Err(format!("Image upload request returned unexpected HTTP status code: {:?}", res.status()));
+    }
 
     let mut buf = String::new();
-    res.read_to_string(&mut buf).unwrap();
-
-    file.close().map_err(|err| format!("Error while deleting temporary file: {:?}", err))?;
+    res.read_to_string(&mut buf).map_err(|_| String::from("Unable to read response into buffer!"))?;
 
     Ok(buf)
 }

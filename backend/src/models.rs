@@ -1,10 +1,7 @@
 //! Defines the database objects and their representations that are used to send data between
 //! the DB, this application, and the clients.
 
-use std::fs::File;
-
 use chrono::NaiveDateTime;
-use diesel::prelude::*;
 use serde::Serialize;
 
 use schema::*;
@@ -20,7 +17,7 @@ pub struct SharedComposition {
     pub definition_string: String,
 }
 
-#[derive(Insertable, Deserialize)]
+#[derive(Insertable, Serialize, Deserialize)]
 #[table_name="shared_compositions"]
 pub struct NewSharedComposition {
     pub username: String,

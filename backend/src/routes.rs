@@ -37,7 +37,7 @@ pub fn list_compositions(
 #[post("/submit_composition", data="<user_composition>")]
 pub fn submit_composition(
     user_composition: Json<UserSharedComposition>, conn_pool: State<DbPool>
-) -> Json<QueryResult<String>> {
+) -> Json<QueryResult<NewSharedComposition>> {
     let conn = &*conn_pool.inner().get_conn();
 
     // build the noise function, create a tumbnail image, upload that to AmeoTrack,
@@ -62,5 +62,5 @@ pub fn submit_composition(
         .execute(conn)
         .map_err(debug);
 
-    Json(QueryResult::Success("Successfully uploaded composition!".into()))
+    Json(QueryResult::Success(new_compo))
 }

@@ -4,6 +4,8 @@ import { routerReducer, routerMiddleware } from 'react-router-redux';
 import { stageSizeReducer } from 'src/reducers/stageSizeReducer';
 import { enginePointerReducer } from 'src/reducers/enginePointerReducer';
 import compositionTreeReducer from 'src/reducers/compositionTreeReducer';
+import submissionStateReducer from 'src/reducers/submissionStateReducer';
+import browseReducer from 'src/reducers/browseReducer';
 import { subscribeChanges } from 'src/helpers/compositionTree/changeListener';
 
 const createHistory = require('history').createBrowserHistory;
@@ -16,6 +18,8 @@ const reducers = combineReducers({
   stageSize: stageSizeReducer.build(),
   enginePointer: enginePointerReducer.build(),
   compositionTree: compositionTreeReducer,
+  submission: submissionStateReducer,
+  browse: browseReducer,
   router: routerReducer,
 });
 

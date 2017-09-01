@@ -21,15 +21,4 @@ const Root = () => (
 
 ReactDOM.render(<Root />, document.getElementById('root'));
 
-// Initialize the Emscripten backend
-var canvas;
-while(!canvas) { // wait until React has loaded it in
-  canvas = document.getElementById('mainCanvas');
-}
-
-// setTimeout(() => {
-//   console.log('pausing...');
-//   pause();
-// }, 2000);
-
 init(INITIAL_CANVAS_SIZE);

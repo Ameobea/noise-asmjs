@@ -10,21 +10,21 @@ extern crate chrono;
 extern crate diesel_codegen;
 #[macro_use]
 extern crate diesel;
-extern crate hyper;
-extern crate hyper_native_tls;
 extern crate image;
 extern crate libcomposition;
-extern crate multipart;
 extern crate noise;
+extern crate pcg;
 extern crate r2d2;
 extern crate r2d2_diesel;
+extern crate rand;
+extern crate reqwest;
 extern crate rocket;
 extern crate rocket_contrib;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
-extern crate tempfile;
+extern crate uuid;
 
 use rocket::request::Request;
 use rocket_contrib::Json;
