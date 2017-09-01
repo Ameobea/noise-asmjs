@@ -6,12 +6,9 @@ authors = ["Casey Primozic <me@ameo.link>"]
 [dependencies]
 itertools = "0.6.1"
 lazy_static = "0.2.8"
+noise = { git = "https://github.com/Ameobea/noise-rs.git", branch="emscripten-fix" }
 palette = "0.2"
 serde = "1.*"
 serde_derive = "1.*"
 serde_json = "1.*"
 
-# TODO: Replace with git version
-[dependencies.noise]
-path = "../../noise-rs"
-version = "0.4.1"

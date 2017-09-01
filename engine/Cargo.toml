@@ -5,3 +5,7 @@ version = "0.1.0"
 
 [dependencies]
 libcomposition = { path="../libcomposition" }
+minutiae = "0.5.0"
+noise = { git = "https://github.com/Ameobea/noise-rs.git", branch="emscripten-fix" }
+serde = "1.*"
+serde_json = "1.*"

@@ -7,7 +7,7 @@ use std::slice;
 use serde_json;
 
 use super::*;
-use libcomposition::{CompositionTree, CompositionTreeNode, CompositionTreeNodeType, calc_color};
+use libcomposition::{CompositionTree, CompositionTreeNode, CompositionTreeNodeType};
 use libcomposition::composition::CompositionScheme;
 use libcomposition::definition::{CompositionTreeNodeDefinition, InputTransformationDefinition};
 use libcomposition::initial_tree::create_initial_tree;

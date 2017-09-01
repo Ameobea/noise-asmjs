@@ -49,6 +49,7 @@
   "bugs": {
     "url": "https://github.com/ameobea/noise-asmjs/issues"
   },
+  "homepage": "https://ameo.design/dev/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ameobea/noise-asmjs.git"

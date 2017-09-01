@@ -1,11 +1,3 @@
-//! My goal for this is to play around with the noise-rs crate and create some noise with which to populate the universe of a
-//! minutiae world.  We'll use 3D perlin noise and have the third coordinate correspond to the sequence number.
-
-// TODO: implement middleware for closures that have the required `before_render`/`after_render` signature
-// TODO: look into auto-implementing cell action/entity action for T since they don't have any requirements and possibly
-//       implementing CA/EA for `()`
-// TODO: Deprecate the entire cell mutator functionality in favor of entirely middleware-driven approaches
-
 #![feature(conservative_impl_trait, const_fn, try_from)]
 
 extern crate minutiae;
