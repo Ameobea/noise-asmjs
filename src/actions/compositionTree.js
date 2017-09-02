@@ -22,6 +22,10 @@ export const COMMIT_CHANGES = 'COMMIT_CHANGES';
 export const UPDATE_NODE = 'UPDATE_NODE';
 // Args: {}
 export const CLEAR_POST_COMMIT = 'CLEAR_POST_COMMIT';
+// Args: {definition: String}
+export const SET_ROOT_NODE = 'SET_ROOT_NODE';
+// Args: {}
+export const CLEAR_RAW = 'CLEAR_RAW';
 
 export const addNode = (parentId, childIndex, nodeDef) => ({
   type: ADD_NODE,
@@ -69,4 +73,13 @@ export const updateNode = id => ({
 
 export const clearPostCommit = () => ({
   type: CLEAR_POST_COMMIT,
+});
+
+export const setRootNode = def => ({
+  type: SET_ROOT_NODE,
+  def,
+});
+
+export const clearRaw = () => ({
+  type: CLEAR_RAW,
 });

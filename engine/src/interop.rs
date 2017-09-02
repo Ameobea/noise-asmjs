@@ -2,17 +2,19 @@
 
 use std::convert::TryInto;
 use std::ffi::CStr;
+use std::mem;
 use std::slice;
 
 use serde_json;
 
 use super::*;
-use libcomposition::{CompositionTree, CompositionTreeNode, CompositionTreeNodeType};
+use libcomposition::{CompositionTree, CompositionTreeNode, CompositionTreeNodeType, ACTIVE_COLOR_FUNCTION};
 use libcomposition::composition::CompositionScheme;
 use libcomposition::definition::{CompositionTreeNodeDefinition, InputTransformationDefinition};
 use libcomposition::initial_tree::create_initial_tree;
 use libcomposition::ir::IrNode;
 use libcomposition::transformations::InputTransformation;
+use libcomposition::util::build_tree_from_def;
 
 extern {
     fn emscripten_pause_main_loop();
@@ -426,6 +428,39 @@ pub unsafe extern "C" fn set_composition_scheme(
             1
         },
     }
+}
+
+/// Replaces the entire composition tree with a new one created from the provided definition.
+#[no_mangle]
+pub unsafe extern "C" fn initialize_from_scratch(
+    tree_pointer: *mut CompositionTree, def: *const c_char
+) -> i32 {
+    let tree = &mut *(tree_pointer);
+
+    // Convert the c-str into a &str
+    let def_str: &str = match CStr::from_ptr(def).to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            error("Invalid UTF8 string provided to `create_composer()`");
+            return 1;
+        },
+    };
+
+    let (color_fn, new_tree) = match build_tree_from_def(def_str) {
+        Ok(x) => x,
+        Err(err) => {
+            error(&format!("Error while bulding supplied definition into `CompositionTree`: {}", err));
+            return 1;
+        },
+    };
+
+    // replace the old tree with the new one.
+    let _ = mem::replace(tree, new_tree);
+
+    // set the active color function
+    ACTIVE_COLOR_FUNCTION = color_fn;
+
+    0
 }
 
 #[no_mangle]

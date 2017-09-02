@@ -15,6 +15,7 @@ pub struct SharedComposition {
     pub thumbnail_url: String,
     pub description: String,
     pub definition_string: String,
+    pub votes: i32,
 }
 
 #[derive(Insertable, Serialize, Deserialize)]
@@ -31,6 +32,7 @@ pub struct NewSharedComposition {
 /// Data supplied by the user to upload a composition scheme
 #[derive(Deserialize)]
 pub struct UserSharedComposition {
+    pub id: i32,
     pub username: String,
     pub title: String,
     pub description: String,

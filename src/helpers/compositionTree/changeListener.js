@@ -11,17 +11,22 @@ import { getIn, set } from 'zaphod/compat';
 
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import {
-  addUncommitedChanges, clearPostCommit, commitChanges, updateNode
+  addUncommitedChanges, clearPostCommit, commitChanges, updateNode, clearRaw,
 } from 'src/actions/compositionTree';
 import { getNodeParent, getSettingParent } from 'src/selectors/compositionTree';
 import { initialUncommitedChanges } from 'src/helpers/compositionTree/util';
 
 const handleChanges = ({ current, prev, data: { store } }, recursionDepth) => {
-  const { compositionTree: { postCommit } } = store.getState();
+  const { compositionTree: { postCommit, raw } } = store.getState();
   if(postCommit) {
     // This is the first diff after a commit+garbage collect, so the tree is already reconciled with the backend
     // and this diff should be ignored.
     store.dispatch(clearPostCommit());
+    return;
+  } else if(raw) {
+    // Composition tree has just been initialized from scratch; the backend will be reset manually.
+    // Ignore this update and clear the flag.
+    store.dispatch(clearRaw());
     return;
   }
 

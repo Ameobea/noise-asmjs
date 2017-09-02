@@ -6,12 +6,10 @@ import R from 'ramda';
 
 import { COMPOSITION, BROWSE_SHARED_COMPOSITIONS } from 'src/Router';
 import { pause, resume, setCanvasSize } from 'src/interop';
-import { SHARE_SUBMISSION_URL } from 'src/data/misc';
-import { getRootNodeDefinition } from 'src/selectors/compositionTree';
-import store from 'src/reducers';
 import {
   showModal, hideModal, startLoading, stopLoading, setSuccess, setError
 } from 'src/actions/submission';
+import { submitComposition } from 'src/Api';
 
 const MenuItem = Menu.Item;
 
@@ -55,25 +53,13 @@ const Success = () => (
   <Message color='green'>Composition submitted successfully!</Message>
 );
 
-const submitComposition = (
+const doSubmitComposition = (
   username, description, title, startLoading, stopLoading, setSuccess,
   setError, hideModal, entities
 ) => {
   startLoading();
 
-  fetch(SHARE_SUBMISSION_URL, {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      username,
-      description,
-      title,
-      definition_string: getRootNodeDefinition(entities),
-    }),
-  }).then(res => res.json())
+  submitComposition(entities, username, description, title)
     .then(res => {
       stopLoading();
 
@@ -124,7 +110,7 @@ class UnconnectedShareForm extends React.Component {
           </div>
 
           <Form.Button
-            onClick={R.partial(submitComposition, [
+            onClick={R.partial(doSubmitComposition, [
               this.state.username,
               this.state.description,
               this.state.title,
@@ -154,10 +140,13 @@ const ShareForm = connect(
   { startLoading, stopLoading, setSuccess, setError, hideModal }
 )(UnconnectedShareForm);
 
-const SubmissionModal = ({ open }) => (
+const UnconnectedSubmissionModal = ({ open, hideModal }) => (
   <Modal
     onOpen={pause}
-    onClose={resume}
+    onClose={ () => {
+      hideModal();
+      resume();
+    } }
     open={open}
   >
     <Modal.Header>Share This Composition</Modal.Header>
@@ -166,6 +155,10 @@ const SubmissionModal = ({ open }) => (
     </Modal.Content>
   </Modal>
 );
+
+const mapSubmissionModalState = ({ submission: { modalOpen } }) => ({ open: modalOpen });
+
+const SubmissionModal = connect(mapSubmissionModalState, { hideModal })(UnconnectedSubmissionModal);
 
 const VizHeader = ({ activeTab, modalOpen, modalLoading, push, showModal, startLoading }) => (
   <div>
@@ -187,7 +180,7 @@ const VizHeader = ({ activeTab, modalOpen, modalLoading, push, showModal, startL
       </MenuItem>
     </Menu>
 
-    <SubmissionModal open={modalOpen} loading={modalLoading} startLoading={startLoading} />
+    <SubmissionModal />
   </div>
 );
 

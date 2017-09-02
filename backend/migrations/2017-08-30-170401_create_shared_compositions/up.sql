@@ -6,5 +6,6 @@ CREATE TABLE `noise_composition`.`shared_compositions` (
   `thumbnail_url` VARCHAR(1024) NOT NULL,
   `description` MEDIUMTEXT NOT NULL,
   `definition_string` MEDIUMTEXT NOT NULL,
+  `votes` INT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB;

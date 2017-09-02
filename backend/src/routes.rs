@@ -2,7 +2,9 @@
 
 use chrono::Utc;
 use diesel;
+use diesel::expression::sql_literal::sql;
 use diesel::prelude::*;
+use diesel::types::Binary;
 use rocket::State;
 use rocket_contrib::Json;
 
@@ -15,9 +17,26 @@ use util::debug;
 
 const ITEMS_PER_PAGE: i64 = 10;
 
-#[get("/list_compositions/<start_page>/<end_page>")]
+enum SortMethod {
+    Newest,
+    Oldest,
+    MostPopular,
+}
+
+impl<'a> From<&'a str> for SortMethod {
+    fn from(s: &str) -> Self {
+        match s {
+            "newest" | "Newest" => SortMethod::Newest,
+            "oldest" | "Oldest" => SortMethod::Oldest,
+            "mostPopular" | "most_popular" => SortMethod::MostPopular,
+            _ => SortMethod::MostPopular,
+        }
+    }
+}
+
+#[get("/list_compositions/<sort>/<start_page>/<end_page>")]
 pub fn list_compositions(
-    start_page: i64, end_page: i64, conn_pool: State<DbPool>
+    sort: String, start_page: i64, end_page: i64, conn_pool: State<DbPool>
 ) -> Result<Json<QueryResult<Vec<SharedComposition>>>, String> {
     if start_page > end_page || start_page < 0 || end_page < 0 {
         return Ok(Json(QueryResult::Error(String::from("Invalid page numbers provided."))));
@@ -25,8 +44,19 @@ pub fn list_compositions(
 
     let conn = &*conn_pool.inner().get_conn();
 
-    let result: Vec<SharedComposition> = shared_compositions_dsl::shared_compositions
-        .limit(ITEMS_PER_PAGE * (start_page - end_page))
+    let query = shared_compositions_dsl::shared_compositions;
+
+    // annoying hack since diesel doesn't provide a way (that I know of) of doing dynamic stuff like this
+    let ordering: SortMethod = sort.as_str().into();
+    let order = match ordering {
+        SortMethod::Oldest => sql::<Binary>("`creation_date` ASC"),
+        SortMethod::Newest => sql::<Binary>("`creation_date` DESC"),
+        SortMethod::MostPopular => sql::<Binary>("`votes` DESC"),
+    };
+
+    let result: Vec<SharedComposition> = query
+        .order(order)
+        .limit(ITEMS_PER_PAGE * ((start_page - end_page) + 1))
         .offset(ITEMS_PER_PAGE * start_page)
         .load(conn)
         .map_err(debug)?;
@@ -63,4 +93,21 @@ pub fn submit_composition(
         .map_err(debug);
 
     Json(QueryResult::Success(new_compo))
+}
+
+#[get("/get_shared_composition/<composition_id>")]
+pub fn get_shared_composition(
+    composition_id: i32, conn_pool: State<DbPool>
+) -> Json<QueryResult<SharedComposition>> {
+    let conn = &*conn_pool.inner().get_conn();
+
+    let result: Result<SharedComposition, String> = shared_compositions_dsl::shared_compositions
+        .find(composition_id)
+        .first(conn)
+        .map_err(debug);
+
+    Json(match result {
+        Ok(r) => QueryResult::Success(r),
+        Err(err) => QueryResult::Error(err),
+    })
 }

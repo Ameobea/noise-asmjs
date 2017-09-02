@@ -121,7 +121,7 @@ export const replaceNode = (nodeCoords, index, defString) => {
   // allocate space on the heap for both the definition string as well as the coordinates array
   const defBufPtr = Module._malloc(bufferSize);
   const coordBufPtr = Module._malloc(nodeCoords.length * 4); // &[i32]
-  Module.stringToUTF8(defString, defBufPtr, 100000);
+  Module.stringToUTF8(defString, defBufPtr, 10000000);
   // convert the coordinate array to a typed array and write it into the buffer we allocated for it
   Module.HEAP32.set(new Int32Array(nodeCoords), coordBufPtr / 4);
 
@@ -142,7 +142,7 @@ export const addInputTransformation = (parentNodeCoords, index, defString) => {
   // allocate space on the heap for both the definition string as well as the coordinates array
   const defBufPtr = Module._malloc(bufferSize);
   const coordBufPtr = Module._malloc(parentNodeCoords.length * 4); // &[i32]
-  Module.stringToUTF8(defString, defBufPtr, 100000);
+  Module.stringToUTF8(defString, defBufPtr, 10000000);
   // convert the coordinate array to a typed array and write it into the buffer we allocated for it
   Module.HEAP32.set(new Int32Array(parentNodeCoords), coordBufPtr / 4);
 
@@ -183,7 +183,7 @@ export const replaceInputTransformation = (parentNodeCoords, treeIndex, transfor
   // allocate space on the heap for both the definition string as well as the coordinates array
   const defBufPtr = Module._malloc(bufferSize);
   const coordBufPtr = Module._malloc(parentNodeCoords.length * 4); // &[i32]
-  Module.stringToUTF8(defString, defBufPtr, 100000);
+  Module.stringToUTF8(defString, defBufPtr, 10000000);
   // convert the coordinate array to a typed array and write it into the buffer we allocated for it
   Module.HEAP32.set(new Int32Array(parentNodeCoords), coordBufPtr / 4);
 
@@ -197,5 +197,22 @@ export const replaceInputTransformation = (parentNodeCoords, treeIndex, transfor
 
   return status;
 };
+
+const initializeFromScratchInner = Module.cwrap('initialize_from_scratch', 'number', ['number', 'number']);
+
+export const initializeFromScratch = defString => {
+  console.log('re-initing the backend...');
+  const bufferSize = Module.lengthBytesUTF8(defString) + 1;
+  // allocate space on the heap for both the definition string as well as the coordinates array
+  const defBufPtr = Module._malloc(bufferSize);
+  Module.stringToUTF8(defString, defBufPtr, 10000000);
+
+  // call the backend function
+  const status = initializeFromScratchInner(getTreePointer(), defBufPtr);
+
+  Module._free(defBufPtr);
+
+  return status;
+}
 
 // export const render_single_frame = Module.cwrap('render_single_frame', null, []);

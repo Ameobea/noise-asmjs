@@ -5,9 +5,12 @@ use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 
 use itertools::Itertools;
+use serde_json;
 
+use color_schemes::ColorFunction;
 use conf::{map_setting_to_type, NoiseModuleConf, SettingType};
 use ir::{IrNode, IrSetting};
+use super::{CompositionTree, CompositionTreeNode, CompositionTreeNodeDefinition, MasterConf};
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum Dim { X, Y, Z}
@@ -111,4 +114,37 @@ pub fn build_noise_module_settings(settings: Vec<IrSetting>) -> Result<Vec<Noise
             acc.push(item);
             acc
         })
+}
+
+/// Given a definition string, produces an entirely new composition tree from scratch.
+pub fn build_tree_from_def(def: &str) -> Result<(ColorFunction, CompositionTree), String> {
+    // attempt to parse the provided IR definition into an `IrNode`
+    let ir_root_node_def: IrNode = serde_json::from_str::<IrNode>(def)
+        .map_err(|_| "Error while parsing the provided definition string!".to_string())?;
+
+    // find the global conf node in the IR tree and build it into a `MasterConf`.
+    // also pull off the color scheme string and buid it into a `ColorScheme`.
+    let (global_conf, color_fn): (MasterConf, ColorFunction) = {
+        let ir_global_conf = ir_root_node_def.children
+            .iter()
+            .find(|node| node._type.as_str() == "globalConf")
+            .ok_or(String::from("Supplied definition string doesn't contain a `globalConf` node!"))?;
+        let global_conf = ir_global_conf.clone()
+            .try_into()
+            .map_err(|err| format!("Unable to convert IR global conf into `GlobalConf`: {}", err))?;
+        let color_fn_string = find_setting_by_name("colorFunction", &ir_global_conf.settings)
+            .map_err(|_| String::from("No `colorFunction` setting included in provided `globalConf` node!"))?;
+        let color_fn = ColorFunction::from_str(&color_fn_string)?;
+
+        (global_conf, color_fn)
+    };
+
+    // and then convert that into a `CompositionTreeNodeDefinition`
+    let root_node_def: CompositionTreeNodeDefinition = ir_root_node_def.try_into()?;
+
+    // build the definition into a proper `CompositionTreeNode`.
+    let root_node: CompositionTreeNode = root_node_def.into();
+
+    // create the full `CompositionTree` from the root node and the global configuration
+    Ok((color_fn, CompositionTree { root_node, global_conf }))
 }

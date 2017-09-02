@@ -12,13 +12,16 @@ import { NULL_UUID } from 'src/data/misc';
 import {
   ADD_NODE, DELETE_NODE, REPLACE_NODE, SELECT_NODE, SET_SETTING, CREATE_SETTING,
   ADD_UNCOMMITED_CHANGES, COMMIT_CHANGES, UPDATE_NODE, CLEAR_POST_COMMIT,
+  SET_ROOT_NODE, CLEAR_RAW,
 } from 'src/actions/compositionTree';
 import { getNodeData } from 'src/data/compositionTree/nodeTypes';
 import { createSetting, initialUncommitedChanges, mapIdsToEntites } from 'src/helpers/compositionTree/util';
 import { settingDefinitions } from 'src/data/moduleSettings';
 import { getLeafAttr, getNodeParent, getSettingByName } from 'src/selectors/compositionTree';
+import { initializeFromScratch } from 'src/interop';
 
 const initialState = R.merge(normalizeTree(initialTree), {
+  raw: false, // true if we've just manually re-hydrated the composition tree from a definition string
   selectedNode: NULL_UUID,
   uncommitedChanges: initialUncommitedChanges(),
   pendingSideEffects: 0,
@@ -264,6 +267,22 @@ export default (state=initialState, action={}) => {
    */
   case UPDATE_NODE: {
     return updateTree(state, state.entities.settings, action.id);
+  }
+
+  case SET_ROOT_NODE: {
+    const { entities } = normalizeTree(action.def);
+
+    // re-initialize the backend from scratch.
+    initializeFromScratch(JSON.stringify(action.def));
+
+    return {...state,
+      raw: true,
+      entities,
+    };
+  }
+
+  case CLEAR_RAW: {
+    return {...state, raw: false };
   }
 
   default: {

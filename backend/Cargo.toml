@@ -13,6 +13,7 @@ image = "*"
 pcg = { git = "https://github.com/codahale/pcg.git" }
 r2d2 = "0.7.3"
 r2d2-diesel = "0.16.0"
+noise = { git = "https://github.com/Ameobea/noise-rs.git", branch="emscripten-fix" }
 rand = "0.3"
 reqwest = { git = "https://github.com/seanmonstar/reqwest.git" }
 rocket = { git = "https://github.com/SergioBenitez/Rocket.git" }
@@ -24,8 +25,3 @@ serde_json = "1.*"
 uuid = { version = "0.5.1", features=["v4"] }
 
 libcomposition = { path = "../libcomposition" }
-
-# TODO: Replace with git version
-[dependencies.noise]
-path = "../../noise-rs"
-version = "0.4.1"

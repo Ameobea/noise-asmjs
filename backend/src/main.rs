@@ -60,7 +60,7 @@ fn internal_error(_: &Request) -> Json<ErrorMessage> {
 
 fn main() {
     rocket::ignite()
-        .mount("/", routes![list_compositions, submit_composition])
+        .mount("/", routes![list_compositions, submit_composition, get_shared_composition])
         .catch(errors![not_found, internal_error])
         .manage(DbPool(create_db_pool()))
         .launch();
