@@ -56,7 +56,7 @@ pub fn list_compositions(
 
     let result: Vec<SharedComposition> = query
         .order(order)
-        .limit(ITEMS_PER_PAGE * ((start_page - end_page) + 1))
+        .limit(ITEMS_PER_PAGE * ((end_page - start_page) + 1))
         .offset(ITEMS_PER_PAGE * start_page)
         .load(conn)
         .map_err(debug)?;

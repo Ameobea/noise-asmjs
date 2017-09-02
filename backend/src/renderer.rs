@@ -1,20 +1,15 @@
 //! Composes the noise module definition provided by a user and generates a thumbnail image.
 
-use std::convert::TryInto;
 use std::env::temp_dir;
 use std::fs::{File, remove_file};
-use std::str::FromStr;
 
 use image::{ImageBuffer, ImageRgb8, Pixel, PNG, Rgb};
-use libcomposition::{CompositionTree, CompositionTreeNode, MasterConf};
+use libcomposition::CompositionTree;
 use libcomposition::color_schemes::ColorFunction;
-use libcomposition::definition::CompositionTreeNodeDefinition;
-use libcomposition::ir::IrNode;
-use libcomposition::util::{build_tree_from_def, find_setting_by_name};
+use libcomposition::util::{build_tree_from_def};
 use noise::NoiseFn;
 use pcg::PcgRng;
 use rand::{Rng, thread_rng};
-use serde_json;
 use uuid::Uuid;
 
 use ameotrack::upload_image;

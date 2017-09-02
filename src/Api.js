@@ -4,7 +4,12 @@
  */
 
 import { getRootNodeDefinition } from 'src/selectors/compositionTree';
-import { SHARE_SUBMISSION_URL, GET_SHARED_COMPOSITION_URL } from 'src/data/api';
+import {
+  SHARE_SUBMISSION_URL,
+  GET_SHARED_COMPOSITION_URL,
+  LIST_SHARED_COMPOSITIONS_URL,
+  COMPOSITIONS_PER_PAGE,
+} from 'src/data/api';
 
 /**
  * Submits a new composition to be shared.
@@ -31,4 +36,12 @@ export const submitComposition = (entities, username, description, title) => {
 export const loadDefinition = id => {
   return fetch(`${GET_SHARED_COMPOSITION_URL}/${id}`)
     .then(res => res.json());
+};
+
+export const loadSharedCompositions = (start, end, sort) => {
+  const startPage = Math.floor(start / COMPOSITIONS_PER_PAGE);
+  const endPage = Math.floor(end / COMPOSITIONS_PER_PAGE);
+  const url = `${LIST_SHARED_COMPOSITIONS_URL}/${sort}/${startPage}/${endPage}`;
+
+  return fetch(url).then(res => res.json());
 };

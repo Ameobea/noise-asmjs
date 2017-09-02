@@ -2,11 +2,13 @@
  * Manages state for the `browse` page
  */
 
-import { SORT, SET_SORT } from 'src/actions/browse';
+import R from 'ramda';
+
+import { SORT, SET_SORT, ADD_COMPOSITIONS } from 'src/actions/browse';
 
 const initialState = {
   loadedCompositions: [],
-  totalCompositions: 1,
+  totalCompositions: 100,
   selectedSort: SORT.MOST_POPULAR,
 };
 
@@ -15,6 +17,10 @@ export default (state=initialState, action={}) => {
 
   case SET_SORT: {
     return {...state, selectedSort: action.sort };
+  }
+
+  case ADD_COMPOSITIONS: {
+    return {...state, loadedCompositions: R.union(state.loadedCompositions, action.compositions)}
   }
 
   default: {
