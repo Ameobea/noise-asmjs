@@ -37,9 +37,9 @@ Module.registerTreePointer = pointer => store.dispatch(log(setTreePointer(pointe
  */
 export const init = canvasSize => {
   // make sure we've not already set an engine pointer
-  if(getEnginePointer() !== 0) {
-    return console.error('There\'s already a set engine pointer; can\'t initialize a new engine!');
-  }
+  // if(getEnginePointer() !== 0) {
+  //   return console.error('There\'s already a set engine pointer; can\'t initialize a new engine!');
+  // }
 
   // Call the internal engine code, initializing the engine and returning a pointer to its settings.
   Module.ccall('init', null, ['number'], [canvasSize]);
@@ -213,6 +213,13 @@ export const initializeFromScratch = defString => {
   Module._free(defBufPtr);
 
   return status;
-}
+};
+
+export const cleanupRuntimeInner = Module.cwrap('cleanup_runtime', null, ['number', 'number']);
+
+/**
+ * Deallocates the previously created composition tree and engine.
+ */
+export const cleanupRuntime = () => { cleanupRuntimeInner(getEnginePointer(), getTreePointer()); };
 
 // export const render_single_frame = Module.cwrap('render_single_frame', null, []);

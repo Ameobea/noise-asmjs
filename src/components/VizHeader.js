@@ -5,11 +5,12 @@ import { push } from 'react-router-redux';
 import R from 'ramda';
 
 import { COMPOSITION, BROWSE_SHARED_COMPOSITIONS } from 'src/Router';
-import { pause, resume, setCanvasSize } from 'src/interop';
+import { cleanupRuntime, init, initializeFromScratch, pause, resume } from 'src/interop';
 import {
   showModal, hideModal, startLoading, stopLoading, setSuccess, setError
 } from 'src/actions/submission';
 import { submitComposition } from 'src/Api';
+import initialTree from 'src/data/compositionTree/initialTree';
 
 const MenuItem = Menu.Item;
 
@@ -30,14 +31,11 @@ const MappedMenuItem = connect(mapState, { push })(({
     name={name}
     active={activeTab === index}
     onClick={ () => {
-      if(index !== 0) {
-        pause();
-      } else {
-        setCanvasSize(lastCanvasSize);
-        resume();
-      }
-
+      resume();
       push(path);
+      cleanupRuntime();
+      initializeFromScratch(JSON.stringify(initialTree));
+      init(lastCanvasSize);
     } }
   />
 ));
@@ -176,7 +174,7 @@ const VizHeader = ({ activeTab, modalOpen, modalLoading, push, showModal, startL
       ) )}
 
       <MenuItem>
-        <Button onClick={showModal}>Share This Composition</Button>
+        <Button onClick={ () => { pause(); showModal(); } }>Share This Composition</Button>
       </MenuItem>
     </Menu>
 

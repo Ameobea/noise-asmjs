@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
 import { AutoSizer, InfiniteLoader, List } from 'react-virtualized';
 import { Dropdown, Form, Grid, Image } from 'semantic-ui-react';
 import R from 'ramda';
@@ -45,7 +46,6 @@ const BrowseSharedCompositions = ({
   dispatch, loadedCompositions, selectedSort, totalCompositions, addCompositions
 }) => {
   const loadMoreRows = ({ startIndex, stopIndex }) => {
-    console.log(selectedSort, startIndex, stopIndex);
     return new Promise((f, r) => {
       loadSharedCompositions(startIndex, stopIndex, selectedSort).then(res => {
         res.Success && addCompositions(res.Success);
@@ -55,18 +55,34 @@ const BrowseSharedCompositions = ({
   };
 
   const renderRow = ({ index, key, style, parent }) => {
-    console.log('render', index);
+    const comp = loadedCompositions[index];
 
     return (
       <div key={key} style={style}>
         { (loadedCompositions.length > index &&
-          <div key={index} style={{height: 420}}>
+          <div key={index} style={{height: 270}}>
             <Grid columns={4}>
               <Grid.Column key={0}>
-                <Image src={loadedCompositions[index].thumbnail_url} height={400} width={400} />
+                <Link to={`/v/${comp.id}`}>
+                  <Image
+                    src={comp.thumbnail_url}
+                    height={250}
+                    width={250}
+                    shape='circular'
+                  />
+                </Link>
               </Grid.Column>
               <Grid.Column key={1}>
-                { loadedCompositions[index].title }
+                <Link to={`/v/${comp.id}`}>
+                  <h2>{ comp.title }</h2>
+                </Link>
+
+                <div style={{ marginTop: 2, marginBottom: 2, fontStyle: 'italic' }}>
+                  { 'Created by ' } <b style={{ color: '#aaa' }}> { comp.username } </b>
+                </div>
+
+                <br />
+                { comp.description }
               </Grid.Column>
               <Grid.Column key={2}>
 
@@ -94,7 +110,7 @@ const BrowseSharedCompositions = ({
                 ref={registerChild}
                 autoHeight
                 onRowsRendered={onRowsRendered}
-                rowHeight={420 /* blaze it */}
+                rowHeight={270}
                 rowRenderer={renderRow}
                 rowCount={loadedCompositions.length + 1}
                 height={height}

@@ -9,14 +9,21 @@ import { SORT, SET_SORT, ADD_COMPOSITIONS } from 'src/actions/browse';
 const initialState = {
   loadedCompositions: [],
   totalCompositions: 100,
-  selectedSort: SORT.MOST_POPULAR,
+  selectedSort: 'NEWEST',
 };
 
 export default (state=initialState, action={}) => {
   switch(action.type) {
 
   case SET_SORT: {
-    return {...state, selectedSort: action.sort };
+    if(action.sort !== state.selectedSort) {
+      return {...state,
+        loadedCompositions: [],
+        selectedSort: action.sort,
+      };
+    } else {
+      return state;
+    }
   }
 
   case ADD_COMPOSITIONS: {

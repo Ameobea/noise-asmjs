@@ -25,6 +25,8 @@ extern {
     pub fn js_debug(msg: *const c_char);
     /// Direct line to `console.error` from JS since the simulated `stdout` is dead after `main()` completes
     pub fn js_error(msg: *const c_char);
+
+    pub fn emscripten_cancel_main_loop();
 }
 
 /// Wrapper around the JS debug function that accepts a Rust `&str`.

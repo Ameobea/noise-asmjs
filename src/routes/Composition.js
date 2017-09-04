@@ -12,12 +12,17 @@ import CompositionTreeGUI from 'src/components/tree';
 import { NULL_UUID } from 'src/data/misc';
 import { setRootNode } from 'src/actions/compositionTree';
 import { loadDefinition } from 'src/Api';
+import { resume } from 'src/interop';
 
 const { Column, Row } = Grid;
 
 class Composition extends React.Component {
   constructor(props) {
     super(props);
+
+    setTimeout(resume, 500);
+
+    window.setRootNode = this.props.setRootNode;
 
     if(this.props.sharedId) {
       loadDefinition(this.props.sharedId).then(res => {

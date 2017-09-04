@@ -471,6 +471,21 @@ pub unsafe extern "C" fn set_canvas_size(engine_pointer: *mut NoiseStepper, size
     engine.conf.needs_resize = true;
 }
 
+/// Deallocates the previous engine and tree pointer set up by the runtime and cancels the
+/// Emscripten event loop.
+#[no_mangle]
+pub unsafe extern "C" fn cleanup_runtime(
+    engine_pointer: *mut NoiseStepper, tree_pointer: *mut CompositionTree
+) {
+    emscripten_cancel_main_loop();
+
+    // convert the pointers into references so that they can be dropped
+    let engine: &mut NoiseStepper = &mut *engine_pointer;
+    let tree: &mut CompositionTree = &mut *tree_pointer;
+    drop(tree);
+    drop(engine);
+}
+
 /// Pauses the simulation by halting the Emscripten browser event loop.
 #[no_mangle]
 pub unsafe extern "C" fn pause_engine() { emscripten_pause_main_loop() }

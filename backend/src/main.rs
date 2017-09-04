@@ -1,7 +1,7 @@
 //! Server-side backend for the noise composition application.  Serves the sharing functionality
 //! and hosts the list of published functions.
 
-#![feature(plugin, try_from)]
+#![feature(plugin)]
 #![plugin(rocket_codegen)]
 #![recursion_limit="128"]
 
@@ -10,6 +10,7 @@ extern crate chrono;
 extern crate diesel_codegen;
 #[macro_use]
 extern crate diesel;
+extern crate htmlescape;
 extern crate image;
 extern crate libcomposition;
 extern crate noise;
@@ -23,7 +24,6 @@ extern crate rocket_contrib;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_json;
 extern crate uuid;
 
 use rocket::request::Request;

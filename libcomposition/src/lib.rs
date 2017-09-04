@@ -57,6 +57,9 @@ pub fn debug(msg: &str) {
     unsafe { js_debug(c_str.as_ptr()) };
 }
 
+#[cfg(not(target_os = "emscripten"))]
+pub fn debug(msg: &str) { println!("{}", msg); }
+
 /// Wrapper around the JS error function that accepts a Rust `&str`.
 #[cfg(target_os = "emscripten")]
 pub fn error(msg: &str) {

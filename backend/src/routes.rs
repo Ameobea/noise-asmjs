@@ -5,6 +5,7 @@ use diesel;
 use diesel::expression::sql_literal::sql;
 use diesel::prelude::*;
 use diesel::types::Binary;
+use htmlescape::encode_minimal;
 use rocket::State;
 use rocket_contrib::Json;
 
@@ -26,9 +27,9 @@ enum SortMethod {
 impl<'a> From<&'a str> for SortMethod {
     fn from(s: &str) -> Self {
         match s {
-            "newest" | "Newest" => SortMethod::Newest,
-            "oldest" | "Oldest" => SortMethod::Oldest,
-            "mostPopular" | "most_popular" => SortMethod::MostPopular,
+            "newest" | "Newest" | "NEWEST" => SortMethod::Newest,
+            "oldest" | "Oldest" | "OLDEST" => SortMethod::Oldest,
+            "mostPopular" | "most_popular" | "MOST_POPULAR" => SortMethod::MostPopular,
             _ => SortMethod::MostPopular,
         }
     }
@@ -80,10 +81,10 @@ pub fn submit_composition(
     // create the model used for insertion into the database
     let new_compo = NewSharedComposition {
         creation_date: Utc::now().naive_utc(),
-        username: user_composition.username.clone(),
-        title: user_composition.title.clone(),
-        description: user_composition.description.clone(),
-        thumbnail_url: thumb_res,
+        username: encode_minimal(&user_composition.username),
+        title: encode_minimal(&user_composition.title),
+        description: encode_minimal(&user_composition.description),
+        thumbnail_url: encode_minimal(&thumb_res), // just in case
         definition_string: user_composition.definition_string.clone(),
     };
 
@@ -107,7 +108,7 @@ pub fn get_shared_composition(
         .map_err(debug);
 
     Json(match result {
-        Ok(r) => QueryResult::Success(r),
+        Ok(r) => QueryResult::Success(r.escape()),
         Err(err) => QueryResult::Error(err),
     })
 }
