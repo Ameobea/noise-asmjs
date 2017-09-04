@@ -50,7 +50,7 @@
   "bugs": {
     "url": "https://github.com/ameobea/noise-asmjs/issues"
   },
-  "homepage": "https://ameo.design/dev/",
+  "homepage": "https://noise.ameo.design/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ameobea/noise-asmjs.git"
@@ -64,6 +64,5 @@
   "eslintIgnore": [
     "compiled.js",
     "../engine/*"
-  ],
-  "proxy": "http://localhost:7878/"
+  ]
 }

@@ -5,6 +5,7 @@
 
 import { getRootNodeDefinition } from 'src/selectors/compositionTree';
 import {
+  API_URL,
   SHARE_SUBMISSION_URL,
   GET_SHARED_COMPOSITION_URL,
   LIST_SHARED_COMPOSITIONS_URL,
@@ -15,7 +16,7 @@ import {
  * Submits a new composition to be shared.
  */
 export const submitComposition = (entities, username, description, title) => {
-  return fetch(SHARE_SUBMISSION_URL, {
+  return fetch(`${API_URL}/${SHARE_SUBMISSION_URL}`, {
     method: 'POST',
     headers: {
       'Accept': 'application/json',
@@ -34,14 +35,14 @@ export const submitComposition = (entities, username, description, title) => {
  * Retrieves the JSON string definition of a noise composition given its ID.
  */
 export const loadDefinition = id => {
-  return fetch(`${GET_SHARED_COMPOSITION_URL}/${id}`)
+  return fetch(`${API_URL}/${GET_SHARED_COMPOSITION_URL}/${id}`)
     .then(res => res.json());
 };
 
 export const loadSharedCompositions = (start, end, sort) => {
   const startPage = Math.floor(start / COMPOSITIONS_PER_PAGE);
   const endPage = Math.floor(end / COMPOSITIONS_PER_PAGE);
-  const url = `${LIST_SHARED_COMPOSITIONS_URL}/${sort}/${startPage}/${endPage}`;
+  const url = `${API_URL}/${LIST_SHARED_COMPOSITIONS_URL}/${sort}/${startPage}/${endPage}`;
 
   return fetch(url).then(res => res.json());
 };
