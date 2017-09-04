@@ -479,11 +479,9 @@ pub unsafe extern "C" fn cleanup_runtime(
 ) {
     emscripten_cancel_main_loop();
 
-    // convert the pointers into references so that they can be dropped
-    let engine: &mut NoiseStepper = &mut *engine_pointer;
     let tree: &mut CompositionTree = &mut *tree_pointer;
-    drop(tree);
-    drop(engine);
+    let old_tree = mem::replace(tree, create_initial_tree());
+    drop(old_tree);
 }
 
 /// Pauses the simulation by halting the Emscripten browser event loop.
