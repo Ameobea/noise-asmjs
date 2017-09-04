@@ -61,7 +61,7 @@ const BrowseSharedCompositions = ({
       <div key={key} style={style}>
         { (loadedCompositions.length > index &&
           <div key={index} style={{height: 270}}>
-            <Grid columns={4}>
+            <Grid columns={2}>
               <Grid.Column key={0}>
                 <Link to={`/v/${comp.id}`}>
                   <Image
@@ -83,9 +83,6 @@ const BrowseSharedCompositions = ({
 
                 <br />
                 { comp.description }
-              </Grid.Column>
-              <Grid.Column key={2}>
-
               </Grid.Column>
             </Grid>
           </div>) || 'Loading...'

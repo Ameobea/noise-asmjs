@@ -176,6 +176,12 @@ const VizHeader = ({ activeTab, modalOpen, modalLoading, push, showModal, startL
       <MenuItem>
         <Button onClick={ () => { pause(); showModal(); } }>Share This Composition</Button>
       </MenuItem>
+
+      <Menu.Menu position='right'>
+        <Menu.Item>
+          <a href='https://ameobea.me/'>Created by Ameo</a>
+        </Menu.Item>
+      </Menu.Menu>
     </Menu>
 
     <SubmissionModal />
