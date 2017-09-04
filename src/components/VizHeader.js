@@ -179,6 +179,16 @@ const VizHeader = ({ activeTab, modalOpen, modalLoading, push, showModal, startL
 
       <Menu.Menu position='right'>
         <Menu.Item>
+          <a
+            className="github-button"
+            href="https://github.com/ameobea/noise-asmjs"
+            data-size="large"
+            aria-label="View ameobea/noise-asmjs on GitHub"
+          >
+            View on Github
+          </a>
+        </Menu.Item>
+        <Menu.Item>
           <a href='https://ameobea.me/'>Created by Ameo</a>
         </Menu.Item>
       </Menu.Menu>
