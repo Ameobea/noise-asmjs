@@ -1,11 +1,11 @@
 [package]
 authors = ["Casey Primozic <me@ameo.link>"]
 name = "noise-backend"
-version = "0.1.0"
+version = "0.1.1"
 
 [dependencies]
 libcomposition = { path="../libcomposition" }
 minutiae = "0.5.0"
-noise = { git = "https://github.com/Ameobea/noise-rs.git", branch="emscripten-fix" }
-serde = "1.*"
-serde_json = "1.*"
+noise = "0.5.1"
+serde = "1.0.70"
+serde_json = "1.0.24"

@@ -1,4 +1,4 @@
-#![feature(conservative_impl_trait, const_fn, try_from)]
+#![feature(const_fn, try_from)]
 
 extern crate minutiae;
 extern crate noise;
@@ -10,11 +10,11 @@ use std::ffi::CString;
 use std::os::raw::{c_char, c_void};
 
 use libcomposition::{CompositionTree, MasterConf};
+use minutiae::emscripten::{CanvasRenderer, EmscriptenDriver};
 use minutiae::prelude::*;
-use minutiae::emscripten::{EmscriptenDriver, CanvasRenderer};
 use noise::*;
 
-extern {
+extern "C" {
     /// Given a pointer to our pixel data buffer, draws its contents to the canvas.
     pub fn canvas_render(ptr: *const u8);
     /// Given a pointer to the noise engine's state, registers it on the JS side into the Redux store
@@ -80,7 +80,14 @@ impl Engine<CS, ES, MES, CA, EA> for OurEngine {
 
 /// given a buffer containing all of the cells in the universe, calculates values for each of them using
 /// perlin noise and sets their states according to the result.
-fn drive_noise(cells_buf: &mut [Cell<CS>], seq: usize, noise: &NoiseFn<Point3<f64>>, universe_size: usize, zoom: f64, speed: f64) {
+fn drive_noise(
+    cells_buf: &mut [Cell<CS>],
+    seq: usize,
+    noise: &NoiseFn<Point3<f64>>,
+    universe_size: usize,
+    zoom: f64,
+    speed: f64,
+) {
     let fseq = seq as f64;
     for y in 0..universe_size {
         for x in 0..universe_size {
@@ -102,7 +109,9 @@ fn resize_universe(universe: &mut Universe<CS, ES, MES, CA, EA>, new_size: usize
         return error("Requested change of universe size to 0!");
     }
 
-    universe.cells.resize(new_size * new_size, Cell {state: CS(0.0)});
+    universe
+        .cells
+        .resize(new_size * new_size, Cell { state: CS(0.0) });
     universe.conf.size = new_size;
 }
 
@@ -116,13 +125,20 @@ impl Middleware<CS, ES, MES, CA, EA, OurEngine> for NoiseStepper {
     fn after_render(&mut self, universe: &mut OurUniverse) {
         // handle any new setting changes before rendering
 
-       if self.conf.needs_resize {
+        if self.conf.needs_resize {
             // resize the universe if the canvas size changed, matching that size.
             resize_universe(universe, self.conf.canvas_size);
             self.conf.needs_resize = false;
         }
 
-        drive_noise(&mut universe.cells, universe.seq, &*self.composition_tree, self.conf.canvas_size, 1.0, 1.0);
+        drive_noise(
+            &mut universe.cells,
+            universe.seq,
+            &*self.composition_tree,
+            self.conf.canvas_size,
+            1.0,
+            1.0,
+        );
     }
 }
 
@@ -131,12 +147,15 @@ struct WorldGenerator;
 impl Generator<CS, ES, MES, CA, EA> for WorldGenerator {
     fn gen(&mut self, conf: &UniverseConf) -> (Vec<Cell<CS>>, Vec<Vec<Entity<CS, ES, MES>>>) {
         // initialize blank universe
-        (vec![Cell{state: CS(0.0)}; conf.size * conf.size], Vec::new())
+        (
+            vec![Cell { state: CS(0.0) }; conf.size * conf.size],
+            Vec::new(),
+        )
     }
 }
 
 fn calc_color(cell: &Cell<CS>, _: &[usize], _: &EntityContainer<CS, ES, MES>) -> [u8; 4] {
-    unsafe { libcomposition::ACTIVE_COLOR_FUNCTION.colorize(cell.state.0) }
+    unsafe { libcomposition::ACTIVE_COLOR_FUNCTION.colorize(cell.state.0 as f32) }
 }
 
 fn main() {

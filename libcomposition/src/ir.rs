@@ -24,20 +24,29 @@ pub struct IrNode {
 }
 
 /// Attempts to convert a `Vec` of `IrNode`s to a `Vec` or something else, returning `Err` if any of the conversions failed.
-pub fn map_ir_nodes<T>(nodes: Vec<IrNode>) -> Result<Vec<T>, T::Error> where T: TryFrom<IrNode>, T::Error: From<String> {
+pub fn map_ir_nodes<T>(nodes: Vec<IrNode>) -> Result<Vec<T>, T::Error>
+where
+    T: TryFrom<IrNode>,
+    T::Error: From<String>,
+{
     let node_count = nodes.len();
-    nodes.into_iter()
-        .map(|item| item.try_into())
-        .fold_results(Vec::with_capacity(node_count), |mut acc, item| {
+    nodes.into_iter().map(|item| item.try_into()).fold_results(
+        Vec::with_capacity(node_count),
+        |mut acc, item| {
             acc.push(item);
             acc
-        })
+        },
+    )
 }
 
 // TODO: Create functions for converting settings from the IR format into inner representations.
 
 /// Attempts to return a vector of all child nodes that are of a certain type.
-pub fn build_children<T>(children: Vec<IrNode>, child_type: &str) -> Result<Vec<T>, T::Error> where T: TryFrom<IrNode>, T::Error: From<String> {
+pub fn build_children<T>(children: Vec<IrNode>, child_type: &str) -> Result<Vec<T>, T::Error>
+where
+    T: TryFrom<IrNode>,
+    T::Error: From<String>,
+{
     let matching_children = children
         .into_iter()
         .filter(|child| child._type == child_type)
@@ -86,7 +95,10 @@ impl TryFrom<IrNode> for Vec<InputTransformationDefinition> {
     fn try_from(node: IrNode) -> Result<Self, Self::Error> {
         match node._type.as_str() {
             "inputTransformations" => map_ir_nodes(node.children),
-            _ => Err(format!("Failed to convert IrNode into `Vec<InputTransformation>` because it's of type {}.", node._type)),
+            _ => Err(format!(
+                "Failed to convert IrNode into `Vec<InputTransformation>` because it's of type {}.",
+                node._type
+            )),
         }
     }
 }

@@ -22,10 +22,11 @@ impl CompositionScheme {
     pub fn compose(&self, children: &[CompositionTreeNode], coord: Point3<f64>) -> f64 {
         match self {
             &CompositionScheme::Average => {
-                let sum = children.iter()
-                    .fold(0., |acc, child| { acc + child.get(coord) });
+                let sum = children
+                    .iter()
+                    .fold(0., |acc, child| acc + child.get(coord));
                 sum / children.len() as f64
-            },
+            }
             &CompositionScheme::WeightedAverage(ref weights) => {
                 unimplemented!(); // TODO
             }
@@ -43,10 +44,14 @@ impl TryFrom<IrNode> for CompositionScheme {
             "average" => Ok(CompositionScheme::Average),
             "weightedAverage" => Ok(CompositionScheme::WeightedAverage({
                 let raw_val = find_setting_by_name("weights", &node.settings)?;
-                serde_json::from_str(&raw_val)
-                    .map_err(|_| format!("Unable to parse `weights` vector from string: {}", raw_val))?
+                serde_json::from_str(&raw_val).map_err(|_| {
+                    format!("Unable to parse `weights` vector from string: {}", raw_val)
+                })?
             })),
-            _ => Err(format!("Unknown composition scheme \"{}\" provided!", composition_scheme)),
+            _ => Err(format!(
+                "Unknown composition scheme \"{}\" provided!",
+                composition_scheme
+            )),
         }
     }
 }

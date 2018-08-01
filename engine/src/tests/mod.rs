@@ -2,10 +2,13 @@
 
 use serde_json;
 
-use composition_tree::{CompositionTree, ComposedNoiseModule};
 use composition_tree::composition::CompositionScheme;
 use composition_tree::conf::{GlobalTreeConf, NoiseModuleConf};
-use composition_tree::definition::{CompositionTreeDefinition, CompositionTreeNodeDefinition, InputTransformationDefinition, NoiseModuleType};
+use composition_tree::definition::{
+    CompositionTreeDefinition, CompositionTreeNodeDefinition, InputTransformationDefinition,
+    NoiseModuleType,
+};
+use composition_tree::{ComposedNoiseModule, CompositionTree};
 use util::Dim;
 
 #[test]
@@ -21,58 +24,50 @@ fn composition_tree_definition_serialization() {
                 CompositionTreeNodeDefinition::Leaf {
                     module_type: NoiseModuleType::Fbm,
                     transformations: vec![
-                        InputTransformationDefinition::ZoomScale {zoom: 1.021, speed: 0.812},
+                        InputTransformationDefinition::ZoomScale {
+                            zoom: 1.021,
+                            speed: 0.812,
+                        },
                         InputTransformationDefinition::HigherOrderNoiseModule {
                             node_def: CompositionTreeNodeDefinition::Composed {
                                 scheme: CompositionScheme::Average,
-                                children: vec![
-                                    CompositionTreeNodeDefinition::Leaf {
-                                        module_type: NoiseModuleType::Billow,
-                                        module_conf: vec![],
-                                        transformations: vec![],
-                                    },
-                                ],
+                                children: vec![CompositionTreeNodeDefinition::Leaf {
+                                    module_type: NoiseModuleType::Billow,
+                                    module_conf: vec![],
+                                    transformations: vec![],
+                                }],
                                 transformations: Vec::new(),
                             },
                             replaced_dim: Dim::Z,
                         },
                     ],
-                    module_conf: vec![
-                        NoiseModuleConf::MultiFractal {
+                    module_conf: vec![NoiseModuleConf::MultiFractal {
+                        frequency: 1.1,
+                        lacunarity: 2.0,
+                        octaves: 5,
+                        persistence: 1.5,
+                    }],
+                },
+                CompositionTreeNodeDefinition::Composed {
+                    scheme: CompositionScheme::Average,
+                    children: vec![CompositionTreeNodeDefinition::Leaf {
+                        module_type: NoiseModuleType::RidgedMulti,
+                        module_conf: vec![NoiseModuleConf::MultiFractal {
                             frequency: 1.1,
                             lacunarity: 2.0,
                             octaves: 5,
                             persistence: 1.5,
-                        },
-                    ],
-                },
-                CompositionTreeNodeDefinition::Composed {
-                    scheme: CompositionScheme::Average,
-                    children: vec![
-                        CompositionTreeNodeDefinition::Leaf {
-                            module_type: NoiseModuleType::RidgedMulti,
-                            module_conf: vec![
-                                NoiseModuleConf::MultiFractal {
-                                    frequency: 1.1,
-                                    lacunarity: 2.0,
-                                    octaves: 5,
-                                    persistence: 1.5,
-                                },
-                            ],
-                            transformations: vec![
-                                InputTransformationDefinition::ZoomScale {zoom: 1.01, speed: 0.2},
-                            ]
-                        }
-                    ],
-                    transformations: vec![
-                        InputTransformationDefinition::ScaleAll(0.97),
-                    ],
+                        }],
+                        transformations: vec![InputTransformationDefinition::ZoomScale {
+                            zoom: 1.01,
+                            speed: 0.2,
+                        }],
+                    }],
+                    transformations: vec![InputTransformationDefinition::ScaleAll(0.97)],
                 },
             ],
-            transformations: vec![
-                InputTransformationDefinition::ScaleAll(0.97),
-            ],
-        }
+            transformations: vec![InputTransformationDefinition::ScaleAll(0.97)],
+        },
     };
 
     let serialized_def = serde_json::to_string(&def).unwrap();

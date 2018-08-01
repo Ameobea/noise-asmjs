@@ -1,10 +1,10 @@
 //! Defines the structure of the initial composition tree that is loaded at application initialization.
 
-use definition::{NoiseModuleType};
 use super::{
     CompositionScheme, CompositionTree, CompositionTreeDefinition, CompositionTreeNodeDefinition,
-    InputTransformationDefinition, MasterConf, NoiseModuleConf
+    InputTransformationDefinition, MasterConf, NoiseModuleConf,
 };
+use definition::NoiseModuleType;
 
 fn create_initial_tree_definition() -> CompositionTreeDefinition {
     CompositionTreeDefinition {
@@ -43,12 +43,10 @@ fn create_initial_tree_definition() -> CompositionTreeDefinition {
                     transformations: Vec::new(),
                 },
             ],
-            transformations: vec![
-                InputTransformationDefinition::ZoomScale {
-                    speed: 1.,
-                    zoom: 1.1,
-                },
-            ],
+            transformations: vec![InputTransformationDefinition::ZoomScale {
+                speed: 1.,
+                zoom: 1.1,
+            }],
         },
     }
 }

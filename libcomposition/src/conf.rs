@@ -46,7 +46,10 @@ impl FromStr for InteropRangeFunction {
             "manhattan" => Ok(InteropRangeFunction::Manhattan),
             "chebyshev" => Ok(InteropRangeFunction::Chebyshev),
             "quadratic" => Ok(InteropRangeFunction::Quadratic),
-            _ => Err(format!("Unable to convert \"{}\" into `InteropRangeFunction`!", s)),
+            _ => Err(format!(
+                "Unable to convert \"{}\" into `InteropRangeFunction`!",
+                s
+            )),
         }
     }
 }
@@ -102,17 +105,29 @@ pub fn map_setting_to_type(key: &str) -> Result<SettingType, Option<String>> {
     match key {
         "octaves" | "frequency" | "lacunarity" | "persistence" => Ok(SettingType::MultiFractal),
         "seed" => Ok(SettingType::Seedable),
-        "rangeFunction" | "enableRange" | "worleyFrequency" | "displacement" => Ok(SettingType::Worley),
+        "rangeFunction" | "enableRange" | "worleyFrequency" | "displacement" => {
+            Ok(SettingType::Worley)
+        }
         "constant" => Ok(SettingType::Constant),
         "attenuation" => Ok(SettingType::RidgedMulti),
         "moduleType" => Err(None),
-        _ => Err(Some(format!("Unable to match setting with key {} to `SettingType`!", key))),
+        _ => Err(Some(format!(
+            "Unable to match setting with key {} to `SettingType`!",
+            key
+        ))),
     }
 }
 
 pub fn apply_multifractal_conf<T: MultiFractal>(conf: &NoiseModuleConf, module: T) -> T {
-    if let &NoiseModuleConf::MultiFractal { octaves, frequency, lacunarity, persistence } = conf {
-        module.set_octaves(octaves as usize)
+    if let &NoiseModuleConf::MultiFractal {
+        octaves,
+        frequency,
+        lacunarity,
+        persistence,
+    } = conf
+    {
+        module
+            .set_octaves(octaves as usize)
             .set_frequency(frequency)
             .set_lacunarity(lacunarity)
             .set_persistence(persistence)
@@ -132,11 +147,20 @@ pub fn apply_seedable_conf<T: Seedable>(conf: &NoiseModuleConf, module: T) -> T 
 }
 
 pub fn apply_worley_conf(conf: &NoiseModuleConf, module: Worley) -> Worley {
-    if let &NoiseModuleConf::Worley { range_function, range_function_enabled, worley_frequency, displacement } = conf {
-        if range_function_enabled { module.enable_range(true) } else { module.enable_range(false) }
-            .set_range_function(range_function.into())
-            .set_displacement(displacement)
-            .set_frequency(worley_frequency)
+    if let &NoiseModuleConf::Worley {
+        range_function,
+        range_function_enabled,
+        worley_frequency,
+        displacement,
+    } = conf
+    {
+        if range_function_enabled {
+            module.enable_range(true)
+        } else {
+            module.enable_range(false)
+        }.set_range_function(range_function.into())
+        .set_displacement(displacement)
+        .set_frequency(worley_frequency)
     } else {
         error(&format!("Attempted to configure module with worley settings but the settings aren't worley: {:?}", conf));
         module
