@@ -2,7 +2,7 @@
 
 use std::convert::TryFrom;
 
-use noise::{NoiseFn, Point3};
+use noise::{NoiseFn, Point2};
 use serde_json;
 
 use super::CompositionTreeNode;
@@ -19,7 +19,7 @@ pub enum CompositionScheme {
 impl CompositionScheme {
     /// Given a set of children noise generators and a coordinate, combines the outputs of each of the child modules and
     /// returns a single output.
-    pub fn compose(&self, children: &[CompositionTreeNode], coord: Point3<f64>) -> f64 {
+    pub fn compose(&self, children: &[CompositionTreeNode], coord: Point2<f64>) -> f64 {
         match self {
             &CompositionScheme::Average => {
                 let sum = children

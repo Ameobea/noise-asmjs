@@ -76,7 +76,7 @@ fn build_transformations(
 }
 
 impl NoiseModuleType {
-    pub fn construct_noise_fn(&self, confs: &[NoiseModuleConf]) -> Box<NoiseFn<Point3<f64>>> {
+    pub fn construct_noise_fn(&self, confs: &[NoiseModuleConf]) -> Box<NoiseFn<Point2<f64>>> {
         match self {
             &NoiseModuleType::Fbm => {
                 let configured_module = confs.iter().fold(Fbm::new(), |acc, conf| match conf {
@@ -87,7 +87,7 @@ impl NoiseModuleType {
                         acc
                     }
                 });
-                Box::new(configured_module) as Box<NoiseFn<Point3<f64>>>
+                Box::new(configured_module) as Box<NoiseFn<Point2<f64>>>
             }
             &NoiseModuleType::Worley => {
                 let configured_module = confs.iter().fold(Worley::new(), |acc, conf| match conf {

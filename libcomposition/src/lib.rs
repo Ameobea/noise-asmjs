@@ -229,12 +229,11 @@ impl CompositionTree {
     }
 }
 
-impl NoiseFn<Point3<f64>> for CompositionTree {
-    fn get(&self, coord: Point3<f64>) -> f64 {
+impl NoiseFn<Point2<f64>> for CompositionTree {
+    fn get(&self, coord: Point2<f64>) -> f64 {
         self.root_node.get([
             (coord[0] * self.global_conf.zoom) + self.global_conf.x_offset,
             (coord[1] * self.global_conf.zoom) + self.global_conf.y_offset,
-            (coord[2] * self.global_conf.speed) + self.global_conf.z_offset,
         ])
     }
 }
@@ -245,7 +244,7 @@ pub struct CompositionTreeNode {
 }
 
 pub enum CompositionTreeNodeType {
-    Leaf(Box<NoiseFn<Point3<f64>>>),
+    Leaf(Box<NoiseFn<Point2<f64>>>),
     Combined(ComposedNoiseModule),
 }
 
@@ -315,8 +314,8 @@ impl CompositionTreeNode {
     }
 }
 
-impl NoiseFn<Point3<f64>> for CompositionTreeNode {
-    fn get(&self, coord: Point3<f64>) -> f64 {
+impl NoiseFn<Point2<f64>> for CompositionTreeNode {
+    fn get(&self, coord: Point2<f64>) -> f64 {
         let transformed_coord = apply_transformations(&self.transformations, coord);
 
         match self.function {
@@ -364,8 +363,8 @@ impl ComposedNoiseModule {
     }
 }
 
-impl NoiseFn<Point3<f64>> for ComposedNoiseModule {
-    fn get(&self, coord: Point3<f64>) -> f64 {
+impl NoiseFn<Point2<f64>> for ComposedNoiseModule {
+    fn get(&self, coord: Point2<f64>) -> f64 {
         self.composer.compose(&self.children, coord)
     }
 }
