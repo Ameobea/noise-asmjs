@@ -1,15 +1,14 @@
 //! Composes the noise module definition provided by a user and generates a thumbnail image.
 
 use std::env::temp_dir;
-use std::fs::{File, remove_file};
+use std::fs::{remove_file, File};
 
-use image::{ImageBuffer, ImageRgb8, Pixel, PNG, Rgb};
-use libcomposition::CompositionTree;
+use image::{ImageBuffer, ImageRgb8, Pixel, Rgb, PNG};
 use libcomposition::color_schemes::ColorFunction;
-use libcomposition::util::{build_tree_from_def};
+use libcomposition::util::build_tree_from_def;
+use libcomposition::CompositionTree;
 use noise::NoiseFn;
-use pcg::PcgRng;
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 use uuid::Uuid;
 
 use ameotrack::upload_image;
@@ -22,15 +21,10 @@ pub fn create_thumbnail(def: &str) -> Result<String, String> {
     // create a `CompositionTree` from the provided definition string
     let (color_fn, tree): (ColorFunction, CompositionTree) = build_tree_from_def(def)?;
 
-    // generate a random `z` value
-    let mut rng = PcgRng::new_unseeded();
-    rng.set_stream(thread_rng().gen());
-    let z = rng.gen_range(0.0f64, 1000000f64);
-
     // use this tree node to populate a buffer with pixel data using the selected color function to
     // populate an image buffer with pixel data
     let img_buf = ImageBuffer::from_fn(IMAGE_SIZE, IMAGE_SIZE, |x, y| {
-        let val: f64 = tree.get([x as f64, y as f64, z]);
+        let val: f64 = tree.get([x as f64, y as f64, 0.0]);
         let color = color_fn.colorize(val);
         Rgb::from_channels(color[0], color[1], color[2], 255u8)
     });
@@ -43,11 +37,16 @@ pub fn create_thumbnail(def: &str) -> Result<String, String> {
     let tmpfile_path = tmpfile_pathbuf.as_path();
 
     let res = {
-        let mut tmpfile: File = File::create(tmpfile_path)
-            .map_err(|_| format!("Unable to create temporary file at path {:?}!", tmpfile_path))?;
+        let mut tmpfile: File = File::create(tmpfile_path).map_err(|_| {
+            format!(
+                "Unable to create temporary file at path {:?}!",
+                tmpfile_path
+            )
+        })?;
         println!("Generated temporary file at {:?}", tmpfile_path);
 
-        ImageRgb8(img_buf).save(&mut tmpfile, PNG)
+        ImageRgb8(img_buf)
+            .save(&mut tmpfile, PNG)
             .map_err(|_| String::from("Unable to write image data to temp file!"))?;
 
         // attempt upload the image to AmeoTrack and store the result
@@ -55,7 +54,8 @@ pub fn create_thumbnail(def: &str) -> Result<String, String> {
     };
 
     // delete the tempfile
-    remove_file(tmpfile_path).map_err(|_| format!("Unable to delete tempfile at {:?}!", tmpfile_path))?;
+    remove_file(tmpfile_path)
+        .map_err(|_| format!("Unable to delete tempfile at {:?}!", tmpfile_path))?;
 
     res
 }

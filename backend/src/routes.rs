@@ -10,7 +10,7 @@ use rocket::State;
 use rocket_contrib::Json;
 
 use db_interface::DbPool;
-use models::{QueryResult, NewSharedComposition, SharedComposition, UserSharedComposition};
+use models::{NewSharedComposition, QueryResult, SharedComposition, UserSharedComposition};
 use renderer::create_thumbnail;
 use schema::shared_compositions::dsl as shared_compositions_dsl;
 use schema::shared_compositions::table as shared_compositions_table;
@@ -37,10 +37,15 @@ impl<'a> From<&'a str> for SortMethod {
 
 #[get("/list_compositions/<sort>/<start_page>/<end_page>")]
 pub fn list_compositions(
-    sort: String, start_page: i64, end_page: i64, conn_pool: State<DbPool>
+    sort: String,
+    start_page: i64,
+    end_page: i64,
+    conn_pool: State<DbPool>,
 ) -> Result<Json<QueryResult<Vec<SharedComposition>>>, String> {
     if start_page > end_page || start_page < 0 || end_page < 0 {
-        return Ok(Json(QueryResult::Error(String::from("Invalid page numbers provided."))));
+        return Ok(Json(QueryResult::Error(String::from(
+            "Invalid page numbers provided.",
+        ))));
     }
 
     let conn = &*conn_pool.inner().get_conn();
@@ -65,9 +70,10 @@ pub fn list_compositions(
     Ok(Json(QueryResult::Success(result)))
 }
 
-#[post("/submit_composition", data="<user_composition>")]
+#[post("/submit_composition", data = "<user_composition>")]
 pub fn submit_composition(
-    user_composition: Json<UserSharedComposition>, conn_pool: State<DbPool>
+    user_composition: Json<UserSharedComposition>,
+    conn_pool: State<DbPool>,
 ) -> Json<QueryResult<NewSharedComposition>> {
     let conn = &*conn_pool.inner().get_conn();
 
@@ -75,7 +81,7 @@ pub fn submit_composition(
     // and retrieve the URL.
     let thumb_res: String = match create_thumbnail(&user_composition.definition_string) {
         Ok(url) => url,
-        Err(err) => { return Json(QueryResult::Error(err)) },
+        Err(err) => return Json(QueryResult::Error(err)),
     };
 
     // create the model used for insertion into the database
@@ -98,7 +104,8 @@ pub fn submit_composition(
 
 #[get("/get_shared_composition/<composition_id>")]
 pub fn get_shared_composition(
-    composition_id: i32, conn_pool: State<DbPool>
+    composition_id: i32,
+    conn_pool: State<DbPool>,
 ) -> Json<QueryResult<SharedComposition>> {
     let conn = &*conn_pool.inner().get_conn();
 

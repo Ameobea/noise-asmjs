@@ -36,7 +36,7 @@ impl SharedComposition {
 }
 
 #[derive(Insertable, Serialize, Deserialize)]
-#[table_name="shared_compositions"]
+#[table_name = "shared_compositions"]
 pub struct NewSharedComposition {
     pub username: String,
     pub creation_date: NaiveDateTime,

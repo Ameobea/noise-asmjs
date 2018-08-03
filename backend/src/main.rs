@@ -3,7 +3,7 @@
 
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
-#![recursion_limit="128"]
+#![recursion_limit = "128"]
 
 extern crate chrono;
 #[macro_use]
@@ -14,7 +14,6 @@ extern crate htmlescape;
 extern crate image;
 extern crate libcomposition;
 extern crate noise;
-extern crate pcg;
 extern crate r2d2;
 extern crate r2d2_diesel;
 extern crate rand;
@@ -31,7 +30,7 @@ use rocket_contrib::Json;
 
 mod ameotrack;
 mod db_interface;
-use self::db_interface::{DbPool, create_db_pool};
+use self::db_interface::{create_db_pool, DbPool};
 mod models;
 use self::models::ErrorMessage;
 mod renderer;
@@ -54,14 +53,21 @@ fn not_found(_: &Request) -> Json<ErrorMessage> {
 fn internal_error(_: &Request) -> Json<ErrorMessage> {
     Json(ErrorMessage {
         status: 500,
-        message: "An internal server error occurred and we were unable to process your request.".into(),
+        message: "An internal server error occurred and we were unable to process your request."
+            .into(),
     })
 }
 
 fn main() {
     rocket::ignite()
-        .mount("/", routes![list_compositions, submit_composition, get_shared_composition])
-        .catch(errors![not_found, internal_error])
+        .mount(
+            "/",
+            routes![
+                list_compositions,
+                submit_composition,
+                get_shared_composition
+            ],
+        ).catch(errors![not_found, internal_error])
         .manage(DbPool(create_db_pool()))
         .launch();
 }
