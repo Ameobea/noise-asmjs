@@ -8,7 +8,6 @@ use libcomposition::color_schemes::ColorFunction;
 use libcomposition::util::build_tree_from_def;
 use libcomposition::CompositionTree;
 use noise::NoiseFn;
-use rand::{thread_rng, Rng};
 use uuid::Uuid;
 
 use ameotrack::upload_image;
@@ -25,7 +24,7 @@ pub fn create_thumbnail(def: &str) -> Result<String, String> {
     // populate an image buffer with pixel data
     let img_buf = ImageBuffer::from_fn(IMAGE_SIZE, IMAGE_SIZE, |x, y| {
         let val: f64 = tree.get([x as f64, y as f64, 0.0]);
-        let color = color_fn.colorize(val);
+        let color = color_fn.colorize(val as f32);
         Rgb::from_channels(color[0], color[1], color[2], 255u8)
     });
 

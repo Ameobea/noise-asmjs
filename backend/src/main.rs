@@ -1,7 +1,7 @@
 //! Server-side backend for the noise composition application.  Serves the sharing functionality
 //! and hosts the list of published functions.
 
-#![feature(plugin)]
+#![feature(plugin, custom_attribute, decl_macro)]
 #![plugin(rocket_codegen)]
 #![recursion_limit = "128"]
 
@@ -40,7 +40,7 @@ mod schema;
 mod util;
 
 /// This function matches all routes that aren't defined, returning a 404 error.
-#[error(404)]
+#[catch(404)]
 fn not_found(_: &Request) -> Json<ErrorMessage> {
     Json(ErrorMessage {
         status: 404,
@@ -49,7 +49,7 @@ fn not_found(_: &Request) -> Json<ErrorMessage> {
 }
 
 /// This function is called every time there's an internal error while attempting to handle a request.
-#[error(500)]
+#[catch(500)]
 fn internal_error(_: &Request) -> Json<ErrorMessage> {
     Json(ErrorMessage {
         status: 500,
@@ -67,7 +67,7 @@ fn main() {
                 submit_composition,
                 get_shared_composition
             ],
-        ).catch(errors![not_found, internal_error])
+        ).catch(catchers![not_found, internal_error])
         .manage(DbPool(create_db_pool()))
         .launch();
 }

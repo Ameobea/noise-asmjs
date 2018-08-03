@@ -11,8 +11,7 @@ use schema::AMEOTRACK_UPLOAD_PASSWORD;
 const AMEOTRACK_UPLOAD_URL: &'static str = "https://ameo.link/u/upload";
 
 pub fn upload_image(path: &Path) -> Result<String, String> {
-    let client =
-        Client::new().map_err(|err| format!("Error while creating `reqwest` client: {:?}", err))?;
+    let client = Client::new();
     let form = Form::new()
         .text("source", "Noise Function Composition Backend")
         .text("password", AMEOTRACK_UPLOAD_PASSWORD)
@@ -27,12 +26,11 @@ pub fn upload_image(path: &Path) -> Result<String, String> {
 
     let mut res = client
         .post(AMEOTRACK_UPLOAD_URL)
-        .map_err(|_| String::from("Error while creating POST request!"))?
         .multipart(form)
         .send()
         .map_err(|err| format!("Error while sending POST request: {:?}", err))?;
 
-    if res.status() != StatusCode::Ok {
+    if res.status() != StatusCode::OK {
         return Err(format!(
             "Image upload request returned unexpected HTTP status code: {:?}",
             res.status()

@@ -10,10 +10,10 @@ diesel = { version = "0.16.0", features=["mysql", "chrono"] }
 diesel_codegen = { version = "0.16.0", features=["mysql"] }
 dotenv = "0.9.0"
 htmlescape = "0.3.1"
-image = "*"
+image = "0.15.0"
 r2d2 = "0.7.3"
 r2d2-diesel = "0.16.0"
-noise = { git = "https://github.com/Ameobea/noise-rs.git", branch="emscripten-fix" }
+noise = "0.5.1"
 rand = "0.3"
 reqwest = { git = "https://github.com/seanmonstar/reqwest.git" }
 rocket = { git = "https://github.com/SergioBenitez/Rocket.git" }
