@@ -43,6 +43,9 @@
     "fbm",
     "noise-rs",
     "asm.js",
+    "WebAssembly",
+    "composition",
+    "compositor",
     "rust"
   ],
   "author": "Casey Primozic <me@ameo.link>",

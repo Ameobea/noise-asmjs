@@ -13,7 +13,7 @@ injectTapEventPlugin();
 
 const Root = () => (
   <MuiThemeProvider>
-    <Provider store={store} >
+    <Provider store={store}>
       <App />
     </Provider>
   </MuiThemeProvider>
@@ -21,4 +21,13 @@ const Root = () => (
 
 ReactDOM.render(<Root />, document.getElementById('root'));
 
-init(INITIAL_CANVAS_SIZE);
+// Only initialize once the wasm has been loaded and handles to its functions set into `Module`
+const tryInit = () => {
+  if (window.Module.asm._init) {
+    init(INITIAL_CANVAS_SIZE);
+  } else {
+    setTimeout(tryInit, 100);
+  }
+};
+
+tryInit();

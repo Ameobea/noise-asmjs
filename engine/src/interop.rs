@@ -23,6 +23,8 @@ extern "C" {
     fn emscripten_resume_main_loop();
 }
 
+static mut ENGINE_RUNNING: bool = false;
+
 /// Initializes the minutiae engine and the internal noise generator engine with the default initial composition tree.
 #[no_mangle]
 pub unsafe extern "C" fn init(canvas_size: usize) {
@@ -65,12 +67,16 @@ pub unsafe extern "C" fn init(canvas_size: usize) {
     setEnginePointer(boxed_engine_ptr as *const c_void);
 
     // Initialize the simulation, registering with the emscripten Browser event loop
-    EmscriptenDriver.init(universe, OurEngine, &mut [
-        // middleware that calculates noise values for each of the universe's cells using the current sequence number
-        boxed_noise_stepper,
-        // middleware that renders the current universe to the canvas each tick using the supplied color calculator function
-        Box::new(CanvasRenderer::new(canvas_size, calc_color, canvas_render))
-    ]);
+    EmscriptenDriver.init(
+        universe,
+        OurEngine,
+        &mut [
+            // middleware that calculates noise values for each of the universe's cells using the current sequence number
+            boxed_noise_stepper,
+            // middleware that renders the current universe to the canvas each tick using the supplied color calculator function
+            Box::new(CanvasRenderer::new(canvas_size, calc_color, canvas_render)),
+        ],
+    );
 }
 
 /// Deletes a node of the composition tree at the supplied depth and index.  Returns 0 if successful, 1 if there was an error.
@@ -172,7 +178,8 @@ pub unsafe extern "C" fn add_node(
             error(&format!("{}", err_str));
             return 1;
         }
-    }.into();
+    }
+    .into();
 
     // attempt to add the created node as a child of the node at the supplied coordinates in the tree
     let coords_slice = slice::from_raw_parts(coords, depth as usize);
@@ -214,7 +221,8 @@ pub unsafe extern "C" fn replace_node(
             error(&format!("{}", err_str));
             return 1;
         }
-    }.into();
+    }
+    .into();
 
     if let 1 = delete_node(tree_pointer, depth, coords, index) {
         return 1;
@@ -556,13 +564,19 @@ pub unsafe extern "C" fn cleanup_runtime(
 /// Pauses the simulation by halting the Emscripten browser event loop.
 #[no_mangle]
 pub unsafe extern "C" fn pause_engine() {
-    emscripten_pause_main_loop()
+    if !ENGINE_RUNNING {
+        emscripten_pause_main_loop();
+        ENGINE_RUNNING = false;
+    }
 }
 
 /// Resumes the simulation by initializing the Emscripten browser event loop.
 #[no_mangle]
 pub unsafe extern "C" fn resume_engine() {
-    emscripten_resume_main_loop()
+    if ENGINE_RUNNING {
+        emscripten_resume_main_loop();
+        ENGINE_RUNNING = false;
+    }
 }
 
 /// Renders a single frame, setting the canvas to a static image.

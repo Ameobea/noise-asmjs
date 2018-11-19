@@ -26,3 +26,5 @@ public/compiled.js
 *.gz
 *.tgz
 .sublime_project
+semantic
+semantic.json

@@ -8,7 +8,7 @@
     "react/jsx-handler-names": 0,
     "react/jsx-indent": [1, 2],
     "react/jsx-indent-props": [1, 2],
-    "react/jsx-max-props-per-line": [1, {"maximum": 3, "when": "multiline"}],
+    "react/jsx-max-props-per-line": [1, { "maximum": 3, "when": "multiline" }],
     "react/jsx-no-literals": 0,
     "react/jsx-sort-props": 0,
     "react/no-multi-comp": 0,
@@ -19,12 +19,15 @@
     "comma-dangle": [2, "only-multiline"],
     "no-console": 0,
     "no-global-assign": 0,
-    "no-unused-vars": [1, {"vars": "all", "args": "none"}],
-    "no-multiple-empty-lines": [2, {"max": 1}],
-    "prefer-const": ["error", {
-      "destructuring": "any",
-      "ignoreReadBeforeAssign": false
-    }]
+    "no-unused-vars": [1, { "vars": "all", "args": "none" }],
+    "no-multiple-empty-lines": [2, { "max": 1 }],
+    "prefer-const": [
+      "error",
+      {
+        "destructuring": "any",
+        "ignoreReadBeforeAssign": false
+      }
+    ]
   },
   "env": {
     "es6": true,
